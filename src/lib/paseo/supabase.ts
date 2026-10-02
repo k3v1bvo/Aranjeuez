@@ -1,15 +1,17 @@
-﻿import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Crea un cliente admin nuevo en cada llamada (seguro en server-side, no se comparte estado)
+export function getDB() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  return createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  })
+}
 
-// Cliente publico (browser)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Cliente admin (server-only, full access)
-export const supabaseAdmin = supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
-    })
-  : supabase
+// Cliente publico (para browser / uso en client components)
+export function getPublicDB() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  return createClient(url, key)
+}
