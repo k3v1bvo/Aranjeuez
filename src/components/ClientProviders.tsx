@@ -4,6 +4,7 @@ import { StoreProvider } from '@/context/StoreContext';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { PaseoAuthProvider } from '@/context/paseo/AuthContext';
+import { FloatingJarvisWidget } from '@/components/FloatingJarvisWidget';
 import { Toaster } from 'sonner';
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         <CartProvider>
           <PaseoAuthProvider>
             {children}
+            <FloatingJarvisWidget />
             <Toaster
               position="top-right"
               toastOptions={{
