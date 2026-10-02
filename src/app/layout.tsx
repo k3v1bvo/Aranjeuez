@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import "./globals.css";
 import { ClientProviders } from "@/components/ClientProviders";
@@ -18,12 +18,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tienda Táctica Cochabamba — Equipamiento Profesional Bolivia",
-  description: "La tienda táctica #1 en Cochabamba, Bolivia. Equipamiento de combate, rescate y operaciones especiales: chalecos balísticos, mochilas tácticas, óptica de precisión, calzado y accesorios MIL-SPEC. Delivery y retiro en almacén.",
-  keywords: ["táctico", "militar", "cochabamba", "bolivia", "equipamiento", "chalecos balísticos", "botas tácticas", "mochilas", "MOLLE", "fuerzas especiales", "seguridad"],
+  title: "Paseo Aranjuez • Ecosistema Digital",
+  description: "Plataforma digital integrada de Paseo Aranjuez Cochabamba: Marketplace PaseoYa con retiros rápidos por QR, Club de Puntos y Asistente Virtual IA.",
+  keywords: ["Paseo Aranjuez", "Cochabamba", "Bolivia", "Marketplace", "Paseo Points", "PaseoYa", "Centro Comercial"],
   openGraph: {
-    title: "Tienda Táctica Cochabamba",
-    description: "Equipamiento profesional para operadores, fuerzas de seguridad y entusiastas. Calidad MIL-SPEC en Bolivia.",
+    title: "Paseo Aranjuez • Ecosistema Digital",
+    description: "Compra, acumula puntos y accede a un asistente inteligente en Paseo Aranjuez.",
     locale: "es_BO",
     type: "website",
   },
@@ -36,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased">
+      <body className="antialiased" style={{ background: "#0b0a16", color: "#f3f4f6" }}>
         <ClientProviders>
           {children}
         </ClientProviders>

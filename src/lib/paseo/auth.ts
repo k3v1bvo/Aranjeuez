@@ -1,7 +1,8 @@
-import { SignJWT, jwtVerify } from "jose"
+﻿import { SignJWT, jwtVerify } from "jose"
 import bcrypt from "bcryptjs"
 import { getDB } from "./supabase"
 import type { PaseoUser } from "./types"
+import { sendPaseoWelcomeEmail } from "./email"
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "paseo-aranjuez-secret-2024"
@@ -54,9 +55,30 @@ export async function registerUser(data: {
   const hashed = await hashPassword(data.password)
   const { data: user, error } = await db
     .from("paseo_users")
-    .insert({ email: data.email, password: hashed, name: data.name, phone: data.phone, role: data.role || "cliente", birthday: data.birthday })
-    .select().single()
+    .insert({
+      email: data.email,
+      password: hashed,
+      name: data.name,
+      phone: data.phone,
+      role: data.role || "cliente",
+      birthday: data.birthday,
+      points: 50,
+      level: "bronce"
+    })
+    .select()
+    .single()
   if (error) return { user: null, error: error.message }
+
+  // 50 welcome points
+  await db.from("paseo_point_movements").insert({
+    user_id: user.id,
+    amount: 50,
+    reason: "Bono de bienvenida al Club Paseo Aranjuez",
+  })
+
+  // Google SMTP welcome email
+  sendPaseoWelcomeEmail(data.email, data.name, 50).catch(console.error)
+
   return { user, error: null }
 }
 
@@ -70,4 +92,53 @@ export async function loginUser(email: string, password: string): Promise<{
   if (!valid) return { user: null, token: null, error: "Email o contraseña incorrectos" }
   const token = await createToken(user)
   return { user, token, error: null }
+}
+
+export async function syncGoogleUser(data: {
+  email: string
+  name?: string
+  avatar_url?: string
+}): Promise<{ user: PaseoUser | null; token: string | null; error: string | null; isNew?: boolean }> {
+  const db = getDB()
+  const { data: existing } = await db.from("paseo_users").select("*").eq("email", data.email).single()
+
+  if (existing) {
+    if (data.avatar_url && !existing.avatar_url) {
+      await db.from("paseo_users").update({ avatar_url: data.avatar_url }).eq("id", existing.id)
+    }
+    const token = await createToken(existing)
+    return { user: existing, token, error: null, isNew: false }
+  }
+
+  const randomPass = await hashPassword(Math.random().toString(36) + "PaseoGoogle2026!")
+  const userName = data.name || data.email.split("@")[0]
+
+  const { data: newUser, error } = await db
+    .from("paseo_users")
+    .insert({
+      email: data.email,
+      name: userName,
+      password: randomPass,
+      avatar_url: data.avatar_url,
+      role: "cliente",
+      points: 50,
+      level: "bronce",
+    })
+    .select()
+    .single()
+
+  if (error || !newUser) {
+    return { user: null, token: null, error: error?.message || "Error al registrar usuario con Google", isNew: false }
+  }
+
+  await db.from("paseo_point_movements").insert({
+    user_id: newUser.id,
+    amount: 50,
+    reason: "Bono de bienvenida - Registro con Google",
+  })
+
+  sendPaseoWelcomeEmail(data.email, userName, 50).catch(console.error)
+
+  const token = await createToken(newUser)
+  return { user: newUser, token, error: null, isNew: true }
 }
