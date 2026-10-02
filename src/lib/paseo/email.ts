@@ -1,10 +1,14 @@
 ﻿import nodemailer from "nodemailer"
 
+const FROM_NAME = process.env.SMTP_FROM_NAME || "Paseo Aranjuez"
+const FROM_EMAIL = process.env.SMTP_USER || "ayniprotocol@gmail.com"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://aranjuez.vercel.app"
+
 function getTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com"
   const port = Number(process.env.SMTP_PORT) || 465
-  const user = process.env.SMTP_USER || ""
-  const pass = (process.env.SMTP_PASSWORD || "").replace(/\s+/g, "")
+  const user = process.env.SMTP_USER || "ayniprotocol@gmail.com"
+  const pass = (process.env.SMTP_PASSWORD || "ujccnzxebbpqzhaw").replace(/\s+/g, "")
 
   if (host.includes("gmail")) {
     return nodemailer.createTransport({
@@ -20,10 +24,6 @@ function getTransporter() {
     auth: { user, pass },
   })
 }
-
-const FROM_NAME = process.env.SMTP_FROM_NAME || "Paseo Aranjuez"
-const FROM_EMAIL = process.env.SMTP_USER || ""
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://aranjuez.vercel.app"
 
 export async function sendPaseoWelcomeEmail(to: string, name: string, points: number = 50) {
   try {
@@ -77,7 +77,7 @@ export async function sendPaseoWelcomeEmail(to: string, name: string, points: nu
     </html>
     `
     return await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_EMAIL || user}>`,
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
       to,
       subject: "🎉 ¡Bienvenido al Club Paseo Aranjuez! Tienes puntos de regalo",
       html,
@@ -172,7 +172,7 @@ export async function sendPaseoOrderEmail(opts: {
     </html>
     `
     return await transporter.sendMail({
-      from: `"${FROM_NAME}" <${FROM_EMAIL || user}>`,
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
       to,
       subject: `🛍️ Pedido ${pickupCode} - Paseo Aranjuez (${statusLabel})`,
       html,
