@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type {
@@ -147,7 +147,7 @@ interface StoreContextType {
   submitCashSettlement: (driverId: string, driverName: string, amount: number, method: CashSettlementMethod, orderIds: string[], proofUrl?: string, notes?: string) => void;
   reviewCashSettlement: (settlementId: string, approved: boolean, reviewerName?: string) => void;
 
-  // Matriz de QRs Estáticos (ImgBB & Supabase)
+  // Matriz de QRs EstÃ¡ticos (ImgBB & Supabase)
   fixedAmountQRs: FixedAmountQR[];
   addFixedAmountQR: (qr: Omit<FixedAmountQR, 'id' | 'created_at'>) => Promise<FixedAmountQR>;
   updateFixedAmountQR: (id: string, data: Partial<FixedAmountQR>) => Promise<void>;
@@ -189,7 +189,7 @@ function mapSupabaseOrder(o: any, items: any[] = []): Order {
     cancelled_at: o.cancelled_at || null,
     cancellation_reason: o.cancellation_reason || null,
     internal_notes: o.internal_notes || null,
-    customer_name: o.customer_name || 'Cliente Táctico',
+    customer_name: o.customer_name || 'Cliente TÃ¡ctico',
     customer_phone: o.customer_phone || '',
     customer_email: o.customer_email || 'cliente@tacticos.bo',
     customer_address: o.customer_address || '',
@@ -207,7 +207,7 @@ function mapSupabaseOrder(o: any, items: any[] = []): Order {
         }))
       : [],
     customer: {
-      name: o.customer_name || 'Cliente Táctico',
+      name: o.customer_name || 'Cliente TÃ¡ctico',
       phone: o.customer_phone || '',
       email: o.customer_email || 'cliente@tacticos.bo',
       address: o.customer_address || '',
@@ -359,7 +359,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Live Supabase sync
       const client = supabase;
-      if (client) {
+      const isLegacyPath = typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/vendor'));
+      if (client && isLegacyPath) {
         // 1. Categories
         client.from('categories').select('*').order('position', { ascending: true }).then(({ data }) => {
           if (data && data.length > 0) setCategories(data);
@@ -418,7 +419,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           }
         });
 
-        // 5. Órdenes y Productos de Órdenes desde Supabase
+        // 5. Ã“rdenes y Productos de Ã“rdenes desde Supabase
         client
           .from('orders')
           .select('*, order_items(*)')
@@ -435,7 +436,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }
           });
 
-        // 6. Rendición de Efectivo (Cuadre de Caja) desde Supabase
+        // 6. RendiciÃ³n de Efectivo (Cuadre de Caja) desde Supabase
         client
           .from('cash_settlements')
           .select('*')
@@ -452,7 +453,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }
           });
 
-        // 7. Matriz de QRs Estáticos (ImgBB & Supabase)
+        // 7. Matriz de QRs EstÃ¡ticos (ImgBB & Supabase)
         client
           .from('fixed_amount_qrs')
           .select('*')
@@ -467,7 +468,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 account_name: d.account_name || null,
                 is_active: d.is_active !== undefined ? d.is_active : true,
                 is_default: d.is_default !== undefined ? d.is_default : false,
-                expiration_years: d.expiration_years || '3 años',
+                expiration_years: d.expiration_years || '3 aÃ±os',
                 expiration_date: d.expiration_date || null,
                 notes: d.notes || null,
                 created_at: d.created_at || new Date().toISOString(),
@@ -489,7 +490,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // WebSockets — Supabase Realtime live sync para Órdenes y Rendiciones de Efectivo
+  // WebSockets â€” Supabase Realtime live sync para Ã“rdenes y Rendiciones de Efectivo
   useEffect(() => {
     const client = supabase;
     if (!client) return;
@@ -500,15 +501,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
         (payload: any) => {
-          console.log('⚡ [Realtime WebSockets] Order event:', payload.eventType, payload);
+          console.log('âš¡ [Realtime WebSockets] Order event:', payload.eventType, payload);
           if (payload.eventType === 'INSERT') {
             const newOrder = mapSupabaseOrder(payload.new);
             setOrders(prev => {
               if (prev.some(o => o.id === newOrder.id)) return prev;
               return [newOrder, ...prev];
             });
-            toast.info(`🔔 ¡Nueva orden táctica recibida! #${(payload.new.id || '').toUpperCase()}`, {
-              description: `Total: Bs. ${Number(payload.new.total || 0).toFixed(2)} • ${payload.new.customer_name || 'Cliente'}`,
+            toast.info(`ðŸ”” Â¡Nueva orden tÃ¡ctica recibida! #${(payload.new.id || '').toUpperCase()}`, {
+              description: `Total: Bs. ${Number(payload.new.total || 0).toFixed(2)} â€¢ ${payload.new.customer_name || 'Cliente'}`,
             });
           } else if (payload.eventType === 'UPDATE') {
             const updatedRow = payload.new;
@@ -533,23 +534,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'cash_settlements' },
         (payload: any) => {
-          console.log('⚡ [Realtime WebSockets] Cash settlement event:', payload.eventType, payload);
+          console.log('âš¡ [Realtime WebSockets] Cash settlement event:', payload.eventType, payload);
           if (payload.eventType === 'INSERT') {
             const newSettlement = mapSupabaseSettlement(payload.new);
             setCashSettlements(prev => {
               if (prev.some(s => s.id === newSettlement.id)) return prev;
               return [newSettlement, ...prev];
             });
-            toast.info(`💰 Nueva Rendición de Caja: ${newSettlement.driver_name}`, {
-              description: `Monto: Bs. ${newSettlement.amount.toFixed(2)} (${newSettlement.method === 'qr_transfer' ? 'QR Simple' : 'Entrega física en Base'})`,
+            toast.info(`ðŸ’° Nueva RendiciÃ³n de Caja: ${newSettlement.driver_name}`, {
+              description: `Monto: Bs. ${newSettlement.amount.toFixed(2)} (${newSettlement.method === 'qr_transfer' ? 'QR Simple' : 'Entrega fÃ­sica en Base'})`,
             });
           } else if (payload.eventType === 'UPDATE') {
             const updated = mapSupabaseSettlement(payload.new);
             setCashSettlements(prev => prev.map(s => s.id === updated.id ? updated : s));
             if (updated.status === 'approved') {
-              toast.success(`✅ Rendición de Bs. ${updated.amount.toFixed(2)} aprobada por administración`);
+              toast.success(`âœ… RendiciÃ³n de Bs. ${updated.amount.toFixed(2)} aprobada por administraciÃ³n`);
             } else if (updated.status === 'rejected') {
-              toast.error(`❌ Rendición de Bs. ${updated.amount.toFixed(2)} rechazada`);
+              toast.error(`âŒ RendiciÃ³n de Bs. ${updated.amount.toFixed(2)} rechazada`);
             }
           }
         }
@@ -558,7 +559,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'fixed_amount_qrs' },
         (payload: any) => {
-          console.log('⚡ [Realtime WebSockets] Fixed amount QR event:', payload.eventType, payload);
+          console.log('âš¡ [Realtime WebSockets] Fixed amount QR event:', payload.eventType, payload);
           if (payload.eventType === 'INSERT') {
             const row = payload.new;
             const newQR: FixedAmountQR = {
@@ -569,7 +570,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               account_name: row.account_name || null,
               is_active: row.is_active !== undefined ? row.is_active : true,
               is_default: row.is_default !== undefined ? row.is_default : false,
-              expiration_years: row.expiration_years || '3 años',
+              expiration_years: row.expiration_years || '3 aÃ±os',
               expiration_date: row.expiration_date || null,
               notes: row.notes || null,
               created_at: row.created_at || new Date().toISOString(),
@@ -607,7 +608,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       )
       .subscribe((status: string) => {
-        console.log('⚡ [Realtime WebSockets Status]:', status);
+        console.log('âš¡ [Realtime WebSockets Status]:', status);
       });
 
     return () => {
@@ -712,7 +713,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ...prev,
       ...newSettings,
     }));
-    toast.success('Configuración y horarios actualizados con éxito');
+    toast.success('ConfiguraciÃ³n y horarios actualizados con Ã©xito');
   };
 
   // CATEGORY ACTIONS
@@ -744,7 +745,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    toast.success(`Categoría "${name}" creada con éxito`);
+    toast.success(`CategorÃ­a "${name}" creada con Ã©xito`);
     return newCategory;
   };
 
@@ -779,13 +780,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    toast.success('Categoría actualizada con éxito');
+    toast.success('CategorÃ­a actualizada con Ã©xito');
   };
 
   const deleteCategory = (id: string): boolean => {
     const hasProducts = products.some(p => p.category_id === id);
     if (hasProducts) {
-      toast.error('No se puede eliminar: existen productos asociados a esta categoría. Reasigna o elimina los productos primero.');
+      toast.error('No se puede eliminar: existen productos asociados a esta categorÃ­a. Reasigna o elimina los productos primero.');
       return false;
     }
 
@@ -798,7 +799,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    toast.info('Categoría eliminada');
+    toast.info('CategorÃ­a eliminada');
     return true;
   };
 
@@ -843,7 +844,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         id: `alt-${Date.now().toString(36)}`,
         type: 'stock',
         severity: newProduct.stock === 0 ? 'critical' : 'warning',
-        message: `Nuevo producto "${newProduct.name}" registrado con stock crítico (${newProduct.stock} uds).`,
+        message: `Nuevo producto "${newProduct.name}" registrado con stock crÃ­tico (${newProduct.stock} uds).`,
         resolved: false,
         resolved_by: null,
         created_at: new Date().toISOString(),
@@ -871,7 +872,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    toast.success(`Producto "${prod.name}" añadido al catálogo`);
+    toast.success(`Producto "${prod.name}" aÃ±adido al catÃ¡logo`);
     return newProduct;
   };
 
@@ -907,7 +908,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               id: `alt-${Date.now().toString(36)}`,
               type: 'stock',
               severity: updatedStock === 0 ? 'critical' : 'warning',
-              message: `El producto "${p.name}" ha caído a ${updatedStock} unidades (umbral: ${updatedThreshold}).`,
+              message: `El producto "${p.name}" ha caÃ­do a ${updatedStock} unidades (umbral: ${updatedThreshold}).`,
               resolved: false,
               resolved_by: null,
               created_at: new Date().toISOString(),
@@ -969,7 +970,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (error) console.error('Error deleting product in Supabase:', error);
       });
     }
-    toast.error('Producto eliminado del catálogo');
+    toast.error('Producto eliminado del catÃ¡logo');
   };
 
   const updateStock = (id: string, newStock: number) => {
@@ -1000,7 +1001,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
 
     setShippingZones(prev => [...prev, newZone]);
-    toast.success(`Zona "${zoneData.name}" configurada con éxito`);
+    toast.success(`Zona "${zoneData.name}" configurada con Ã©xito`);
     return newZone;
   };
 
@@ -1021,12 +1022,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return z;
       })
     );
-    toast.success('Zona de envío actualizada');
+    toast.success('Zona de envÃ­o actualizada');
   };
 
   const deleteShippingZone = (id: string): boolean => {
     setShippingZones(prev => prev.filter(z => z.id !== id));
-    toast.info('Zona de envío eliminada');
+    toast.info('Zona de envÃ­o eliminada');
     return true;
   };
 
@@ -1036,7 +1037,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     toast.success('Zonas de Cochabamba y Nacionales restablecidas a valores oficiales');
   };
 
-  // ORDER CREATION & LOGISTICS (BOLIVIA - 3 DELIVERY TYPES + 50/50 + REGALO TÁCTICO)
+  // ORDER CREATION & LOGISTICS (BOLIVIA - 3 DELIVERY TYPES + 50/50 + REGALO TÃCTICO)
   const createOrder = async (input: CreateOrderInput): Promise<Order> => {
     let shippingCost = 0;
     let driverCommission = 0;
@@ -1066,7 +1067,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (input.payment_mode === 'full_payment') {
       paid_amount = total;
       pending_amount = 0;
-      free_gift = storeSettings.freeGiftName; // 🎉 100% pago obtiene souvenir de regalo
+      free_gift = storeSettings.freeGiftName; // ðŸŽ‰ 100% pago obtiene souvenir de regalo
     } else if (input.payment_mode === 'partial_payment') {
       paid_amount = Math.round((total / 2) * 100) / 100; // 50% anticipo por QR
       pending_amount = Math.round((total - paid_amount) * 100) / 100; // 50% al recibir
@@ -1090,7 +1091,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         realUserId = user?.id ?? null;
       }
     } catch {
-      // Sin sesión activa — orden anónima, customer_id será null
+      // Sin sesiÃ³n activa â€” orden anÃ³nima, customer_id serÃ¡ null
     }
 
     const newOrder: Order = {
@@ -1152,7 +1153,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         .from('orders')
         .insert({
           id: newOrder.id,
-          customer_id: realUserId || undefined,  // UUID real de Supabase Auth (null si anónimo)
+          customer_id: realUserId || undefined,  // UUID real de Supabase Auth (null si anÃ³nimo)
           status: newOrder.status,
           subtotal: Number(input.subtotal),
           total: Number(newOrder.total),
@@ -1186,7 +1187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               id: item.id,
               order_id: newOrder.id,
               product_id: item.product_id,
-              product_name: products.find(p => p.id === item.product_id)?.name || 'Producto Táctico',
+              product_name: products.find(p => p.id === item.product_id)?.name || 'Producto TÃ¡ctico',
               quantity: item.quantity,
               unit_price: Number(item.unit_price),
               total_price: Number(item.subtotal),
@@ -1209,18 +1210,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     // Notify about gift if unlocked
     if (free_gift) {
-      toast.success('🎁 ¡REGALO TÁCTICO SORPRESA ADJUDICADO!', {
-        description: '¡Por pagar el 100% con QR, un Souvenir Táctico Sorpresa exclusivo viaja dentro de tu paquete!',
+      toast.success('ðŸŽ Â¡REGALO TÃCTICO SORPRESA ADJUDICADO!', {
+        description: 'Â¡Por pagar el 100% con QR, un Souvenir TÃ¡ctico Sorpresa exclusivo viaja dentro de tu paquete!',
       });
     }
 
     if (input.customer_email) {
-      toast.success('¡Cuenta generada automáticamente!', {
+      toast.success('Â¡Cuenta generada automÃ¡ticamente!', {
         description: `Se enviaron tus credenciales y tracking por correo SMTP a ${input.customer_email}`,
       });
     }
 
-    toast.success(`¡Orden ${orderId.toUpperCase()} creada con éxito!`);
+    toast.success(`Â¡Orden ${orderId.toUpperCase()} creada con Ã©xito!`);
     return newOrder;
   };
 
@@ -1266,24 +1267,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (targetEmail && targetEmail.includes('@')) {
       const statusLabels: Record<string, { title: string; message: string }> = {
         preparing: {
-          title: `ORDEN EN PREPARACIÓN #${orderId}`,
-          message: `Estimado(a) ${customerName || 'Operador'}, tu pedido táctico está siendo alistado y empacado con precintos de seguridad en nuestra base central en Cochabamba.`,
+          title: `ORDEN EN PREPARACIÃ“N #${orderId}`,
+          message: `Estimado(a) ${customerName || 'Operador'}, tu pedido tÃ¡ctico estÃ¡ siendo alistado y empacado con precintos de seguridad en nuestra base central en Cochabamba.`,
         },
         ready: {
           title: `ORDEN LISTA #${orderId}`,
-          message: `Estimado(a) ${customerName || 'Operador'}, tu equipo táctico ya está 100% verificado y listo para recojo en tienda (Av. Heroínas #560) o para entrega inmediata.`,
+          message: `Estimado(a) ${customerName || 'Operador'}, tu equipo tÃ¡ctico ya estÃ¡ 100% verificado y listo para recojo en tienda (Av. HeroÃ­nas #560) o para entrega inmediata.`,
         },
         in_transit: {
           title: `PAQUETE EN RUTA #${orderId}`,
-          message: `Estimado(a) ${customerName || 'Operador'}, tu paquete va en camino. El repartidor motorizado o la flota nacional interdepartamental está en tránsito hacia tu ubicación.`,
+          message: `Estimado(a) ${customerName || 'Operador'}, tu paquete va en camino. El repartidor motorizado o la flota nacional interdepartamental estÃ¡ en trÃ¡nsito hacia tu ubicaciÃ³n.`,
         },
         delivered: {
-          title: `ORDEN ENTREGADA CON ÉXITO #${orderId}`,
-          message: `Estimado(a) ${customerName || 'Operador'}, tu equipo ha sido entregado en destino. ¡Misión cumplida! Gracias por confiar en Tienda Táctica Bolivia.`,
+          title: `ORDEN ENTREGADA CON Ã‰XITO #${orderId}`,
+          message: `Estimado(a) ${customerName || 'Operador'}, tu equipo ha sido entregado en destino. Â¡MisiÃ³n cumplida! Gracias por confiar en Tienda TÃ¡ctica Bolivia.`,
         },
         cancelled: {
           title: `ORDEN CANCELADA #${orderId}`,
-          message: `Estimado(a) ${customerName || 'Operador'}, tu orden ha sido cancelada. Si necesitas asistencia, contáctanos por WhatsApp al +591 71234567.`,
+          message: `Estimado(a) ${customerName || 'Operador'}, tu orden ha sido cancelada. Si necesitas asistencia, contÃ¡ctanos por WhatsApp al +591 71234567.`,
         },
       };
 
@@ -1294,7 +1295,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: targetEmail,
-            subject: `${meta.title} — Tienda Táctica Bolivia`,
+            subject: `${meta.title} â€” Tienda TÃ¡ctica Bolivia`,
             title: meta.title,
             message: meta.message,
             orderId,
@@ -1333,14 +1334,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: demoVendor.email,
-          subject: `🛵 NUEVA RUTA ASIGNADA #${orderId} — Comisión: Bs. ${Number(o.driver_commission).toFixed(2)}`,
+          subject: `ðŸ›µ NUEVA RUTA ASIGNADA #${orderId} â€” ComisiÃ³n: Bs. ${Number(o.driver_commission).toFixed(2)}`,
           title: `DESPACHO ASIGNADO #${orderId}`,
           message: `Camarada conductor, tienes una nueva orden asignada:
-• Destino: ${o.customer_address}
-• Cliente: ${o.customer_name}
-• Celular / WhatsApp: ${o.customer_phone}
-• Modalidad Cobro: ${o.payment_mode === 'full_payment' ? 'PAGADO 100% (Solo entregar)' : `COBRAR SALDO: Bs. ${Number(o.pending_amount).toFixed(2)}`}
-• Tu Comisión Ganada: +Bs. ${Number(o.driver_commission).toFixed(2)}`,
+â€¢ Destino: ${o.customer_address}
+â€¢ Cliente: ${o.customer_name}
+â€¢ Celular / WhatsApp: ${o.customer_phone}
+â€¢ Modalidad Cobro: ${o.payment_mode === 'full_payment' ? 'PAGADO 100% (Solo entregar)' : `COBRAR SALDO: Bs. ${Number(o.pending_amount).toFixed(2)}`}
+â€¢ Tu ComisiÃ³n Ganada: +Bs. ${Number(o.driver_commission).toFixed(2)}`,
           orderId,
           total: o.total,
           actionUrl: '/vendor',
@@ -1356,12 +1357,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: o.customer_email,
-            subject: `🛵 Repartidor Asignado a tu Orden #${orderId} — Tienda Táctica Bolivia`,
+            subject: `ðŸ›µ Repartidor Asignado a tu Orden #${orderId} â€” Tienda TÃ¡ctica Bolivia`,
             title: `MOTORIZADO EN CAMINO #${orderId}`,
-            message: `Estimado(a) ${o.customer_name}, tu paquete táctico ha sido asignado a nuestro conductor oficial:
-• Conductor: Carlos Chofer (Motorizado Mil-Spec)
-• Teléfono Chofer: +591 76543210
-• Modalidad: ${o.payment_mode === 'full_payment' ? 'Pagado 100%' : `Saldo a pagar al chofer: Bs. ${Number(o.pending_amount).toFixed(2)}`}`,
+            message: `Estimado(a) ${o.customer_name}, tu paquete tÃ¡ctico ha sido asignado a nuestro conductor oficial:
+â€¢ Conductor: Carlos Chofer (Motorizado Mil-Spec)
+â€¢ TelÃ©fono Chofer: +591 76543210
+â€¢ Modalidad: ${o.payment_mode === 'full_payment' ? 'Pagado 100%' : `Saldo a pagar al chofer: Bs. ${Number(o.pending_amount).toFixed(2)}`}`,
             orderId,
             total: o.total,
             actionUrl: '/pedidos',
@@ -1400,7 +1401,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
 
     if (targetOrder.status !== 'ready') {
-      toast.error('Esta orden ya fue aceptada por otro conductor o aún no está lista');
+      toast.error('Esta orden ya fue aceptada por otro conductor o aÃºn no estÃ¡ lista');
       return false;
     }
 
@@ -1434,7 +1435,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
     }
 
-    toast.success(`¡Has aceptado la orden ${orderId.toUpperCase()}! Asignada a tu ruta.`);
+    toast.success(`Â¡Has aceptado la orden ${orderId.toUpperCase()}! Asignada a tu ruta.`);
     return true;
   };
 
@@ -1511,9 +1512,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: o.customer_email,
-            subject: `🛵 ¡Tu Paquete Táctico va en Camino! #${orderId} — Tienda Táctica Bolivia`,
+            subject: `ðŸ›µ Â¡Tu Paquete TÃ¡ctico va en Camino! #${orderId} â€” Tienda TÃ¡ctica Bolivia`,
             title: `MOTORIZADO EN RUTA #${orderId}`,
-            message: `Estimado(a) ${o.customer_name}, el motorizado ya recogió tu paquete táctico y va en camino hacia tu dirección (${o.customer_address}). Mantente atento(a) a tu celular para la entrega inmediata.`,
+            message: `Estimado(a) ${o.customer_name}, el motorizado ya recogiÃ³ tu paquete tÃ¡ctico y va en camino hacia tu direcciÃ³n (${o.customer_address}). Mantente atento(a) a tu celular para la entrega inmediata.`,
             orderId,
             total: o.total,
             actionUrl: '/pedidos',
@@ -1572,9 +1573,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: targetOrder.customer_email,
-          subject: `✅ ¡Paquete Táctico Entregado con Éxito! #${orderId} — Tienda Táctica Bolivia`,
-          title: `MISIÓN CUMPLIDA #${orderId}`,
-          message: `Estimado(a) ${targetOrder.customer_name}, confirmamos que tu paquete táctico ha sido entregado en tus manos. ¡Muchas gracias por tu compra en Tienda Táctica Cochabamba! Esperamos que tu nuevo equipamiento supere todas tus expectativas.`,
+          subject: `âœ… Â¡Paquete TÃ¡ctico Entregado con Ã‰xito! #${orderId} â€” Tienda TÃ¡ctica Bolivia`,
+          title: `MISIÃ“N CUMPLIDA #${orderId}`,
+          message: `Estimado(a) ${targetOrder.customer_name}, confirmamos que tu paquete tÃ¡ctico ha sido entregado en tus manos. Â¡Muchas gracias por tu compra en Tienda TÃ¡ctica Cochabamba! Esperamos que tu nuevo equipamiento supere todas tus expectativas.`,
           orderId,
           total: targetOrder.total,
           actionUrl: '/pedidos',
@@ -1590,18 +1591,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: 'ayniprotocol@gmail.com',
-        subject: `💰 ENTREGA COMPLETADA #${orderId} — Total: Bs. ${Number(targetOrder.total).toFixed(2)}`,
+        subject: `ðŸ’° ENTREGA COMPLETADA #${orderId} â€” Total: Bs. ${Number(targetOrder.total).toFixed(2)}`,
         title: `ENTREGA Y COBRO FINALIZADO #${orderId}`,
-        message: `El repartidor ha completado con éxito la entrega #${orderId}:
-• Cliente: ${targetOrder.customer_name}
-• Total Orden: Bs. ${Number(targetOrder.total).toFixed(2)}
-• Comisión Chofer: Bs. ${Number(targetOrder.driver_commission).toFixed(2)}
-• Ganancia Neta Tienda: Bs. ${(Number(targetOrder.total) - Number(targetOrder.driver_commission)).toFixed(2)}
-• Fecha y Hora: ${new Date(deliveryTime).toLocaleString('es-BO')}`,
+        message: `El repartidor ha completado con Ã©xito la entrega #${orderId}:
+â€¢ Cliente: ${targetOrder.customer_name}
+â€¢ Total Orden: Bs. ${Number(targetOrder.total).toFixed(2)}
+â€¢ ComisiÃ³n Chofer: Bs. ${Number(targetOrder.driver_commission).toFixed(2)}
+â€¢ Ganancia Neta Tienda: Bs. ${(Number(targetOrder.total) - Number(targetOrder.driver_commission)).toFixed(2)}
+â€¢ Fecha y Hora: ${new Date(deliveryTime).toLocaleString('es-BO')}`,
         orderId,
         total: targetOrder.total,
         actionUrl: '/admin/orders',
-        actionLabel: 'PANEL DE ÓRDENES ADMIN',
+        actionLabel: 'PANEL DE Ã“RDENES ADMIN',
         role: 'admin',
       }),
     }).catch(e => console.warn('Could not alert admin of delivery:', e));
@@ -1640,8 +1641,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
     }
 
-    toast.success(`¡Entrega de orden ${orderId.toUpperCase()} completada!`, {
-      description: `Comisión registrada: +Bs. ${targetOrder.driver_commission.toFixed(2)}`,
+    toast.success(`Â¡Entrega de orden ${orderId.toUpperCase()} completada!`, {
+      description: `ComisiÃ³n registrada: +Bs. ${targetOrder.driver_commission.toFixed(2)}`,
     });
   };
 
@@ -1675,7 +1676,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
     }
 
-    toast.success('¡Gracias por calificar la entrega de tu pedido!');
+    toast.success('Â¡Gracias por calificar la entrega de tu pedido!');
   };
 
   const cancelOrder = (orderId: string, reason?: string): boolean => {
@@ -1683,7 +1684,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!order) return false;
 
     if (order.status !== 'pending' && order.status !== 'paid') {
-      toast.error('Solo puedes cancelar pedidos en estado "Pendiente" o "Pagado" (antes de preparación)');
+      toast.error('Solo puedes cancelar pedidos en estado "Pendiente" o "Pagado" (antes de preparaciÃ³n)');
       return false;
     }
 
@@ -1750,7 +1751,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
     }
 
-    toast.success('Comisión de reparto liquidada con éxito');
+    toast.success('ComisiÃ³n de reparto liquidada con Ã©xito');
   };
 
   // ============ CASH SETTLEMENT SYSTEM ============
@@ -1825,7 +1826,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (error) {
             console.warn('Could not insert cash settlement in Supabase (will remain in localStorage):', error);
           } else {
-            console.log('✅ Cash settlement persisted to Supabase database');
+            console.log('âœ… Cash settlement persisted to Supabase database');
           }
         });
     }
@@ -1836,13 +1837,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: 'ayniprotocol@gmail.com',
-        subject: `💰 RENDICIÓN DE CAJA: ${driverName} — Bs. ${amount.toFixed(2)}`,
-        title: 'RENDICIÓN DE EFECTIVO PENDIENTE DE APROBACIÓN',
-        message: `El repartidor ${driverName} ha enviado una rendición de caja por Bs. ${amount.toFixed(2)}.\nMétodo: ${method === 'qr_transfer' ? 'Transferencia QR Simple' : 'Entrega física en Base'}.\nÓrdenes cubiertas: ${orderIds.join(', ')}.\nRevisa y aprueba en el panel de administración.`,
+        subject: `ðŸ’° RENDICIÃ“N DE CAJA: ${driverName} â€” Bs. ${amount.toFixed(2)}`,
+        title: 'RENDICIÃ“N DE EFECTIVO PENDIENTE DE APROBACIÃ“N',
+        message: `El repartidor ${driverName} ha enviado una rendiciÃ³n de caja por Bs. ${amount.toFixed(2)}.\nMÃ©todo: ${method === 'qr_transfer' ? 'Transferencia QR Simple' : 'Entrega fÃ­sica en Base'}.\nÃ“rdenes cubiertas: ${orderIds.join(', ')}.\nRevisa y aprueba en el panel de administraciÃ³n.`,
       }),
     }).catch(e => console.warn('Could not notify admin of cash settlement:', e));
 
-    toast.success(`Rendición de Bs. ${amount.toFixed(2)} enviada al administrador para revisión`);
+    toast.success(`RendiciÃ³n de Bs. ${amount.toFixed(2)} enviada al administrador para revisiÃ³n`);
   };
 
   const reviewCashSettlement = (settlementId: string, approved: boolean, reviewerName?: string) => {
@@ -1877,16 +1878,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (error) {
             console.warn('Could not update cash settlement in Supabase:', error);
           } else {
-            console.log('✅ Cash settlement review synced to Supabase database');
+            console.log('âœ… Cash settlement review synced to Supabase database');
           }
         });
     }
 
-    toast.success(approved ? '✅ Rendición aprobada y cuadrada' : '❌ Rendición rechazada');
+    toast.success(approved ? 'âœ… RendiciÃ³n aprobada y cuadrada' : 'âŒ RendiciÃ³n rechazada');
   };
 
   // ========================================================
-  // MATRIZ DE QRs ESTÁTICOS (ImgBB & Supabase)
+  // MATRIZ DE QRs ESTÃTICOS (ImgBB & Supabase)
   // ========================================================
   const addFixedAmountQR = async (qrData: Omit<FixedAmountQR, 'id' | 'created_at'>): Promise<FixedAmountQR> => {
     const newQR: FixedAmountQR = {
@@ -1917,7 +1918,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             account_name: newQR.account_name,
             is_active: newQR.is_active,
             is_default: newQR.is_default,
-            expiration_years: newQR.expiration_years || '3 años',
+            expiration_years: newQR.expiration_years || '3 aÃ±os',
             expiration_date: newQR.expiration_date || null,
             notes: newQR.notes,
           })
@@ -1934,7 +1935,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    toast.success('Código QR agregado a la matriz exitosamente');
+    toast.success('CÃ³digo QR agregado a la matriz exitosamente');
     return newQR;
   };
 
@@ -1973,7 +1974,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    toast.success('Código QR actualizado en la matriz');
+    toast.success('CÃ³digo QR actualizado en la matriz');
   };
 
   const deleteFixedAmountQR = async (id: string): Promise<boolean> => {
@@ -1992,7 +1993,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    toast.success('Código QR eliminado de la matriz');
+    toast.success('CÃ³digo QR eliminado de la matriz');
     return true;
   };
 
@@ -2023,7 +2024,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { qr: exactAny, isExactMatch: true, isDefault: false };
     }
 
-    // 2. QR comodín de respaldo (sin monto fijado o marcado como is_default, priorizando no expirados)
+    // 2. QR comodÃ­n de respaldo (sin monto fijado o marcado como is_default, priorizando no expirados)
     const defaultValid = fixedAmountQRs.find(
       q => q.is_active && !isExpired(q) && (q.is_default || q.amount === null || q.amount === 0)
     );
@@ -2069,7 +2070,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       return updated;
     });
-    toast.success('Configuración de pasarela guardada con éxito', {
+    toast.success('ConfiguraciÃ³n de pasarela guardada con Ã©xito', {
       description: `Proveedor activo: ${settings.provider_name || paymentGatewaySettings.provider_name}`,
     });
   };
@@ -2097,7 +2098,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('tacticos_payment_gateway_settings');
     localStorage.removeItem('tacticos_cash_settlements');
     localStorage.removeItem('tacticos_fixed_amount_qrs');
-    toast.info('Datos restaurados a valores de fábrica para Bolivia');
+    toast.info('Datos restaurados a valores de fÃ¡brica para Bolivia');
   };
 
   return (

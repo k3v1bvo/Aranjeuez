@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { AppRole } from '@/lib/types';
@@ -30,7 +30,7 @@ interface AuthContextType {
 }
 
 const roleProfiles: Record<AppRole, { id: string; name: string; email: string; phone: string; avatar_url: string | null }> = {
-  admin: { id: 'admin-01', name: 'Comandante Dueño', email: 'admin@tacticos.bo', phone: '+591 71234567', avatar_url: null },
+  admin: { id: 'admin-01', name: 'Comandante DueÃ±o', email: 'admin@tacticos.bo', phone: '+591 71234567', avatar_url: null },
   vendor: { id: 'vendor-01', name: 'Carlos Chofer (Driver)', email: 'driver1@tacticos.bo', phone: '+591 76543210', avatar_url: null },
   client: { id: 'client-01', name: 'Juan Operativo', email: 'cliente@tacticos.bo', phone: '+591 75512345', avatar_url: null },
 };
@@ -60,6 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthUser(initialUser);
 
         // Fetch full profile from Supabase profiles table
+        const isLegacyPath = typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/vendor'));
+        if (isLegacyPath) {
         client
           .from('profiles')
           .select('full_name, phone, avatar_url')
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setRole(data.role as AppRole);
             }
           });
+        }
       }
     });
 
@@ -132,10 +135,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: pass,
     });
     if (error) {
-      toast.error('Error al iniciar sesión', { description: error.message });
+      toast.error('Error al iniciar sesiÃ³n', { description: error.message });
       return false;
     }
-    toast.success('¡Sesión iniciada con éxito!');
+    toast.success('Â¡SesiÃ³n iniciada con Ã©xito!');
     setIsAuthModalOpen(false);
     return true;
   };
@@ -186,9 +189,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: email,
-        subject: '¡Bienvenido al Centro de Mando Táctico Bolivia!',
+        subject: 'Â¡Bienvenido al Centro de Mando TÃ¡ctico Bolivia!',
         title: 'CREDENCIALES DE OPERADOR ASIGNADAS',
-        message: `Estimado(a) ${fullName || 'Operador'}, tu cuenta ha sido creada con éxito en la plataforma de Tienda Táctica Cochabamba (Base Heroínas #560). Teléfono de contacto registrado: ${phone || 'Sin especificar'}. Ya puedes explorar nuestro arsenal, realizar pedidos con despacho local o envíos a toda Bolivia.`,
+        message: `Estimado(a) ${fullName || 'Operador'}, tu cuenta ha sido creada con Ã©xito en la plataforma de Tienda TÃ¡ctica Cochabamba (Base HeroÃ­nas #560). TelÃ©fono de contacto registrado: ${phone || 'Sin especificar'}. Ya puedes explorar nuestro arsenal, realizar pedidos con despacho local o envÃ­os a toda Bolivia.`,
       }),
     }).catch(e => console.warn('Could not send welcome email:', e));
 
@@ -198,17 +201,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: 'ayniprotocol@gmail.com',
-        subject: `👤 NUEVO OPERADOR REGISTRADO: ${fullName || email}`,
+        subject: `ðŸ‘¤ NUEVO OPERADOR REGISTRADO: ${fullName || email}`,
         title: 'NUEVO USUARIO EN PLATAFORMA',
         message: `Se ha registrado una nueva cuenta en la tienda:
-• Nombre: ${fullName || 'Sin nombre'}
-• Correo: ${email}
-• Teléfono / WhatsApp: ${phone || 'No especificado'}
-• Fecha: ${new Date().toLocaleString('es-BO')}`,
+â€¢ Nombre: ${fullName || 'Sin nombre'}
+â€¢ Correo: ${email}
+â€¢ TelÃ©fono / WhatsApp: ${phone || 'No especificado'}
+â€¢ Fecha: ${new Date().toLocaleString('es-BO')}`,
       }),
     }).catch(e => console.warn('Could not send admin new user alert:', e));
 
-    toast.success('¡Operador registrado con éxito!');
+    toast.success('Â¡Operador registrado con Ã©xito!');
     setIsAuthModalOpen(false);
     return true;
   };
@@ -240,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setAuthUser(null);
     setRole('client');
-    toast.info('Sesión cerrada');
+    toast.info('SesiÃ³n cerrada');
   };
 
   const switchDemoRole = (newRole: AppRole) => {

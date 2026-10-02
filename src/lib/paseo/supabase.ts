@@ -3,6 +3,11 @@
 const DEFAULT_URL = "https://xedrgakpummpqwamfyos.supabase.co"
 const DEFAULT_ANON_KEY = "sb_publishable_H8TpMGOgkP-_gzpO7aRRJg_y10HHWHa"
 
+// En Node.js (servidor), evitar crash de realtime WebSocket
+if (typeof window === "undefined" && typeof (globalThis as any).WebSocket === "undefined") {
+  (globalThis as any).WebSocket = class {}
+}
+
 let publicClient: SupabaseClient | null = null
 
 // Cliente publico (para browser / Realtime WebSockets / client components)
