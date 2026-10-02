@@ -31,6 +31,7 @@ export default function PedidosPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const loadOrders = useCallback(async () => {
     try {
@@ -56,10 +57,14 @@ export default function PedidosPage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o))
       )
+      if (selectedOrder && selectedOrder.id === updatedOrder.id) {
+        setSelectedOrder((prev) => (prev ? { ...prev, ...updatedOrder } : null))
+      }
 
       const statusMap: Record<string, string> = {
         preparando: "Tu pedido está en preparación 👨‍🍳",
         listo: "¡Tu pedido está listo para recoger en la tienda! 🛍️",
+        llego: "Notificaste a la tienda que estás en el local 📍",
         entregado: "¡Pedido entregado con éxito! 🎉",
       }
 
@@ -68,8 +73,32 @@ export default function PedidosPage() {
           description: `Código: ${updatedOrder.pickup_code}`,
         })
       }
-    }, [])
+    }, [selectedOrder])
   )
+
+  async function handleImHere(orderId: string) {
+    setUpdatingId(orderId)
+    try {
+      const res = await fetch("/api/paseo/pedidos", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: "llego" }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error("Error al notificar llegada", { description: data.error })
+      } else {
+        toast.success("¡Tienda notificada!", {
+          description: "El personal de caja ya sabe que estás en el local.",
+        })
+        loadOrders()
+      }
+    } catch (e) {
+      toast.error("Error de conexión")
+    } finally {
+      setUpdatingId(null)
+    }
+  }
 
   const getStatusBadge = (status: string) => {
     const config: Record<string, { bg: string; color: string; label: string }> = {
@@ -77,6 +106,7 @@ export default function PedidosPage() {
       confirmado: { bg: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", label: "Confirmado" },
       preparando: { bg: "rgba(245, 158, 11, 0.2)", color: "#fcd34d", label: "En Preparación" },
       listo: { bg: "rgba(16, 185, 129, 0.25)", color: "#34d399", label: "¡Listo para Recoger!" },
+      llego: { bg: "rgba(59, 130, 246, 0.25)", color: "#60a5fa", label: "📍 Cliente en Tienda" },
       entregado: { bg: "rgba(107, 114, 128, 0.2)", color: "#9ca3af", label: "Entregado" },
       cancelado: { bg: "rgba(239, 68, 68, 0.2)", color: "#fca5a5", label: "Cancelado" },
     }
@@ -125,11 +155,11 @@ export default function PedidosPage() {
             background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
             color: "#fcd34d", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600,
           }}>⭐ {user?.points ?? 0} Pts</Link>
-          <Link href="/jarvis" style={{
+          <Link href="/cliente/perfil" style={{
             padding: "0.45rem 1rem", borderRadius: "8px",
-            background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)",
-            color: "#34d399", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600,
-          }}>🤖 Jarvis</Link>
+            background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)",
+            color: "#c4b5fd", textDecoration: "none", fontSize: "0.85rem", fontWeight: 600,
+          }}>👤 Mi Perfil</Link>
         </div>
       </header>
 
@@ -172,12 +202,39 @@ export default function PedidosPage() {
                   border: "1px dashed rgba(139, 92, 246, 0.4)", marginBottom: "1.2rem",
                 }}>
                   <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", fontWeight: 700 }}>
-                    Código de Retiro en Tienda
+                    Código de Retiro Presencial Obligatorio
                   </div>
                   <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#a78bfa", letterSpacing: "2px", fontFamily: "monospace" }}>
                     {selectedOrder.pickup_code}
                   </div>
                 </div>
+
+                {/* Boton: Ya llegue a la tienda */}
+                {selectedOrder.status === "listo" && (
+                  <button
+                    onClick={() => handleImHere(selectedOrder.id)}
+                    disabled={updatingId === selectedOrder.id}
+                    style={{
+                      width: "100%", padding: "0.85rem", borderRadius: "12px",
+                      background: "linear-gradient(135deg, #3b82f6, #1d4ed8)", border: "none",
+                      color: "#fff", fontWeight: 800, fontSize: "0.95rem", cursor: "pointer",
+                      boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)", marginBottom: "1rem",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                    }}
+                  >
+                    📍 ¡Ya llegué a la tienda a recoger!
+                  </button>
+                )}
+
+                {selectedOrder.status === "llego" && (
+                  <div style={{
+                    padding: "10px", borderRadius: "10px", background: "rgba(59, 130, 246, 0.15)",
+                    border: "1px solid rgba(59, 130, 246, 0.3)", color: "#93c5fd", fontSize: "0.85rem",
+                    marginBottom: "1rem", textAlign: "center", fontWeight: 600,
+                  }}>
+                    ✓ El personal del local fue notificado de tu llegada. Muestra tu QR en caja.
+                  </div>
+                )}
 
                 <div style={{ fontSize: "0.9rem", color: "rgba(255,255,255,0.7)", display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -226,7 +283,8 @@ export default function PedidosPage() {
                 key={o.id}
                 onClick={() => setSelectedOrder(o)}
                 style={{
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
+                  background: o.status === "llego" ? "rgba(59, 130, 246, 0.08)" : "rgba(255,255,255,0.04)",
+                  border: o.status === "llego" ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.1)",
                   borderRadius: "18px", padding: "1.4rem 1.6rem",
                   display: "flex", justifyContent: "space-between", alignItems: "center",
                   cursor: "pointer", transition: "transform 0.15s ease",

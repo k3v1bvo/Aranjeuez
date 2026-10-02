@@ -46,12 +46,17 @@ export default function ComercioDashboard() {
     loadOrders()
   }, [loadOrders])
 
-  // Escuchar nuevos pedidos en tiempo real por WebSockets
+  // Escuchar nuevos pedidos o cambios de estado en vivo por WebSockets
   useRealtimeOrders(
     useCallback((newOrder: any) => {
       setOrders((prev) => {
         const exists = prev.some((o) => o.id === newOrder.id)
         if (exists) {
+          if (newOrder.status === "llego") {
+            toast.warning(`🚨 ¡El cliente del pedido ${newOrder.pickup_code} acaba de llegar al local!`, {
+              duration: 8000,
+            })
+          }
           return prev.map((o) => (o.id === newOrder.id ? { ...o, ...newOrder } : o))
         }
         toast.info("🛎️ ¡Nuevo pedido recibido en PaseoYa!", {
@@ -89,6 +94,7 @@ export default function ComercioDashboard() {
       case "recibido": return "#a78bfa"
       case "preparando": return "#fcd34d"
       case "listo": return "#34d399"
+      case "llego": return "#60a5fa"
       case "entregado": return "#9ca3af"
       default: return "#60a5fa"
     }
@@ -123,6 +129,11 @@ export default function ComercioDashboard() {
         </div>
 
         <div style={{ display: "flex", gap: "0.8rem" }}>
+          <Link href="/comercio/productos" style={{
+            padding: "0.5rem 1.2rem", borderRadius: "10px",
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+            color: "#fff", textDecoration: "none", fontSize: "0.88rem", fontWeight: 600,
+          }}>📦 Mis Productos</Link>
           <Link href="/comercio/scanner" style={{
             padding: "0.5rem 1.2rem", borderRadius: "10px",
             background: "linear-gradient(135deg, #f59e0b, #d97706)",
@@ -143,7 +154,7 @@ export default function ComercioDashboard() {
           <div>
             <h2 style={{ fontSize: "1.3rem", fontWeight: 700, margin: "0 0 4px 0" }}>Control de Pedidos y Despacho</h2>
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.88rem", margin: 0 }}>
-              Los cambios de estado se sincronizan automáticamente con el cliente por <strong>WebSockets</strong> y envían correo con <strong>Google SMTP</strong>.
+              Sincronización en tiempo real vía <strong>WebSockets</strong> con notificación automática por <strong>Google SMTP</strong>.
             </p>
           </div>
           <div style={{ display: "flex", gap: "1rem" }}>
@@ -173,102 +184,119 @@ export default function ComercioDashboard() {
             <p style={{ fontSize: "2rem", margin: "0 0 10px 0" }}>📦</p>
             <h3 style={{ fontSize: "1.2rem", margin: "0 0 8px 0" }}>No hay pedidos registrados aún</h3>
             <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.9rem" }}>
-              Haz una compra de prueba en el portal cliente para verla aparecer aquí al instante.
+              Haz una compra de prueba en el portal cliente para verla aparecer aquí al instante por WebSockets.
             </p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
-            {orders.map((o) => (
-              <div
-                key={o.id}
-                style={{
-                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "20px", padding: "1.6rem",
-                  display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.2rem",
-                }}
-              >
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                    <span style={{
-                      fontFamily: "monospace", fontSize: "1.2rem", fontWeight: 900,
-                      background: "rgba(124, 58, 237, 0.2)", color: "#c4b5fd",
-                      padding: "4px 10px", borderRadius: "8px", border: "1px solid rgba(124, 58, 237, 0.4)"
-                    }}>
-                      {o.pickup_code}
-                    </span>
-                    <span style={{
-                      background: `${getStatusColor(o.status)}22`, color: getStatusColor(o.status),
-                      padding: "4px 12px", borderRadius: "99px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase"
-                    }}>
-                      {o.status}
-                    </span>
+            {orders.map((o) => {
+              const isArrival = o.status === "llego"
+              return (
+                <div
+                  key={o.id}
+                  style={{
+                    background: isArrival ? "rgba(59, 130, 246, 0.12)" : "rgba(255,255,255,0.04)",
+                    border: isArrival ? "2px solid #3b82f6" : "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "20px", padding: "1.6rem",
+                    display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.2rem",
+                    boxShadow: isArrival ? "0 0 25px rgba(59, 130, 246, 0.3)" : "none",
+                  }}
+                >
+                  <div>
+                    {isArrival && (
+                      <div style={{
+                        display: "inline-block", background: "#3b82f6", color: "#fff",
+                        padding: "3px 10px", borderRadius: "6px", fontSize: "0.75rem",
+                        fontWeight: 800, marginBottom: "8px", letterSpacing: "0.5px"
+                      }}>
+                        🚨 ¡EL CLIENTE ACABA DE LLEGAR AL LOCAL PARA RETIRAR!
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                      <span style={{
+                        fontFamily: "monospace", fontSize: "1.2rem", fontWeight: 900,
+                        background: "rgba(124, 58, 237, 0.2)", color: "#c4b5fd",
+                        padding: "4px 10px", borderRadius: "8px", border: "1px solid rgba(124, 58, 237, 0.4)"
+                      }}>
+                        {o.pickup_code}
+                      </span>
+                      <span style={{
+                        background: `${getStatusColor(o.status)}22`, color: getStatusColor(o.status),
+                        padding: "4px 12px", borderRadius: "99px", fontSize: "0.8rem", fontWeight: 700, textTransform: "uppercase"
+                      }}>
+                        {o.status}
+                      </span>
+                    </div>
+
+                    <p style={{ margin: "0 0 4px 0", fontSize: "1rem", fontWeight: 700 }}>
+                      Cliente: {o.user?.name || "Visitante"} {o.user?.phone ? `(${o.user.phone})` : ""}
+                    </p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
+                      {o.items?.map(i => `${i.quantity}x ${i.product?.name || "Producto"}`).join(", ") || "Compra en tienda"}
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
+                      {new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • Total: <strong style={{ color: "#34d399" }}>Bs. {Number(o.total).toFixed(2)}</strong> (+{o.points_earned} Pts)
+                    </p>
                   </div>
 
-                  <p style={{ margin: "0 0 4px 0", fontSize: "1rem", fontWeight: 700 }}>
-                    Cliente: {o.user?.name || "Visitante"} {o.user?.phone ? `(${o.user.phone})` : ""}
-                  </p>
-                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)" }}>
-                    {o.items?.map(i => `${i.quantity}x ${i.product?.name || "Producto"}`).join(", ") || "Compra en tienda"}
-                  </p>
-                  <p style={{ margin: 0, fontSize: "0.75rem", color: "rgba(255,255,255,0.35)" }}>
-                    {new Date(o.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} • Total: <strong style={{ color: "#34d399" }}>Bs. {Number(o.total).toFixed(2)}</strong> (+{o.points_earned} Pts)
-                  </p>
+                  {/* Acciones de Estado */}
+                  <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                    {o.status === "recibido" && (
+                      <button
+                        onClick={() => updateStatus(o.id, "preparando")}
+                        disabled={updatingId === o.id}
+                        style={{
+                          padding: "0.6rem 1.1rem", borderRadius: "10px",
+                          background: "rgba(245, 158, 11, 0.2)", border: "1px solid #f59e0b",
+                          color: "#fbbf24", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer"
+                        }}
+                      >
+                        👨‍🍳 Marcar Preparando
+                      </button>
+                    )}
+
+                    {(o.status === "recibido" || o.status === "preparando") && (
+                      <button
+                        onClick={() => updateStatus(o.id, "listo")}
+                        disabled={updatingId === o.id}
+                        style={{
+                          padding: "0.6rem 1.1rem", borderRadius: "10px",
+                          background: "linear-gradient(135deg, #10b981, #059669)", border: "none",
+                          color: "#fff", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                          boxShadow: "0 4px 15px rgba(16, 185, 129, 0.4)"
+                        }}
+                      >
+                        🛍️ ¡Listo para Recoger!
+                      </button>
+                    )}
+
+                    {(o.status === "listo" || o.status === "llego") && (
+                      <button
+                        onClick={() => updateStatus(o.id, "entregado")}
+                        disabled={updatingId === o.id}
+                        style={{
+                          padding: "0.65rem 1.3rem", borderRadius: "10px",
+                          background: isArrival
+                            ? "linear-gradient(135deg, #3b82f6, #1d4ed8)"
+                            : "linear-gradient(135deg, #7c3aed, #4f46e5)",
+                          border: "none", color: "#fff", fontWeight: 800, fontSize: "0.88rem", cursor: "pointer",
+                          boxShadow: "0 4px 15px rgba(124, 58, 237, 0.4)"
+                        }}
+                      >
+                        ✓ Entregar y Acreditar Puntos
+                      </button>
+                    )}
+
+                    {o.status === "entregado" && (
+                      <span style={{ color: "#9ca3af", fontSize: "0.85rem", fontWeight: 600 }}>
+                        ✓ Entregado y Puntos Asignados
+                      </span>
+                    )}
+                  </div>
                 </div>
-
-                {/* Acciones de Estado */}
-                <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-                  {o.status === "recibido" && (
-                    <button
-                      onClick={() => updateStatus(o.id, "preparando")}
-                      disabled={updatingId === o.id}
-                      style={{
-                        padding: "0.6rem 1.1rem", borderRadius: "10px",
-                        background: "rgba(245, 158, 11, 0.2)", border: "1px solid #f59e0b",
-                        color: "#fbbf24", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer"
-                      }}
-                    >
-                      👨‍🍳 Marcar Preparando
-                    </button>
-                  )}
-
-                  {(o.status === "recibido" || o.status === "preparando") && (
-                    <button
-                      onClick={() => updateStatus(o.id, "listo")}
-                      disabled={updatingId === o.id}
-                      style={{
-                        padding: "0.6rem 1.1rem", borderRadius: "10px",
-                        background: "linear-gradient(135deg, #10b981, #059669)", border: "none",
-                        color: "#fff", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-                        boxShadow: "0 4px 15px rgba(16, 185, 129, 0.4)"
-                      }}
-                    >
-                      🛍️ ¡Listo para Recoger!
-                    </button>
-                  )}
-
-                  {o.status === "listo" && (
-                    <button
-                      onClick={() => updateStatus(o.id, "entregado")}
-                      disabled={updatingId === o.id}
-                      style={{
-                        padding: "0.6rem 1.2rem", borderRadius: "10px",
-                        background: "linear-gradient(135deg, #7c3aed, #4f46e5)", border: "none",
-                        color: "#fff", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-                        boxShadow: "0 4px 15px rgba(124, 58, 237, 0.4)"
-                      }}
-                    >
-                      ✓ Entregar y Acreditar Puntos
-                    </button>
-                  )}
-
-                  {o.status === "entregado" && (
-                    <span style={{ color: "#9ca3af", fontSize: "0.85rem", fontWeight: 600 }}>
-                      ✓ Entregado y Puntos Asignados
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
