@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+  <rect width="600" height="600" fill="#111827"/>
+  <rect x="50" y="50" width="500" height="500" rx="24" fill="#1a2332" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+  <!-- Crosshair icon -->
+  <circle cx="300" cy="270" r="60" fill="none" stroke="#f59e0b" stroke-width="3" opacity="0.6"/>
+  <line x1="300" y1="190" x2="300" y2="220" stroke="#f59e0b" stroke-width="3" opacity="0.6"/>
+  <line x1="300" y1="320" x2="300" y2="350" stroke="#f59e0b" stroke-width="3" opacity="0.6"/>
+  <line x1="220" y1="270" x2="250" y2="270" stroke="#f59e0b" stroke-width="3" opacity="0.6"/>
+  <line x1="350" y1="270" x2="380" y2="270" stroke="#f59e0b" stroke-width="3" opacity="0.6"/>
+  <circle cx="300" cy="270" r="6" fill="#f59e0b" opacity="0.8"/>
+  <!-- Text -->
+  <text x="300" y="420" text-anchor="middle" fill="#5a7291" font-family="system-ui" font-size="18" font-weight="600" letter-spacing="0.1em">PRODUCTO TÁCTICO</text>
+  <text x="300" y="450" text-anchor="middle" fill="#374b6a" font-family="system-ui" font-size="14">Imagen no disponible</text>
+</svg>
