@@ -50,7 +50,7 @@ export async function registerUser(data: {
   phone?: string; role?: string; birthday?: string
 }): Promise<{ user: PaseoUser | null; error: string | null }> {
   const db = getDB()
-  const { data: existing } = await db.from("paseo_users").select("id").eq("email", data.email).single()
+  const { data: existing } = await db.from("paseo_users").select("id").eq("email", data.email).maybeSingle()
   if (existing) return { user: null, error: "Este email ya está registrado" }
   const hashed = await hashPassword(data.password)
   const { data: user, error } = await db
@@ -86,7 +86,7 @@ export async function loginUser(email: string, password: string): Promise<{
   user: PaseoUser | null; token: string | null; error: string | null
 }> {
   const db = getDB()
-  const { data: user } = await db.from("paseo_users").select("*").eq("email", email).single()
+  const { data: user } = await db.from("paseo_users").select("*").eq("email", email).maybeSingle()
   if (!user) return { user: null, token: null, error: "Email o contraseña incorrectos" }
   const valid = await verifyPassword(password, user.password)
   if (!valid) return { user: null, token: null, error: "Email o contraseña incorrectos" }
@@ -100,7 +100,7 @@ export async function syncGoogleUser(data: {
   avatar_url?: string
 }): Promise<{ user: PaseoUser | null; token: string | null; error: string | null; isNew?: boolean }> {
   const db = getDB()
-  const { data: existing } = await db.from("paseo_users").select("*").eq("email", data.email).single()
+  const { data: existing } = await db.from("paseo_users").select("*").eq("email", data.email).maybeSingle()
 
   if (existing) {
     if (data.avatar_url && !existing.avatar_url) {

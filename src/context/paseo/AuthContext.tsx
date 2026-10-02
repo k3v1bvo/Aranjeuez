@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import type { PaseoUser } from "@/lib/paseo/types"
 import { getPublicDB } from "@/lib/paseo/supabase"
+import { toast } from "sonner"
 
 interface AuthContextType {
   user: PaseoUser | null
@@ -55,6 +56,17 @@ export function PaseoAuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json()
             if (data.user) {
               setUser(data.user)
+              if (data.isNew) {
+                toast.success(`🎉 ¡Bienvenido al Club Paseo, ${data.user.name}!`, {
+                  description: `Te regalamos 50 puntos de bienvenida. Correo enviado a ${email}`,
+                  duration: 5000,
+                })
+              } else {
+                toast.success(`¡Hola de nuevo, ${data.user.name}!`, {
+                  description: "Sesión iniciada con Google",
+                  duration: 4000,
+                })
+              }
             }
           } catch (e) {
             console.error("Error sincronizando usuario de Google:", e)
@@ -75,8 +87,14 @@ export function PaseoAuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ action: "login", email, password }),
     })
     const data = await res.json()
-    if (data.error) return { error: data.error }
+    if (data.error) {
+      toast.error("Error al iniciar sesión", { description: data.error })
+      return { error: data.error }
+    }
     setUser(data.user)
+    toast.success(`¡Bienvenido de vuelta, ${data.user.name}!`, {
+      description: "Sesión iniciada correctamente",
+    })
     return {}
   }
 
@@ -87,8 +105,15 @@ export function PaseoAuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ action: "register", ...formData }),
     })
     const data = await res.json()
-    if (data.error) return { error: data.error }
+    if (data.error) {
+      toast.error("Error al crear cuenta", { description: data.error })
+      return { error: data.error }
+    }
     setUser(data.user)
+    toast.success("🎉 ¡Cuenta creada con éxito!", {
+      description: `Bienvenido al Club Paseo. Te acreditamos 50 puntos y enviamos tu tarjeta a ${formData.email}`,
+      duration: 5000,
+    })
     return {}
   }
 
@@ -110,9 +135,13 @@ export function PaseoAuthProvider({ children }: { children: ReactNode }) {
           },
         },
       })
-      if (error) return { error: error.message }
+      if (error) {
+        toast.error("Error al conectar con Google", { description: error.message })
+        return { error: error.message }
+      }
       return {}
     } catch (err: any) {
+      toast.error("Error inesperado", { description: err.message })
       return { error: err.message || "Error al iniciar con Google" }
     }
   }
@@ -129,6 +158,7 @@ export function PaseoAuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ action: "logout" }),
     })
     setUser(null)
+    toast.info("Has cerrado sesión")
   }
 
   return (
