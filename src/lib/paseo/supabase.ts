@@ -1,5 +1,8 @@
 ﻿import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
+const DEFAULT_URL = "https://xedrgakpummpqwamfyos.supabase.co"
+const DEFAULT_ANON_KEY = "sb_publishable_H8TpMGOgkP-_gzpO7aRRJg_y10HHWHa"
+
 let publicClient: SupabaseClient | null = null
 
 // Cliente publico (para browser / Realtime WebSockets / client components)
@@ -7,8 +10,9 @@ export function getPublicDB(): SupabaseClient {
   if (typeof window !== "undefined" && publicClient) {
     return publicClient
   }
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_ANON_KEY
+
   const client = createClient(url, key, {
     auth: {
       persistSession: true,
@@ -21,6 +25,7 @@ export function getPublicDB(): SupabaseClient {
       },
     },
   })
+
   if (typeof window !== "undefined") {
     publicClient = client
   }
@@ -29,8 +34,12 @@ export function getPublicDB(): SupabaseClient {
 
 // Crea un cliente admin en cada llamada de servidor
 export function getDB(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ""
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_URL
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    DEFAULT_ANON_KEY
+
   return createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
