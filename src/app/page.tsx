@@ -13,8 +13,27 @@ export default function HomePage() {
       fontFamily: "'Segoe UI', system-ui, sans-serif",
       overflowX: "hidden",
     }}>
+      <style>{`
+        @media (max-width: 600px) {
+          .paseo-nav { padding: 0.8rem 1rem !important; gap: 0.5rem !important; flex-wrap: wrap !important; }
+          .paseo-nav-brand { gap: 0.5rem !important; }
+          .paseo-nav-brand-icon { width: 34px !important; height: 34px !important; font-size: 1rem !important; }
+          .paseo-nav-brand-name { font-size: 1rem !important; }
+          .paseo-nav-brand-sub { font-size: 0.65rem !important; }
+          .paseo-nav-actions { gap: 0.5rem !important; }
+          .paseo-nav-actions a { padding: 0.45rem 0.9rem !important; font-size: 0.8rem !important; }
+          .paseo-hero { padding: 3rem 1.2rem 2.5rem !important; }
+          .paseo-hero h1 { font-size: clamp(2rem, 8vw, 3.5rem) !important; }
+          .paseo-hero-desc { font-size: 1rem !important; }
+          .paseo-hero-actions a { padding: 0.85rem 1.5rem !important; font-size: 0.95rem !important; }
+          .paseo-grid { grid-template-columns: 1fr !important; padding: 1.5rem 1rem 3rem !important; }
+          .paseo-pilar { padding: 1.6rem !important; }
+          .paseo-footer { padding: 2rem 1rem !important; }
+          .paseo-footer-links { flex-direction: column !important; gap: 0.6rem !important; }
+        }
+      `}</style>
       {/* Navbar */}
-      <nav style={{
+      <nav className="paseo-nav" style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "1.2rem 2.5rem",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
@@ -22,20 +41,20 @@ export default function HomePage() {
         position: "sticky", top: 0, zIndex: 100,
         background: "rgba(11,10,22,0.75)",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-          <div style={{
+        <div className="paseo-nav-brand" style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
+          <div className="paseo-nav-brand-icon" style={{
             width: "42px", height: "42px",
             background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
             borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: "1.3rem", boxShadow: "0 4px 15px rgba(124, 58, 237, 0.4)"
           }}>🛍️</div>
           <div>
-            <p style={{ fontWeight: 800, fontSize: "1.15rem", margin: 0, letterSpacing: "-0.3px" }}>Paseo Aranjuez</p>
-            <p style={{ fontSize: "0.72rem", margin: 0, color: "#a78bfa", fontWeight: 600 }}>Ecosistema Digital Unificado</p>
+            <p className="paseo-nav-brand-name" style={{ fontWeight: 800, fontSize: "1.15rem", margin: 0, letterSpacing: "-0.3px" }}>Paseo Aranjuez</p>
+            <p className="paseo-nav-brand-sub" style={{ fontSize: "0.72rem", margin: 0, color: "#a78bfa", fontWeight: 600 }}>Ecosistema Digital Unificado</p>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div className="paseo-nav-actions" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {user ? (
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
               <div style={{
@@ -53,7 +72,7 @@ export default function HomePage() {
               }}>Mi Portal</Link>
             </div>
           ) : (
-            <div style={{ display: "flex", gap: "0.8rem" }}>
+            <div className="paseo-nav-actions" style={{ display: "flex", gap: "0.8rem" }}>
               <Link href="/auth/login" style={{
                 padding: "0.55rem 1.2rem", borderRadius: "10px",
                 border: "1px solid rgba(255,255,255,0.18)", color: "#fff",
@@ -72,7 +91,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero */}
-      <section style={{ textAlign: "center", padding: "5rem 1.5rem 3.5rem", maxWidth: "900px", margin: "0 auto" }}>
+      <section className="paseo-hero" style={{ textAlign: "center", padding: "5rem 1.5rem 3.5rem", maxWidth: "900px", margin: "0 auto" }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: "8px",
           background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.35)",
@@ -83,23 +102,22 @@ export default function HomePage() {
         </div>
 
         <h1 style={{
-          fontSize: "clamp(2.5rem, 6.5vw, 4.5rem)",
-          fontWeight: 900, margin: "0 0 1.2rem",
-          background: "linear-gradient(135deg, #ffffff 10%, #c4b5fd 55%, #60a5fa 100%)",
+          fontSize: "clamp(2.5rem, 6vw, 4.2rem)",
+          fontWeight: 800, margin: "0 0 1.2rem",
+          background: "linear-gradient(135deg, #ffffff 0%, #c4b5fd 50%, #818cf8 100%)",
           WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          lineHeight: 1.1, letterSpacing: "-1px"
+          lineHeight: 1.1, letterSpacing: "-1px",
         }}>
           El Ecosistema Digital<br />de Paseo Aranjuez
         </h1>
-
-        <p style={{
-          fontSize: "1.2rem", color: "rgba(255,255,255,0.7)",
-          maxWidth: "650px", margin: "0 auto 2.8rem", lineHeight: 1.6,
+        <p className="paseo-hero-desc" style={{
+          fontSize: "1.15rem", color: "rgba(255,255,255,0.6)",
+          maxWidth: "650px", margin: "0 auto 2.5rem", lineHeight: 1.7,
         }}>
           Paseo Aranjuez no necesita tres aplicaciones aisladas. Integra <strong>PaseoYa Marketplace</strong>, <strong>Paseo Points</strong> y <strong>Jarvis IA</strong> en una sola experiencia fluida en tiempo real (WebSockets).
         </p>
 
-        <div style={{ display: "flex", gap: "1.2rem", justifyContent: "center", flexWrap: "wrap" }}>
+        <div className="paseo-hero-actions" style={{ display: "flex", gap: "1.2rem", justifyContent: "center", flexWrap: "wrap" }}>
           <Link href="/cliente" style={{
             padding: "0.95rem 2.2rem", borderRadius: "14px",
             background: "linear-gradient(135deg, #7c3aed, #4f46e5)",
@@ -117,10 +135,10 @@ export default function HomePage() {
 
       {/* Grid de 3 Pilares */}
       <section style={{ padding: "2rem 1.5rem 4rem", maxWidth: "1150px", margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.8rem" }}>
+        <div className="paseo-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.8rem" }}>
           
           {/* Pilar 1: PaseoYa */}
-          <div style={{
+          <div className="paseo-pilar" style={{
             background: "rgba(255,255,255,0.035)",
             border: "1px solid rgba(124, 58, 237, 0.25)",
             borderRadius: "24px", padding: "2.2rem",
@@ -149,7 +167,7 @@ export default function HomePage() {
           </div>
 
           {/* Pilar 2: Paseo Points */}
-          <div style={{
+          <div className="paseo-pilar" style={{
             background: "rgba(255,255,255,0.035)",
             border: "1px solid rgba(245, 158, 11, 0.25)",
             borderRadius: "24px", padding: "2.2rem",
@@ -178,7 +196,7 @@ export default function HomePage() {
           </div>
 
           {/* Pilar 3: Jarvis IA */}
-          <div style={{
+          <div className="paseo-pilar" style={{
             background: "rgba(255,255,255,0.035)",
             border: "1px solid rgba(16, 185, 129, 0.25)",
             borderRadius: "24px", padding: "2.2rem",
@@ -199,7 +217,7 @@ export default function HomePage() {
               <div style={{ color: "#6ee7b7", fontSize: "0.85rem" }}>✓ Ubicación exacta de pisos y sectores</div>
               <div style={{ color: "#6ee7b7", fontSize: "0.85rem" }}>✓ Sugerencias de compras personalizadas</div>
             </div>
-            <Link href="/cliente" style={{
+            <Link href="/jarvis" style={{
               padding: "0.75rem 1.5rem", borderRadius: "10px",
               background: "rgba(16,185,129,0.18)", border: "1px solid rgba(16,185,129,0.4)",
               color: "#34d399", textDecoration: "none", fontSize: "0.92rem", fontWeight: 700, textAlign: "center",
@@ -210,14 +228,14 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer style={{
+      <footer className="paseo-footer" style={{
         textAlign: "center", padding: "3rem 1.5rem",
         borderTop: "1px solid rgba(255,255,255,0.06)",
         color: "rgba(255,255,255,0.4)", fontSize: "0.85rem",
       }}>
-        <p style={{ fontWeight: 600, color: "#fff", margin: "0 0 6px 0" }}>Paseo Aranjuez • Av. América Este #1234, Cochabamba</p>
-        <p style={{ margin: "0 0 12px 0" }}>Hackathon Paseo Aranjuez 2024 • Solución integral de Comercio, Fidelización e IA</p>
-        <div style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "1rem" }}>
+        <p style={{ fontWeight: 600, color: "#fff", margin: "0 0 6px 0" }}>Paseo Aranjuez · Av. América Este #1234, Cochabamba</p>
+        <p style={{ margin: "0 0 12px 0" }}>Hackathon Paseo Aranjuez 2024 · Solución integral de Comercio, Fidelización e IA</p>
+        <div className="paseo-footer-links" style={{ display: "flex", gap: "1.5rem", justifyContent: "center", marginTop: "1rem" }}>
           <Link href="/auth/login" style={{ color: "#a78bfa", textDecoration: "none" }}>Portal Cliente</Link>
           <Link href="/auth/login" style={{ color: "#fbbf24", textDecoration: "none" }}>Portal Comercio</Link>
           <Link href="/auth/login" style={{ color: "#34d399", textDecoration: "none" }}>Panel Admin</Link>

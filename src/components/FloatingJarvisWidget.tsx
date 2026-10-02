@@ -15,8 +15,14 @@ export function FloatingJarvisWidget() {
       right: "24px",
       zIndex: 9999,
     }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .jarvis-fab { bottom: 80px !important; right: 16px !important; }
+        }
+      `}</style>
       <Link
         href="/jarvis"
+        className="jarvis-fab"
         style={{
           display: "flex",
           alignItems: "center",
@@ -33,6 +39,9 @@ export function FloatingJarvisWidget() {
           fontSize: "0.88rem",
           letterSpacing: "0.3px",
           transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
         }}
         onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06) translateY(-2px)")}
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1) translateY(0)")}
