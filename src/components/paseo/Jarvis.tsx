@@ -1,31 +1,48 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, MapPin, RotateCcw, Sparkles } from 'lucide-react';
-import type { Product, Store } from '@/lib/paseo/model';
+import { ArrowUp, MapPin, RotateCcw, Sparkles, User, Award, Clock } from 'lucide-react';
+import type { Product, Store, User as UserModel } from '@/lib/paseo/model';
 import { api } from './Providers';
 import { ProductCard } from './UI';
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
   products?: Product[];
   stores?: Store[];
 }
+
 const suggestions = [
-  'Busco un regalo por menos de Bs. 150',
-  '¿Qué puedo comer en el Paseo?',
-  '¿Hay promociones o eventos?',
-  '¿Cómo gano y canjeo puntos?',
+  '📦 ¿Dónde retiro mi pedido y cuál es mi código?',
+  '⭐ ¿Cuántos puntos tengo acumulados y qué nivel soy?',
+  '🍽️ ¿Qué opciones para comer hay en Piso 3 y Piso 4?',
+  '📱 ¿Dónde queda Samsung Store y qué horarios tienen?',
+  '🚗 ¿Cómo funciona el estacionamiento inteligente?',
+  '🍿 ¿Qué opciones de entretenimiento o cine hay?',
 ];
+
 export function Jarvis() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
   const end = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/paseo/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) setCurrentUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     end.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [messages, busy]);
+
   async function send(value: string, retry = false) {
     if (!value.trim() || busy) return;
     const next: Message[] = retry
@@ -57,29 +74,57 @@ export function Jarvis() {
       setBusy(false);
     }
   }
+
+  const userLevel = currentUser
+    ? (currentUser.points || 0) >= 1000
+      ? 'Platino'
+      : (currentUser.points || 0) >= 500
+      ? 'Oro'
+      : (currentUser.points || 0) >= 200
+      ? 'Plata'
+      : 'Bronce'
+    : null;
+
   return (
     <div className="container jarvis-page">
       <aside className="jarvis-intro">
         <span className="jarvis-orb">
           <Sparkles size={34} />
         </span>
-        <p className="eyebrow">Tu asistente del Paseo</p>
-        <h1>Un buen plan empieza con una pregunta.</h1>
-        <p>Te ayudo a encontrar tiendas, elegir un regalo y descubrir qué pasa en el Paseo.</p>
-        <div className="notice">
-          Mis respuestas usan el catálogo, promociones y eventos publicados. Si falta un dato, te lo
-          diré.
-        </div>
+        <p className="eyebrow">Concierge VIP de Paseo Aranjuez</p>
+        <h1>Un gran plan empieza con una pregunta.</h1>
+        <p>Te ayudo a ubicar tiendas, verificar tus pedidos y códigos de retiro, consultar puntos y organizar tu visita.</p>
+        
+        {currentUser ? (
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-sm text-white/90 my-4">
+            <div className="flex items-center gap-2 text-amber-300 font-semibold">
+              <User size={16} />
+              <span>{currentUser.name}</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-white/70">
+              <span className="flex items-center gap-1">
+                <Award size={14} className="text-[#FF6B1A]" />
+                <strong>{currentUser.points || 0}</strong> Pts (Nivel {userLevel})
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="notice my-4">
+            Inicia sesión para que Jarvis pueda darte el estado exacto de tus pedidos, códigos de recogida y saldo de puntos.
+          </div>
+        )}
+
         <Link href="/cliente" className="text-button">
-          Explorar tiendas <MapPin size={16} />
+          Explorar catálogo y tiendas <MapPin size={16} />
         </Link>
       </aside>
+
       <section className="chat-panel" aria-label="Conversación con Jarvis">
         <div className="chat-head">
           <div>
             <Sparkles size={20} />
             <strong>Jarvis</strong>
-            <span className="tag">Asistente IA</span>
+            <span className="tag">Concierge IA Oficial</span>
           </div>
           <button
             className="icon-button"
@@ -93,12 +138,13 @@ export function Jarvis() {
             <RotateCcw size={18} />
           </button>
         </div>
+
         <div className="chat-messages" aria-live="polite" aria-busy={busy}>
           {!messages.length && (
             <div className="chat-welcome">
               <Sparkles size={34} />
-              <h2>Hola, ¿qué te gustaría hacer hoy?</h2>
-              <p>Cuéntame qué buscas, tu presupuesto o qué plan tienes en mente.</p>
+              <h2>{currentUser ? `Hola ${currentUser.name}, ¿en qué te puedo ayudar hoy?` : 'Hola, ¿qué te gustaría hacer hoy?'}</h2>
+              <p>Puedes preguntarme por tus pedidos, tus puntos de fidelidad, recomendaciones de comida o cómo llegar a cualquier tienda.</p>
               <div className="suggestions">
                 {suggestions.map((s) => (
                   <button key={s} onClick={() => send(s)}>
@@ -109,10 +155,11 @@ export function Jarvis() {
               </div>
             </div>
           )}
+
           {messages.map((m, i) => (
             <article className={`message message-${m.role}`} key={i}>
               <small>{m.role === 'user' ? 'Tú' : 'Jarvis'}</small>
-              <p>
+              <div className="message-content leading-relaxed">
                 {m.content
                   .split(/(\*\*[^*]+\*\*)/g)
                   .map((part, index) =>
@@ -122,7 +169,8 @@ export function Jarvis() {
                       part
                     ),
                   )}
-              </p>
+              </div>
+
               {!!m.products?.length && (
                 <div className="chat-products">
                   {m.products.map((p) => (
@@ -130,6 +178,7 @@ export function Jarvis() {
                   ))}
                 </div>
               )}
+
               {!!m.stores?.length && (
                 <div className="chat-stores">
                   {m.stores.map((s) => (
@@ -137,7 +186,7 @@ export function Jarvis() {
                       <MapPin size={16} />
                       <span>
                         <strong>{s.name}</strong>
-                        <small>{s.schedule || 'Horario por confirmar'}</small>
+                        <small>{s.floor ? `${s.floor} · ${s.local_num || ''}` : (s.schedule || 'Horario por confirmar')}</small>
                       </span>
                     </Link>
                   ))}
@@ -145,11 +194,13 @@ export function Jarvis() {
               )}
             </article>
           ))}
+
           {busy && (
             <p className="chat-thinking" role="status">
-              <Sparkles size={17} /> Consultando información del Paseo…
+              <Sparkles size={17} /> Consultando información oficial del Paseo…
             </p>
           )}
+
           {error && (
             <div className="notice error" role="alert">
               <div>
@@ -163,8 +214,10 @@ export function Jarvis() {
               </div>
             </div>
           )}
+
           <div ref={end} />
         </div>
+
         <form
           className="chat-form"
           onSubmit={(e) => {
@@ -179,7 +232,7 @@ export function Jarvis() {
             id="jarvis-input"
             value={input}
             maxLength={2000}
-            placeholder="Quiero descubrir algo nuevo…"
+            placeholder="Pregúntale a Jarvis sobre tiendas, compras, puntos, comidas..."
             rows={2}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -197,8 +250,9 @@ export function Jarvis() {
             <ArrowUp size={22} />
           </button>
         </form>
+
         <small className="chat-disclaimer">
-          Evita compartir contraseñas o información personal. Confirma disponibilidad al comprar.
+          Jarvis cuenta con información en tiempo real de Paseo Aranjuez. Para pedidos y saldo de puntos personales, consulta habiendo iniciado sesión.
         </small>
       </section>
     </div>

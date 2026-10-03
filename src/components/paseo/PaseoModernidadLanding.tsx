@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavbarPaseo } from './NavbarPaseo';
 import { AndeanHero } from './AndeanHero';
 import { PaseoYaShowcase } from './PaseoYaShowcase';
@@ -14,8 +14,30 @@ import { AuthModal } from './AuthModal';
 import { CartDrawerModal, CartItem } from './CartDrawerModal';
 import { OrdersTrackerModal } from './OrdersTrackerModal';
 import { ToastProvider } from './PaseoToast';
-import { Bot, Send, X, Sparkles, User, ShoppingBag } from 'lucide-react';
+import { Bot, Send, X, Sparkles, MapPin, ShoppingBag, Loader2 } from 'lucide-react';
 import { MOCK_USER } from '@/lib/mock-data';
+
+interface ChatStore {
+  id: string;
+  name: string;
+  floor?: string;
+  local_num?: string;
+  category?: string;
+}
+
+interface ChatProduct {
+  id: string;
+  name: string;
+  price: number;
+  store?: string;
+}
+
+interface ChatMessage {
+  sender: 'user' | 'jarvis';
+  text: string;
+  stores?: ChatStore[];
+  products?: ChatProduct[];
+}
 
 export function PaseoModernidadLanding() {
   const [activeTab, setActiveTab] = useState<string>('inicio');
@@ -30,8 +52,26 @@ export function PaseoModernidadLanding() {
   const [currentUser, setCurrentUser] = useState({
     name: MOCK_USER.name,
     points: MOCK_USER.points,
-    level: MOCK_USER.level,
+    level: MOCK_USER.level as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
   });
+
+  // Cargar sesión real autenticada desde el servidor si existe
+  useEffect(() => {
+    fetch('/api/paseo/auth')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user) {
+          const pts = data.user.points || 0;
+          const lvl = pts >= 1000 ? 'Platino' : pts >= 500 ? 'Oro' : pts >= 200 ? 'Plata' : 'Bronce';
+          setCurrentUser({
+            name: data.user.name,
+            points: pts,
+            level: lvl,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Estado del Carrito PaseoYa
   const [cartItems, setCartItems] = useState<CartItem[]>([
@@ -76,37 +116,69 @@ export function PaseoModernidadLanding() {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Chat con Jarvis
-  const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'jarvis'; text: string }>>([
+  // Chat con Jarvis 100% inteligente y conectado a la API de Paseo
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       sender: 'jarvis',
-      text: `¡Hola, ${currentUser.name}! Soy Jarvis, tu asistente inteligente en Paseo Aranjuez. ¿En qué piso o tienda te gustaría encontrar lo que buscas hoy?`
+      text: `¡Hola! Soy Jarvis, tu asistente inteligente en Paseo Aranjuez. Te puedo ayudar a ubicar locales, revisar tus pedidos y códigos de retiro, consultar tus puntos y recomendarte lo mejor del mall. ¿Qué te gustaría consultar hoy?`
     }
   ]);
   const [inputValue, setInputValue] = useState<string>('');
+  const [isJarvisBusy, setIsJarvisBusy] = useState<boolean>(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const floatingChatScrollRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = (textToSend?: string) => {
-    const text = textToSend || inputValue;
-    if (!text.trim()) return;
+  useEffect(() => {
+    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
+    floatingChatScrollRef.current?.scrollTo({ top: floatingChatScrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [chatMessages, isJarvisBusy]);
 
-    setChatMessages((prev) => [...prev, { sender: 'user', text }]);
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || inputValue).trim();
+    if (!text || isJarvisBusy) return;
+
+    const newMessages: ChatMessage[] = [...chatMessages, { sender: 'user', text }];
+    setChatMessages(newMessages);
     if (!textToSend) setInputValue('');
+    setIsJarvisBusy(true);
 
-    setTimeout(() => {
-      let reply = 'Te recomiendo visitar el Piso 1 para tecnología o la Terraza del Piso 3 para excelente gastronomía.';
-      const lower = text.toLowerCase();
-      if (lower.includes('comer') || lower.includes('comida') || lower.includes('hambre') || lower.includes('restaurante')) {
-        reply = 'En la Terraza Gastronómica (Piso 3) tienes Terraza Grill & Beer, y en el Piso 1 está Café Aranjuez (Local 118) con pastelería de especialidad.';
-      } else if (lower.includes('regalo') || lower.includes('novia') || lower.includes('novio')) {
-        reply = 'Para regalos especiales te sugiero Mundo Regalo en el Piso 2 (Local 211) o Moda Élite (Local 204) con accesorios seleccionados.';
-      } else if (lower.includes('puntos') || lower.includes('canje') || lower.includes('qr')) {
-        reply = 'Cada compra en PaseoYa te acredita 1 punto por cada 1 Bs. Muestra tu credencial QR en caja para sumar visitas y canjear premios.';
-      } else if (lower.includes('pedido') || lower.includes('orden') || lower.includes('estado')) {
-        reply = 'Puedes consultar el estado de tu pedido en tiempo real abriendo la pestaña "Mis Pedidos" en la barra superior.';
+    try {
+      const response = await fetch('/api/paseo/jarvis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages.slice(-15).map((m) => ({
+            role: m.sender === 'user' ? 'user' : 'assistant',
+            content: m.text,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Servicio temporalmente ocupado.');
       }
 
-      setChatMessages((prev) => [...prev, { sender: 'jarvis', text: reply }]);
-    }, 500);
+      const data = await response.json();
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'jarvis',
+          text: data.reply || 'Aquí tienes la información consultada.',
+          stores: data.stores,
+          products: data.products,
+        },
+      ]);
+    } catch (err) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          sender: 'jarvis',
+          text: 'No pude conectarme en este momento. Por favor verifica tu conexión o intenta nuevamente.',
+        },
+      ]);
+    } finally {
+      setIsJarvisBusy(false);
+    }
   };
 
   return (
@@ -159,11 +231,12 @@ export function PaseoModernidadLanding() {
           {activeTab === 'jarvis' && (
             <div className="py-16 px-4 max-w-4xl mx-auto">
               <div className="text-center mb-8">
-                <span className="text-xs uppercase font-bold text-[#D4A24C] tracking-widest block mb-2">
-                  Asistente Virtual del Mall
+                <span className="text-xs uppercase font-bold text-[#D4A24C] tracking-widest block mb-2 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4A24C]" />
+                  Asistente Virtual Inteligente
                 </span>
-                <h2 className="text-4xl font-black font-display">Jarvis Paseo</h2>
-                <p className="text-white/60 text-sm mt-1">Conoce todo sobre tiendas, ubicaciones, pisos y horarios</p>
+                <h2 className="text-4xl font-black font-display">Jarvis Paseo Aranjuez</h2>
+                <p className="text-white/60 text-sm mt-1">Conoce las 47 tiendas, pedidos activos, códigos de retiro, puntos y pisos</p>
               </div>
               
               <div className="flex justify-center mb-10">
@@ -172,50 +245,107 @@ export function PaseoModernidadLanding() {
 
               {/* Chat Integrado Full */}
               <div className="rounded-3xl glass-andino border border-white/10 p-6 shadow-2xl">
-                <div className="h-80 overflow-y-auto space-y-4 mb-4 pr-2">
+                <div ref={chatScrollRef} className="h-96 overflow-y-auto space-y-4 mb-4 pr-2">
                   {chatMessages.map((msg, i) => (
                     <div
                       key={i}
                       className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${
+                        className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${
                           msg.sender === 'user'
-                            ? 'bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white rounded-br-none'
-                            : 'bg-[#061734] border border-white/10 text-white/90 rounded-bl-none'
+                            ? 'bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white rounded-br-none shadow-lg shadow-[#FF6B1A]/20'
+                            : 'bg-[#061734]/90 border border-white/10 text-white/90 rounded-bl-none shadow-lg'
                         }`}
                       >
-                        {msg.text}
+                        <div className="whitespace-pre-line">
+                          {msg.text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+                            part.startsWith('**') && part.endsWith('**') ? (
+                              <strong key={index} className="text-white font-bold">{part.slice(2, -2)}</strong>
+                            ) : (
+                              part
+                            )
+                          )}
+                        </div>
+
+                        {/* Tiendas sugeridas */}
+                        {msg.stores && msg.stores.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-2">
+                            {msg.stores.map((st) => (
+                              <div
+                                key={st.id}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-amber-300"
+                              >
+                                <MapPin className="w-3.5 h-3.5 text-[#FF6B1A]" />
+                                <span className="font-semibold text-white">{st.name}</span>
+                                <span className="text-white/60">({st.floor || 'Mall'} · {st.local_num || ''})</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Productos sugeridos */}
+                        {msg.products && msg.products.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {msg.products.map((pr) => (
+                              <div
+                                key={pr.id}
+                                className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10 text-xs"
+                              >
+                                <div>
+                                  <div className="font-medium text-white">{pr.name}</div>
+                                  <div className="text-[10px] text-white/50">{pr.store}</div>
+                                </div>
+                                <span className="font-bold text-[#FF6B1A]">Bs. {pr.price}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
+
+                  {isJarvisBusy && (
+                    <div className="flex justify-start">
+                      <div className="bg-[#061734] border border-white/10 text-white/80 rounded-2xl rounded-bl-none p-3.5 flex items-center gap-2 text-xs">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#FF6B1A]" />
+                        <span>Jarvis está consultando información del mall...</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sugerencias Rápidas */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   <button
-                    onClick={() => handleSendMessage('¿Dónde comer?')}
-                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-[#D4A24C] border border-[#D4A24C]/30"
+                    onClick={() => handleSendMessage('¿Dónde retiro mi pedido y cuál es mi código?')}
+                    className="chip-suggestion px-3 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-xs text-emerald-400 border border-emerald-400/30 transition-all font-medium"
                   >
-                    ¿Dónde comer?
+                    📦 ¿Dónde retiro mi pedido?
                   </button>
                   <button
-                    onClick={() => handleSendMessage('Buscar un regalo')}
-                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-[#FF6B1A] border border-[#FF6B1A]/30"
+                    onClick={() => handleSendMessage('¿Cuántos puntos tengo acumulados y qué nivel soy?')}
+                    className="chip-suggestion px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-xs text-amber-300 border border-amber-400/30 transition-all font-medium"
                   >
-                    Buscar un regalo
+                    ⭐ ¿Cuántos puntos tengo?
                   </button>
                   <button
-                    onClick={() => handleSendMessage('¿Cómo ganar Paseo Points?')}
-                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-white/70 border border-white/10"
+                    onClick={() => handleSendMessage('¿Qué opciones para comer hay en Piso 3 y Piso 4?')}
+                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-[#D4A24C] border border-[#D4A24C]/30 transition-all"
                   >
-                    ¿Cómo ganar puntos?
+                    🍽️ ¿Qué comer en Piso 3 y 4?
                   </button>
                   <button
-                    onClick={() => handleSendMessage('¿Dónde retiro mi pedido?')}
-                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-emerald-400 border border-emerald-400/30"
+                    onClick={() => handleSendMessage('¿Dónde queda Samsung Store y tiendas de tecnología?')}
+                    className="chip-suggestion px-3 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-xs text-blue-300 border border-blue-400/30 transition-all"
                   >
-                    ¿Dónde retiro mi pedido?
+                    📱 Tiendas de tecnología
+                  </button>
+                  <button
+                    onClick={() => handleSendMessage('¿Cuáles son los horarios y cómo funciona el estacionamiento?')}
+                    className="chip-suggestion px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-xs text-white/80 border border-white/15 transition-all"
+                  >
+                    🚗 Horarios y estacionamiento
                   </button>
                 </div>
 
@@ -226,12 +356,14 @@ export function PaseoModernidadLanding() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Escribe tu consulta sobre locales o pisos..."
-                    className="flex-1 bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FF6B1A]"
+                    placeholder="Pregúntale a Jarvis sobre tiendas, pedidos, puntos, comida..."
+                    disabled={isJarvisBusy}
+                    className="flex-1 bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#FF6B1A] disabled:opacity-50"
                   />
                   <button
                     onClick={() => handleSendMessage()}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] font-bold text-sm text-white hover:opacity-95 shadow-lg shadow-[#B84D0B]/30 btn-primary-andino"
+                    disabled={isJarvisBusy || !inputValue.trim()}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] font-bold text-sm text-white hover:opacity-95 shadow-lg shadow-[#B84D0B]/30 btn-primary-andino disabled:opacity-50 transition-all flex items-center justify-center"
                     aria-label="Enviar mensaje"
                   >
                     <Send className="w-4 h-4" />
@@ -263,7 +395,7 @@ export function PaseoModernidadLanding() {
           )}
         </main>
 
-        {/* Widget Flotante de Jarvis (con punto dot-online Regla 18) */}
+        {/* Widget Flotante de Jarvis */}
         {!isJarvisChatOpen && activeTab !== 'jarvis' && (
           <button
             onClick={() => setIsJarvisChatOpen(true)}
@@ -297,7 +429,7 @@ export function PaseoModernidadLanding() {
               </button>
             </div>
 
-            <div className="h-64 overflow-y-auto space-y-3 mb-3 text-xs pr-1">
+            <div ref={floatingChatScrollRef} className="h-64 overflow-y-auto space-y-3 mb-3 text-xs pr-1">
               {chatMessages.map((msg, i) => (
                 <div
                   key={i}
@@ -306,14 +438,44 @@ export function PaseoModernidadLanding() {
                   <div
                     className={`max-w-[85%] p-3 rounded-xl leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-[#FF6B1A] text-white rounded-br-none'
-                        : 'bg-[#061734] border border-white/10 text-white rounded-bl-none'
+                        ? 'bg-[#FF6B1A] text-white rounded-br-none shadow'
+                        : 'bg-[#061734] border border-white/10 text-white rounded-bl-none shadow'
                     }`}
                   >
-                    {msg.text}
+                    <div className="whitespace-pre-line">
+                      {msg.text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+                        part.startsWith('**') && part.endsWith('**') ? (
+                          <strong key={index} className="text-white font-bold">{part.slice(2, -2)}</strong>
+                        ) : (
+                          part
+                        )
+                      )}
+                    </div>
+
+                    {msg.stores && msg.stores.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
+                        {msg.stores.map((st) => (
+                          <span
+                            key={st.id}
+                            className="px-2 py-0.5 rounded-lg bg-white/10 text-[10px] text-amber-300"
+                          >
+                            📍 {st.name} ({st.floor})
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
+
+              {isJarvisBusy && (
+                <div className="flex justify-start">
+                  <div className="bg-[#061734] border border-white/10 text-white/80 rounded-xl rounded-bl-none p-2 flex items-center gap-1.5 text-[11px]">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF6B1A]" />
+                    <span>Consultando a Jarvis...</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -322,12 +484,14 @@ export function PaseoModernidadLanding() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Escribe tu consulta..."
-                className="flex-1 bg-black/40 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#FF6B1A]"
+                placeholder="Pregunta a Jarvis..."
+                disabled={isJarvisBusy}
+                className="flex-1 bg-black/40 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#FF6B1A] disabled:opacity-50"
               />
               <button
                 onClick={() => handleSendMessage()}
-                className="p-2.5 rounded-xl bg-[#FF6B1A] text-white hover:opacity-90 btn-primary-andino"
+                disabled={isJarvisBusy || !inputValue.trim()}
+                className="p-2.5 rounded-xl bg-[#FF6B1A] text-white hover:opacity-90 btn-primary-andino disabled:opacity-50"
                 aria-label="Enviar"
               >
                 <Send className="w-3.5 h-3.5" />
@@ -355,7 +519,7 @@ export function PaseoModernidadLanding() {
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
           onSuccessLogin={(data) => {
-            setCurrentUser(prev => ({
+            setCurrentUser((prev) => ({
               ...prev,
               name: data.name,
               level: data.role === 'comercio' ? 'Oro' : prev.level,
