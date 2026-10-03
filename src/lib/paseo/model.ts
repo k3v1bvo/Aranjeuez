@@ -132,6 +132,10 @@ export interface Settings {
   geofence_lng?: number;
   geofence_strict?: boolean;
   demo_mode?: boolean;
+  qr_welcome_points?: number;
+  qr_entry_points?: number;
+  qr_exit_points?: number;
+  qr_min_minutes?: number;
 }
 export interface Catalog {
   stores: Store[];

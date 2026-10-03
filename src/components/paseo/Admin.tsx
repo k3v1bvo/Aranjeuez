@@ -4,7 +4,7 @@ import { QrStationManager } from './QrStationManager';
 import { QrCode, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowUpRight, Coins, Package, ShoppingBag, Users, MapPin, Compass } from 'lucide-react';
+import { ArrowUpRight, Coins, Package, ShoppingBag, Users, MapPin, Compass, Award } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Movement, Order, Product, Settings, Store, User } from '@/lib/paseo/model';
 import { dateTime, money } from '@/lib/paseo/model';
@@ -245,6 +245,10 @@ function SettingsForm({ settings }: { settings: Settings }) {
     geofence_lat: settings.geofence_lat ?? -17.37365,
     geofence_lng: settings.geofence_lng ?? -66.15582,
     geofence_strict: settings.geofence_strict ?? false,
+    qr_welcome_points: settings.qr_welcome_points ?? 5,
+    qr_entry_points: settings.qr_entry_points ?? 1,
+    qr_exit_points: settings.qr_exit_points ?? 2,
+    qr_min_minutes: settings.qr_min_minutes ?? 2,
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -438,6 +442,85 @@ function SettingsForm({ settings }: { settings: Settings }) {
               {gpsStatus}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Sección Puntos por Tótems QR y Recorrido de Pisos */}
+      <div className="p-5 rounded-2xl bg-white/5 border border-amber-500/30 space-y-4">
+        <div className="flex items-center gap-2 text-white font-bold text-base">
+          <Award size={18} className="text-amber-400" />
+          <span>Puntos por Tótems QR de Recorrido (Sin Compra Obligatoria)</span>
+        </div>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Configura cuántos puntos recibe un visitante al escanear los tótems físicos en las puertas principales, en la entrada de cada piso y al salir tras recorrer el centro comercial.
+        </p>
+
+        <div className="form-grid">
+          <label>
+            Puntos por Bienvenida (Puertas América / Dalence)
+            <input
+              type="number"
+              min="0"
+              max="500"
+              step="1"
+              required
+              value={values.qr_welcome_points ?? 5}
+              onChange={(e) => setValues({ ...values, qr_welcome_points: Number(e.target.value) })}
+            />
+            <small className="text-slate-400 text-[11px] block mt-1">
+              Máximo 1 vez al día por usuario.
+            </small>
+          </label>
+
+          <label>
+            Puntos por Entrada a Piso (PB, P1, P2, P3, S1)
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              required
+              value={values.qr_entry_points ?? 1}
+              onChange={(e) => setValues({ ...values, qr_entry_points: Number(e.target.value) })}
+            />
+            <small className="text-slate-400 text-[11px] block mt-1">
+              Al llegar al piso por ascensor o gradas (1 vez al día por piso).
+            </small>
+          </label>
+        </div>
+
+        <div className="form-grid">
+          <label>
+            Puntos por Salida de Piso
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              required
+              value={values.qr_exit_points ?? 2}
+              onChange={(e) => setValues({ ...values, qr_exit_points: Number(e.target.value) })}
+            />
+            <small className="text-slate-400 text-[11px] block mt-1">
+              Al culminar el recorrido del nivel (requiere haber iniciado el piso).
+            </small>
+          </label>
+
+          <label>
+            Permanencia Mínima en Piso (Minutos)
+            <input
+              type="number"
+              min="0"
+              max="60"
+              step="1"
+              required
+              value={values.qr_min_minutes ?? 2}
+              onChange={(e) => setValues({ ...values, qr_min_minutes: Number(e.target.value) })}
+            />
+            <small className="text-slate-400 text-[11px] block mt-1">
+              Tiempo que debe transcurrir entre el escaneo de entrada y salida para evitar abusos.
+            </small>
+          </label>
         </div>
       </div>
 

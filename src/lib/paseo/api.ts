@@ -21,7 +21,7 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
-import { STATIONS, FLOORS, MIN_MINUTES_ON_FLOOR, findStation, laPazHour, bucketFor, type TimeBucket } from './stations';
+import { STATIONS, FLOORS, MIN_MINUTES_ON_FLOOR, DEFAULT_QR_CONFIG, getStationPoints, type QrPointsConfig, findStation, laPazHour, bucketFor, type TimeBucket } from './stations';
 import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail, sendPaseoMerchantPromotedEmail } from './email';
 
 const ORDER_FIELDS =
@@ -507,6 +507,25 @@ async function scanner(req: NextRequest) {
 }
 
 
+function parseQrPoints(locationStr: string = ''): QrPointsConfig {
+  if (!locationStr) return DEFAULT_QR_CONFIG;
+  const parts = locationStr.split('|| QR_POINTS:');
+  if (parts.length > 1) {
+    try {
+      const q = JSON.parse(parts[1].trim());
+      return {
+        welcome: typeof q.welcome === 'number' && q.welcome >= 0 ? Number(q.welcome) : DEFAULT_QR_CONFIG.welcome,
+        entry: typeof q.entry === 'number' && q.entry >= 0 ? Number(q.entry) : DEFAULT_QR_CONFIG.entry,
+        exit: typeof q.exit === 'number' && q.exit >= 0 ? Number(q.exit) : DEFAULT_QR_CONFIG.exit,
+        minMinutes: typeof q.minMinutes === 'number' && q.minMinutes >= 0 ? Number(q.minMinutes) : DEFAULT_QR_CONFIG.minMinutes,
+      };
+    } catch {
+      return DEFAULT_QR_CONFIG;
+    }
+  }
+  return DEFAULT_QR_CONFIG;
+}
+
 function parseGeofence(locationStr: string = '') {
   const DEFAULT_GEOFENCE = {
     radius: 200,
@@ -518,12 +537,12 @@ function parseGeofence(locationStr: string = '') {
 
   if (!locationStr) return DEFAULT_GEOFENCE;
 
-  const parts = locationStr.split('|| GEOFENCE:');
-  const address = parts[0].trim() || DEFAULT_GEOFENCE.address;
+  const address = locationStr.split('|| GEOFENCE:')[0].split('|| QR_POINTS:')[0].trim() || DEFAULT_GEOFENCE.address;
 
-  if (parts.length > 1) {
+  if (locationStr.includes('|| GEOFENCE:')) {
     try {
-      const geo = JSON.parse(parts[1].trim());
+      const geoRaw = locationStr.split('|| GEOFENCE:')[1].split('|| QR_POINTS:')[0].trim();
+      const geo = JSON.parse(geoRaw);
       return {
         radius: Number(geo.radius) || 200,
         lat: Number(geo.lat) || -17.37365,
@@ -571,6 +590,7 @@ async function checkin(req: NextRequest) {
     await client.from('paseo_settings').select('location').eq('id', 1).maybeSingle(),
   );
   const geo = parseGeofence(rawSettings?.location);
+  const qrConfig = parseQrPoints(rawSettings?.location);
   let distanceToPaseo: number | null = null;
   let inGeofence: boolean | null = null;
   if (userLat !== null && userLng !== null) {
@@ -600,7 +620,7 @@ async function checkin(req: NextRequest) {
   const scanned = (code: string) => todayScans.filter((s) => s.detail?.station_code === code);
   const rewarded = (code: string) => scanned(code).some((s) => Number(s.detail?.points_granted) > 0);
 
-  let points = station.points;
+  let points = getStationPoints(station, qrConfig);
   let message = '';
 
   if (station.kind === 'bienvenida') {
@@ -621,9 +641,9 @@ async function checkin(req: NextRequest) {
     if (!entry) {
       points = 0;
       message = `Escanea primero el QR de entrada de ${station.floorLabel} para sumar al salir.`;
-    } else if (Date.now() - new Date(entry.created_at).getTime() < MIN_MINUTES_ON_FLOOR * 60000) {
+    } else if (Date.now() - new Date(entry.created_at).getTime() < qrConfig.minMinutes * 60000) {
       points = 0;
-      message = `Recorre un poco ${station.floorLabel} antes de registrar tu salida.`;
+      message = `Recorre un poco ${station.floorLabel} antes de registrar tu salida (mínimo ${qrConfig.minMinutes} min).`;
     }
   }
 
@@ -1246,6 +1266,7 @@ async function dashboard(req: NextRequest) {
       : [];
   const rawSettings = checked(await client.from('paseo_settings').select('*').eq('id', 1).single());
   const geo = parseGeofence(rawSettings?.location);
+  const qrPoints = parseQrPoints(rawSettings?.location);
   const settings = {
     ...rawSettings,
     location: geo.address,
@@ -1253,6 +1274,10 @@ async function dashboard(req: NextRequest) {
     geofence_lat: geo.lat,
     geofence_lng: geo.lng,
     geofence_strict: geo.strict,
+    qr_welcome_points: qrPoints.welcome,
+    qr_entry_points: qrPoints.entry,
+    qr_exit_points: qrPoints.exit,
+    qr_min_minutes: qrPoints.minMinutes,
   };
   return NextResponse.json({
     orders: orderRows,
@@ -1270,32 +1295,54 @@ async function settings(req: NextRequest) {
   const user = await requireUser(req, ['admin']);
   const data = await body(req);
 
+  const currentRaw = checked(
+    await db().from('paseo_settings').select('location').eq('id', 1).maybeSingle(),
+  );
+  const currentGeo = parseGeofence(currentRaw?.location);
+  const currentQr = parseQrPoints(currentRaw?.location);
+
   const geoObj = {
-    radius: typeof data.geofence_radius === 'number' ? Math.max(50, Math.min(5000, Number(data.geofence_radius))) : 200,
-    lat: typeof data.geofence_lat === 'number' ? Number(data.geofence_lat) : -17.37365,
-    lng: typeof data.geofence_lng === 'number' ? Number(data.geofence_lng) : -66.15582,
-    strict: Boolean(data.geofence_strict),
+    radius: typeof data.geofence_radius === 'number' ? Math.max(50, Math.min(5000, Number(data.geofence_radius))) : currentGeo.radius,
+    lat: typeof data.geofence_lat === 'number' ? Number(data.geofence_lat) : currentGeo.lat,
+    lng: typeof data.geofence_lng === 'number' ? Number(data.geofence_lng) : currentGeo.lng,
+    strict: data.geofence_strict !== undefined ? Boolean(data.geofence_strict) : currentGeo.strict,
   };
 
-  const address = string(data.location, 'Ubicación', 2, 200);
-  const locationWithGeo = `${address} || GEOFENCE:${JSON.stringify(geoObj)}`;
+  const qrPointsObj: QrPointsConfig = {
+    welcome: typeof data.qr_welcome_points === 'number' ? Math.max(0, Math.min(1000, Number(data.qr_welcome_points))) : currentQr.welcome,
+    entry: typeof data.qr_entry_points === 'number' ? Math.max(0, Math.min(500, Number(data.qr_entry_points))) : currentQr.entry,
+    exit: typeof data.qr_exit_points === 'number' ? Math.max(0, Math.min(500, Number(data.qr_exit_points))) : currentQr.exit,
+    minMinutes: typeof data.qr_min_minutes === 'number' ? Math.max(0, Math.min(120, Number(data.qr_min_minutes))) : currentQr.minMinutes,
+  };
 
-  const values = {
-    points_ratio: number(data.points_ratio, 'Equivalencia', 0.01, 100),
-    welcome_points: number(data.welcome_points, 'Bienvenida', 0, 10000, true),
-    paseo_name: string(data.paseo_name, 'Nombre', 2, 100),
+  const address = typeof data.location === 'string' && data.location.trim().length >= 2 
+    ? string(data.location, 'Ubicación', 2, 200) 
+    : currentGeo.address;
+  const locationWithGeo = `${address} || GEOFENCE:${JSON.stringify(geoObj)} || QR_POINTS:${JSON.stringify(qrPointsObj)}`;
+
+  const values: Record<string, unknown> = {
     location: locationWithGeo,
   };
+  if (data.points_ratio !== undefined) {
+    values.points_ratio = number(data.points_ratio, 'Equivalencia', 0.01, 100);
+  }
+  if (data.welcome_points !== undefined) {
+    values.welcome_points = number(data.welcome_points, 'Bienvenida', 0, 10000, true);
+  }
+  if (data.paseo_name !== undefined) {
+    values.paseo_name = string(data.paseo_name, 'Nombre', 2, 100);
+  }
+
   checked(await db().from('paseo_settings').update(values).eq('id', 1));
   checked(
     await db().from('paseo_audit').insert({
       actor_id: user.id,
       action: 'configuracion_editada',
       entity: 'configuracion',
-      detail: { ...values, geofence: geoObj },
+      detail: { ...values, geofence: geoObj, qr_points: qrPointsObj },
     }),
   );
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, qr_points: qrPointsObj });
 }
 
 export async function handle(req: NextRequest, path: string[]) {

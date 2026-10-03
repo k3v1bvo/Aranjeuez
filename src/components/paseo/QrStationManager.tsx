@@ -22,13 +22,66 @@ export function QrStationManager() {
       created_at: string;
       actor_id: string;
     }>;
+    settings?: {
+      qr_welcome_points?: number;
+      qr_entry_points?: number;
+      qr_exit_points?: number;
+      qr_min_minutes?: number;
+    };
   }>('resumen', 15000);
+
+  // Estados para configuración editable de puntos por el Administrador
+  const [welcomePts, setWelcomePts] = useState<number>(5);
+  const [entryPts, setEntryPts] = useState<number>(1);
+  const [exitPts, setExitPts] = useState<number>(2);
+  const [minMinutes, setMinMinutes] = useState<number>(2);
+  const [savingPoints, setSavingPoints] = useState(false);
+  const [pointsPanelOpen, setPointsPanelOpen] = useState(false);
 
   const [activeFloorFilter, setActiveFloorFilter] = useState<'todos' | FloorId>('todos');
   const [qrImages, setQrImages] = useState<Record<string, string>>({});
   const [printStation, setPrintStation] = useState<Station | null>(null);
   const [simulatingCode, setSimulatingCode] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+
+  useEffect(() => {
+    if (data?.settings) {
+      if (typeof data.settings.qr_welcome_points === 'number') setWelcomePts(data.settings.qr_welcome_points);
+      if (typeof data.settings.qr_entry_points === 'number') setEntryPts(data.settings.qr_entry_points);
+      if (typeof data.settings.qr_exit_points === 'number') setExitPts(data.settings.qr_exit_points);
+      if (typeof data.settings.qr_min_minutes === 'number') setMinMinutes(data.settings.qr_min_minutes);
+    }
+  }, [data?.settings]);
+
+  const currentPointsFor = (station: Station) => {
+    if (station.kind === 'bienvenida') return welcomePts;
+    if (station.kind === 'salida') return exitPts;
+    return entryPts;
+  };
+
+  const handleSavePoints = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingPoints(true);
+    try {
+      await api('configuracion', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          qr_welcome_points: Number(welcomePts),
+          qr_entry_points: Number(entryPts),
+          qr_exit_points: Number(exitPts),
+          qr_min_minutes: Number(minMinutes),
+        }),
+      });
+      toast.success('¡Puntos por QR actualizados correctamente!', {
+        description: `Bienvenida: ${welcomePts} pts · Entrada: ${entryPts} pt · Salida: ${exitPts} pts · Dwell: ${minMinutes} min`,
+      });
+      reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al guardar los puntos');
+    } finally {
+      setSavingPoints(false);
+    }
+  };
 
   // Generar códigos QR para todas las estaciones con la URL canónica
   useEffect(() => {
@@ -71,7 +124,7 @@ export function QrStationManager() {
         body: JSON.stringify({ code: station.code }),
       });
       toast.success(res.message || 'Escaneo registrado con éxito', {
-        description: `Estación: ${station.name} (+${res.pointsAwarded ?? station.points} pts)`,
+        description: `Estación: ${station.name} (+${res.pointsAwarded ?? currentPointsFor(station)} pts)`,
       });
       reload();
     } catch (e) {
@@ -155,6 +208,141 @@ export function QrStationManager() {
         </div>
       </PageTitle>
 
+      {/* Panel de Control de Puntos QR (Solo Administrador) */}
+      <div className="p-5 rounded-2xl bg-[#061734]/90 border border-amber-500/40 shadow-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+              ⚙️
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                Configuración de Puntos por QR & Permanencia
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase font-mono">
+                  Solo Administrador
+                </span>
+              </h3>
+              <p className="text-xs text-white/60">
+                Ajusta en tiempo real cuántos puntos otorga cada tótem y el tiempo mínimo para validar la salida de un piso.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPointsPanelOpen(!pointsPanelOpen)}
+            className="button secondary small self-start sm:self-auto text-xs flex items-center gap-1.5"
+          >
+            {pointsPanelOpen ? 'Cerrar Editor' : '✏️ Modificar Puntos'}
+          </button>
+        </div>
+
+        {pointsPanelOpen ? (
+          <form onSubmit={handleSavePoints} className="space-y-4 pt-1 animate-in fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <label className="text-xs font-semibold text-slate-300 space-y-1 block">
+                <span>🚪 Puntos Bienvenida (Puertas)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="1"
+                  required
+                  value={welcomePts}
+                  onChange={(e) => setWelcomePts(Number(e.target.value))}
+                  className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
+                />
+                <span className="text-[10px] text-white/50 block">Puertas Av. América y Dalence (1x al día)</span>
+              </label>
+
+              <label className="text-xs font-semibold text-slate-300 space-y-1 block">
+                <span>⬆️ Puntos Entrada a Piso</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  required
+                  value={entryPts}
+                  onChange={(e) => setEntryPts(Number(e.target.value))}
+                  className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
+                />
+                <span className="text-[10px] text-white/50 block">PB, P1, P2, P3, S1 (1x al día)</span>
+              </label>
+
+              <label className="text-xs font-semibold text-slate-300 space-y-1 block">
+                <span>⬇️ Puntos Salida de Piso</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  required
+                  value={exitPts}
+                  onChange={(e) => setExitPts(Number(e.target.value))}
+                  className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
+                />
+                <span className="text-[10px] text-white/50 block">Fin del recorrido del piso (1x al día)</span>
+              </label>
+
+              <label className="text-xs font-semibold text-slate-300 space-y-1 block">
+                <span>⏱️ Permanencia Mínima (Minutos)</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="60"
+                  step="1"
+                  required
+                  value={minMinutes}
+                  onChange={(e) => setMinMinutes(Number(e.target.value))}
+                  className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
+                />
+                <span className="text-[10px] text-white/50 block">Tiempo requerido antes de validar salida</span>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setPointsPanelOpen(false)}
+                className="button secondary small text-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={savingPoints}
+                className="button small bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+              >
+                {savingPoints ? 'Guardando...' : '💾 Guardar Cambios en Vivo'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[11px] text-white/60">Bienvenida</div>
+              <div className="text-lg font-black text-amber-400">+{welcomePts} pts</div>
+              <div className="text-[10px] text-white/40">1 vez al día</div>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[11px] text-white/60">Entrada a Piso</div>
+              <div className="text-lg font-black text-emerald-400">+{entryPts} pt</div>
+              <div className="text-[10px] text-white/40">1 vez por piso/día</div>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[11px] text-white/60">Salida de Piso</div>
+              <div className="text-lg font-black text-blue-400">+{exitPts} pts</div>
+              <div className="text-[10px] text-white/40">Con entrada previa</div>
+            </div>
+            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+              <div className="text-[11px] text-white/60">Permanencia Mínima</div>
+              <div className="text-lg font-black text-purple-400">{minMinutes} min</div>
+              <div className="text-[10px] text-white/40">Anti-spam entre entrada y salida</div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Explicación de la Lógica de Puntos por Recorrido */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-[#061734] via-[#09224d] to-[#061734] border border-[#FF6B1A]/30 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -165,9 +353,9 @@ export function QrStationManager() {
             </h3>
           </div>
           <p className="text-xs text-white/70 max-w-3xl leading-relaxed">
-            • <strong>Bienvenida (+5 pts):</strong> 1 vez al día en puertas principales (Av. América o Dalence).<br />
-            • <strong>Inicio de Piso (+1 pt):</strong> Al llegar al nivel por ascensor o gradas.<br />
-            • <strong>Salida de Piso (+2 pts):</strong> Al finalizar el recorrido del nivel (requiere haber iniciado el piso y pasar al menos 2 minutos).
+            • <strong>Bienvenida (+{welcomePts} pts):</strong> 1 vez al día en puertas principales (Av. América o Dalence).<br />
+            • <strong>Inicio de Piso (+{entryPts} pt):</strong> Al llegar al nivel por ascensor o gradas.<br />
+            • <strong>Salida de Piso (+{exitPts} pts):</strong> Al finalizar el recorrido del nivel (requiere haber iniciado el piso y pasar al menos {minMinutes} minutos).
           </p>
         </div>
         <div className="shrink-0 flex items-center gap-2">
@@ -237,7 +425,7 @@ export function QrStationManager() {
                       : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
                   }`}>
                     {isWelcome ? <Sparkles size={11} /> : isExit ? <LogOut size={11} /> : <DoorOpen size={11} />}
-                    {isWelcome ? 'Bienvenida' : isExit ? 'Salida' : 'Inicio'} (+{station.points} pts)
+                    {isWelcome ? 'Bienvenida' : isExit ? 'Salida' : 'Inicio'} (+{currentPointsFor(station)} pts)
                   </span>
                   <span className="text-[10px] font-mono text-white/50">
                     Piso Z: {station.z}

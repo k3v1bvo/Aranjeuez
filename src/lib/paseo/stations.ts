@@ -37,6 +37,30 @@ export const POINTS_BY_KIND: Record<StationKind, number> = {
 /** Minutos mínimos entre la entrada y la salida de un mismo piso para que la salida sume. */
 export const MIN_MINUTES_ON_FLOOR = 2;
 
+export interface QrPointsConfig {
+  welcome: number;
+  entry: number;
+  exit: number;
+  minMinutes: number;
+}
+
+export const DEFAULT_QR_CONFIG: QrPointsConfig = {
+  welcome: 5,
+  entry: 1,
+  exit: 2,
+  minMinutes: 2,
+};
+
+export function getStationPoints(
+  station: Station,
+  config?: Partial<QrPointsConfig> | null,
+): number {
+  if (!config) return station.points;
+  if (station.kind === 'bienvenida') return config.welcome ?? station.points;
+  if (station.kind === 'salida') return config.exit ?? station.points;
+  return config.entry ?? station.points;
+}
+
 function floorStations(
   floorId: FloorId,
   entrada: { x: number; y: number; place: string },
