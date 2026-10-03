@@ -1,16 +1,13 @@
 'use client';
 
 import { MapPin, Clock } from 'lucide-react';
-import { ChakanaIcon } from './ChakanaIcon';
+
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
 
 export function FooterPaseo() {
   return (
     <footer className="bg-[#030B1A] border-t border-white/10 pt-16 pb-12 px-4 sm:px-6 lg:px-8 text-white relative overflow-hidden">
-      {/* Chakana Watermark de Fondo Sutil */}
-      <div className="absolute -bottom-16 -right-16 pointer-events-none opacity-[0.03]">
-        <ChakanaIcon size={320} className="text-white" rotateOnHover={false} />
-      </div>
+      
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">

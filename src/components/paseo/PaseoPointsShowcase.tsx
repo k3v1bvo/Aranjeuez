@@ -11,7 +11,7 @@ import { AnimatedCounter } from './AnimatedCounter';
 import { ConfettiEffect } from './ConfettiEffect';
 import { ScrollRevealContainer, ScrollRevealItem, ScrollReveal } from './ScrollReveal';
 import { usePaseoToast } from './PaseoToast';
-import { ChakanaIcon } from './ChakanaIcon';
+
 
 interface PaseoPointsShowcaseProps {
   onOpenQr: () => void;
@@ -108,7 +108,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
 
                 {/* Marca de Agua Chakana de Fondo */}
                 <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
-                  <ChakanaIcon size={240} className="text-[#D4A24C]" />
+                  <Crown size={240} className="text-[#D4A24C]" />
                 </div>
 
                 {/* Fila Superior: Chip EMV, Nombre del Mall y Nivel Actual */}

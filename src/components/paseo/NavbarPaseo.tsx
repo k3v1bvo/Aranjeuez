@@ -5,7 +5,7 @@ import {
   QrCode, Sparkles, ShoppingBag, Bot, Flame, Compass, Sun, Moon, 
   User, ClipboardList, Layers 
 } from 'lucide-react';
-import { ChakanaIcon } from './ChakanaIcon';
+
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
 import { QrPulsanteModal } from './QrPulsanteModal';
 import { MOCK_USER } from '@/lib/mock-data';

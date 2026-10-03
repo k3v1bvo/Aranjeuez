@@ -6,6 +6,7 @@ import { Sparkles, Mic, Brain, Volume2 } from 'lucide-react';
 export type JarvisOrbState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 interface JarvisOrbProps {
+  onClick?: () => void;
   initialState?: JarvisOrbState;
   size?: 'sm' | 'md' | 'lg';
   showControls?: boolean;
@@ -13,6 +14,7 @@ interface JarvisOrbProps {
 }
 
 export function JarvisOrb({
+  onClick,
   initialState = 'idle',
   size = 'md',
   showControls = true,

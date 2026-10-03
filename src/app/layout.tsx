@@ -4,22 +4,25 @@ import { Providers } from '@/components/paseo/Providers';
 import { Shell } from '@/components/paseo/Shell';
 
 export const metadata: Metadata = {
-  title: 'Paseo Aranjuez — Modernidad Andina & Ecosistema Digital',
+  title: 'Paseo Aranjuez — Centro Comercial & Empresarial | Cochabamba',
   description:
-    'Plataforma digital unificada de Paseo Aranjuez (Cochabamba, Bolivia). Click & Collect (PaseoYa), Jarvis IA y Fidelización con Paseo Points.',
+    'Aquí se combinan los negocios, el placer y el entretenimiento de manera perfecta. Descubre tiendas oficiales, terrazas gourmet, PaseoYa Click & Collect y Paseo Points.',
   keywords: [
     'Paseo Aranjuez',
     'Cochabamba',
     'Bolivia',
-    'Marketplace',
-    'Jarvis IA',
-    'Paseo Points',
     'Centro Comercial',
+    'Restaurantes',
+    'El Cuarto',
+    'PaseoYa',
+    'Click & Collect',
+    'Paseo Points',
+    'Jarvis',
   ],
   openGraph: {
-    title: 'Paseo Aranjuez — Modernidad Andina',
+    title: 'Paseo Aranjuez — Descubre, Disfruta y Vuelve',
     description:
-      'Ecosistema digital premium con alma cochabambina. PaseoYa, Jarvis IA y Paseo Points.',
+      'El centro comercial y empresarial líder de Cochabamba. Tiendas exclusivas, gastronomía de autor y servicios digitales.',
     locale: 'es_BO',
     type: 'website',
   },
