@@ -21,6 +21,7 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
+import { STATIONS, FLOORS, MIN_MINUTES_ON_FLOOR, findStation, laPazHour, bucketFor, type TimeBucket } from './stations';
 import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail, sendPaseoMerchantPromotedEmail } from './email';
 
 const ORDER_FIELDS =
@@ -556,157 +557,353 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
 async function checkin(req: NextRequest) {
   const user = await requireUser(req);
   const client = db();
-  const data = await body(req).catch(() => ({}));
-  const rawCode = String((data as { code?: string })?.code || 'PASEO-TOTEM-LOBBY').toUpperCase();
-  const userLat = typeof (data as Record<string, unknown>)?.userLat === 'number' ? Number((data as Record<string, unknown>).userLat) : null;
-  const userLng = typeof (data as Record<string, unknown>)?.userLng === 'number' ? Number((data as Record<string, unknown>).userLng) : null;
+  const data = (await body(req).catch(() => ({}))) as Record<string, unknown>;
+  const station = findStation(typeof data.code === 'string' ? data.code : '');
+  if (!station) throw new ApiError(404, 'Este código QR no pertenece al Paseo Aranjuez.');
 
-  // Cargar configuración de geocerca del edificio
+  const userLat = typeof data.userLat === 'number' ? Number(data.userLat) : null;
+  const userLng = typeof data.userLng === 'number' ? Number(data.userLng) : null;
+
+  rateLimit(`checkin:${user.id}`, 20);
+
+  // Geocerca del edificio (configurable por el admin)
   const rawSettings = checked(
-    await client.from('paseo_settings').select('location').eq('id', 1).maybeSingle()
+    await client.from('paseo_settings').select('location').eq('id', 1).maybeSingle(),
   );
   const geo = parseGeofence(rawSettings?.location);
-
   let distanceToPaseo: number | null = null;
-  let inGeofence = true;
-
+  let inGeofence: boolean | null = null;
   if (userLat !== null && userLng !== null) {
     distanceToPaseo = getDistanceMeters(userLat, userLng, geo.lat, geo.lng);
     inGeofence = distanceToPaseo <= geo.radius;
-
     if (geo.strict && !inGeofence) {
-      throw new ApiError(
-        400,
-        `Estás a ${distanceToPaseo}m del edificio Paseo Aranjuez. Para validar tu recorrido debes estar dentro del perímetro oficial (máx. ${geo.radius}m).`
+      throw new ApiError(400, 'Este QR solo se puede registrar dentro del Paseo Aranjuez.');
+    }
+  }
+
+  // Escaneos reales de hoy (hora Bolivia) de este usuario
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date());
+  const dayStart = new Date(`${today}T00:00:00-04:00`).toISOString();
+  const todayScans = (
+    (checked(
+      await client
+        .from('paseo_audit')
+        .select('detail,created_at')
+        .eq('actor_id', user.id)
+        .eq('action', 'telemetry_scan')
+        .gte('created_at', dayStart)
+        .order('created_at', { ascending: false })
+        .limit(200),
+    ) || []) as Array<{ detail: Record<string, unknown>; created_at: string }>
+  ).filter((s) => !s.detail?.demo);
+
+  const scanned = (code: string) => todayScans.filter((s) => s.detail?.station_code === code);
+  const rewarded = (code: string) => scanned(code).some((s) => Number(s.detail?.points_granted) > 0);
+
+  let points = station.points;
+  let message = '';
+
+  if (station.kind === 'bienvenida') {
+    const welcomed = STATIONS.filter((s) => s.kind === 'bienvenida').some((s) => rewarded(s.code));
+    if (welcomed) {
+      points = 0;
+      message = '¡Hola de nuevo! Tu bienvenida de hoy ya fue sumada. Recorre los pisos para ganar más puntos.';
+    }
+  } else if (rewarded(station.code)) {
+    points = 0;
+    message = `Ya sumaste los puntos de ${station.name} hoy. ¡Vuelve mañana!`;
+  } else if (station.kind === 'salida') {
+    // La salida de un piso solo suma si antes se registró la entrada de ese piso.
+    const entryCodes = STATIONS.filter(
+      (s) => s.floorId === station.floorId && s.kind !== 'salida',
+    ).map((s) => s.code);
+    const entry = todayScans.find((s) => entryCodes.includes(String(s.detail?.station_code)));
+    if (!entry) {
+      points = 0;
+      message = `Escanea primero el QR de entrada de ${station.floorLabel} para sumar al salir.`;
+    } else if (Date.now() - new Date(entry.created_at).getTime() < MIN_MINUTES_ON_FLOOR * 60000) {
+      points = 0;
+      message = `Recorre un poco ${station.floorLabel} antes de registrar tu salida.`;
+    }
+  }
+
+  if (points > 0) {
+    checked(
+      await client.from('paseo_point_movements').insert({
+        user_id: user.id,
+        amount: points,
+        reason: `Recorrido · ${station.name}`,
+      }),
+    );
+    const current = checked(
+      await client.from('paseo_users').select('points,lifetime_points').eq('id', user.id).single(),
+    );
+    if (current) {
+      checked(
+        await client
+          .from('paseo_users')
+          .update({
+            points: (current.points || 0) + points,
+            lifetime_points: (current.lifetime_points || 0) + points,
+          })
+          .eq('id', user.id),
       );
     }
+    message =
+      station.kind === 'bienvenida'
+        ? `¡Bienvenido al Paseo Aranjuez! Sumaste +${points} puntos.`
+        : `${station.name}: sumaste +${points} ${points === 1 ? 'punto' : 'puntos'}.`;
   }
 
-  const TOTEMS: Record<
-    string,
-    { name: string; floor: string; x: number; y: number; z: number; points: number; sector: string }
-  > = {
-    'PASEO-TOTEM-LOBBY': {
-      name: 'Tótem Entrada Principal & Lobby Av. América',
-      floor: 'Planta Baja',
-      x: 50,
-      y: 88,
-      z: 0,
-      points: 5,
-      sector: 'Lobby Principal',
-    },
-    'PASEO-TOTEM-PANDO': {
-      name: 'Tótem Acceso Boulevard Pando',
-      floor: 'Planta Baja',
-      x: 20,
-      y: 75,
-      z: 0,
-      points: 5,
-      sector: 'Acceso Pando',
-    },
-    'PASEO-TOTEM-TERRAZA': {
-      name: 'Tótem Mirador Terraza Gastronómica',
-      floor: 'Piso 3 · Terraza',
-      x: 75,
-      y: 25,
-      z: 3,
-      points: 10,
-      sector: 'Terraza Gastronómica',
-    },
-    'PASEO-TOTEM-PARKING': {
-      name: 'Tótem Parking & Click & Collect',
-      floor: 'Subsuelo 1',
-      x: 45,
-      y: 40,
-      z: -1,
-      points: 5,
-      sector: 'Subsuelo 1',
-    },
-  };
-
-  const station = TOTEMS[rawCode] || TOTEMS['PASEO-TOTEM-LOBBY'];
-  const pointsAwarded = station.points;
-
-  rateLimit(`checkin:${user.id}:${rawCode}`, 8);
-
-  // Cooldown de 15 minutos por usuario y estación
-  const recent = checked(
-    await client
-      .from('paseo_point_movements')
-      .select('created_at')
-      .eq('user_id', user.id)
-      .ilike('reason', `%${station.sector}%`)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-  );
-
-  if (recent && recent.created_at) {
-    const elapsed = Date.now() - new Date(recent.created_at).getTime();
-    if (elapsed < 15 * 60 * 1000) {
-      const waitMin = Math.ceil((15 * 60 * 1000 - elapsed) / 60000);
-      return NextResponse.json({
-        ok: true,
-        alreadyCheckedIn: true,
-        message: `¡Ya registraste tu visita en ${station.sector}! Vuelve en ${waitMin} min para sumar más puntos.`,
-      });
-    }
-  }
-
-  await client.from('paseo_point_movements').insert({
-    user_id: user.id,
-    amount: pointsAwarded,
-    reason: `Visita ${station.sector} (+${pointsAwarded} pts)`,
-  });
-
-  const currentUserData = checked(
-    await client.from('paseo_users').select('points,lifetime_points').eq('id', user.id).single()
-  );
-  if (currentUserData) {
-    await client
-      .from('paseo_users')
-      .update({
-        points: (currentUserData.points || 0) + pointsAwarded,
-        lifetime_points: (currentUserData.lifetime_points || 0) + pointsAwarded,
-      })
-      .eq('id', user.id);
-  }
-
-  // Telemetría interna silenciosa (x, y, z)
+  // Registro interno del recorrido (solo visible para administración)
   try {
     await client.from('paseo_audit').insert({
       actor_id: user.id,
       action: 'telemetry_scan',
       entity: 'heat_telemetry',
       detail: {
+        station_code: station.code,
+        totem_code: station.code,
+        totem_name: station.name,
+        kind: station.kind,
+        floor_id: station.floorId,
+        floor: station.floorLabel,
         x: station.x,
         y: station.y,
         z: station.z,
-        floor: station.floor,
-        sector: station.sector,
-        totem_code: rawCode,
-        totem_name: station.name,
+        points_granted: points,
         type: 'totem_scan',
-        points_granted: pointsAwarded,
         user_name: user.name,
-        timestamp: new Date().toISOString(),
+        lat: userLat,
+        lng: userLng,
+        distance_meters: distanceToPaseo,
+        in_geofence: inGeofence,
       },
     });
   } catch {
-    // Silencioso
+    // El registro interno nunca debe bloquear al cliente
   }
 
   return NextResponse.json({
     ok: true,
-    pointsAwarded,
+    pointsAwarded: points,
+    alreadyCheckedIn: points === 0,
     stationName: station.name,
-    distanceToPaseo,
-    inGeofence,
-    geofenceRadius: geo.radius,
-    message: distanceToPaseo !== null
-      ? `¡Bienvenido a ${station.name}! (${inGeofence ? 'Dentro del perímetro ✓' : 'Aviso de proximidad'}: ${distanceToPaseo}m). Sumaste +${pointsAwarded} pts.`
-      : `¡Bienvenido a ${station.name}! Sumaste +${pointsAwarded} pts en tu recorrido.`,
+    message,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Mapa de calor (solo administración)
+// ---------------------------------------------------------------------------
+type ScanRow = { actor_id: string | null; detail: Record<string, unknown>; created_at: string };
+
+async function heatmap(req: NextRequest) {
+  const admin = await requireUser(req, ['admin']);
+  const client = db();
+
+  if (req.method === 'GET') {
+    const daysParam = Number(new URL(req.url).searchParams.get('dias') || 7);
+    const days = Number.isFinite(daysParam) ? Math.max(1, Math.min(90, Math.round(daysParam))) : 7;
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+    const rows = (checked(
+      await client
+        .from('paseo_audit')
+        .select('actor_id,detail,created_at')
+        .eq('action', 'telemetry_scan')
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(10000),
+    ) || []) as ScanRow[];
+
+    const empty = () => ({ manana: 0, mediodia: 0, tarde: 0, noche: 0 });
+    const stats = new Map<
+      string,
+      { total: number; real: number; demo: number; buckets: Record<TimeBucket, number>; visitors: Set<string> }
+    >();
+    for (const s of STATIONS)
+      stats.set(s.code, { total: 0, real: 0, demo: 0, buckets: empty(), visitors: new Set() });
+
+    // Recorridos: entrada -> salida del mismo piso, mismo usuario, mismo día
+    const journeys = new Map<string, { entered: boolean; exited: boolean }>();
+    let real = 0;
+    let demo = 0;
+    for (const row of rows) {
+      const station = findStation(String(row.detail?.station_code || row.detail?.totem_code || ''));
+      if (!station) continue;
+      const st = stats.get(station.code)!;
+      const isDemo = Boolean(row.detail?.demo);
+      st.total += 1;
+      if (isDemo) {
+        st.demo += 1;
+        demo += 1;
+      } else {
+        st.real += 1;
+        real += 1;
+      }
+      st.buckets[bucketFor(laPazHour(row.created_at))] += 1;
+      if (row.actor_id) st.visitors.add(row.actor_id);
+      const day = row.created_at.slice(0, 10);
+      const key = `${row.actor_id}|${station.floorId}|${day}`;
+      const j = journeys.get(key) || { entered: false, exited: false };
+      if (station.kind === 'salida') j.exited = true;
+      else j.entered = true;
+      journeys.set(key, j);
+    }
+
+    const floors = FLOORS.map((f) => {
+      const floorJourneys = [...journeys.entries()].filter(([k]) => k.split('|')[1] === f.id);
+      const started = floorJourneys.filter(([, j]) => j.entered).length;
+      const completed = floorJourneys.filter(([, j]) => j.entered && j.exited).length;
+      const visitors = new Set(
+        STATIONS.filter((s) => s.floorId === f.id).flatMap((s) => [...stats.get(s.code)!.visitors]),
+      );
+      return { id: f.id, label: f.label, started, completed, visitors: visitors.size };
+    });
+
+    return NextResponse.json({
+      days,
+      totals: { scans: real + demo, real, demo },
+      floors,
+      stations: STATIONS.map((s) => {
+        const st = stats.get(s.code)!;
+        return {
+          ...s,
+          total: st.total,
+          real: st.real,
+          demo: st.demo,
+          buckets: st.buckets,
+          visitors: st.visitors.size,
+        };
+      }),
+      recent: rows.slice(0, 25).map((r) => ({
+        created_at: r.created_at,
+        station_code: r.detail?.station_code || r.detail?.totem_code,
+        user_name: r.detail?.user_name,
+        points_granted: r.detail?.points_granted,
+        demo: Boolean(r.detail?.demo),
+      })),
+    });
+  }
+
+  if (req.method === 'POST') {
+    const data = await body(req);
+    if (data.accion === 'limpiar') {
+      checked(
+        await client.from('paseo_audit').delete().eq('action', 'telemetry_scan').eq('detail->>demo', 'true'),
+      );
+      return NextResponse.json({ ok: true, message: 'Datos de prueba eliminados.' });
+    }
+    if (data.accion === 'demo') {
+      const existing = await client
+        .from('paseo_audit')
+        .select('id', { count: 'exact', head: true })
+        .eq('action', 'telemetry_scan')
+        .eq('detail->>demo', 'true');
+      if ((existing.count || 0) > 6000)
+        throw new ApiError(400, 'Ya hay suficientes datos de prueba. Límpialos antes de generar más.');
+
+      const people = (checked(
+        await client.from('paseo_users').select('id,name').eq('role', 'cliente').like('email', '%@paseo.example'),
+      ) || []) as Array<{ id: string; name: string }>;
+      if (!people.length) throw new ApiError(400, 'No hay cuentas cliente de prueba (@paseo.example).');
+
+      const rows = buildDemoJourneys(people, 7);
+      for (let i = 0; i < rows.length; i += 500) {
+        checked(await client.from('paseo_audit').insert(rows.slice(i, i + 500)));
+      }
+      checked(
+        await client.from('paseo_audit').insert({
+          actor_id: admin.id,
+          action: 'mapa_calor_demo',
+          entity: 'heat_telemetry',
+          detail: { generados: rows.length },
+        }),
+      );
+      return NextResponse.json({ ok: true, created: rows.length, message: `Se generaron ${rows.length} escaneos de prueba.` });
+    }
+  }
+  throw new ApiError(400, 'Acción no disponible.');
+}
+
+/** Genera recorridos verosímiles: horas pico, puerta de ingreso, pisos según la hora. */
+function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: number) {
+  const pick = <T,>(items: Array<[T, number]>): T => {
+    const total = items.reduce((n, [, w]) => n + w, 0);
+    let r = Math.random() * total;
+    for (const [v, w] of items) {
+      r -= w;
+      if (r <= 0) return v;
+    }
+    return items[items.length - 1][0];
+  };
+  const byCode = (code: string) => STATIONS.find((s) => s.code === code)!;
+  const rows: Array<Record<string, unknown>> = [];
+  const scan = (personIdx: number, code: string, at: Date) => {
+    const s = byCode(code);
+    const p = people[personIdx % people.length];
+    rows.push({
+      actor_id: p.id,
+      action: 'telemetry_scan',
+      entity: 'heat_telemetry',
+      created_at: at.toISOString(),
+      detail: {
+        demo: true,
+        station_code: s.code,
+        totem_code: s.code,
+        totem_name: s.name,
+        kind: s.kind,
+        floor_id: s.floorId,
+        floor: s.floorLabel,
+        x: s.x,
+        y: s.y,
+        z: s.z,
+        points_granted: 0,
+        type: 'totem_scan',
+        user_name: p.name,
+      },
+    });
+  };
+
+  for (let d = 0; d < days; d++) {
+    const weekend = [0, 6].includes(new Date(Date.now() - d * 86400000).getDay());
+    const visits = Math.round((weekend ? 70 : 45) * (0.85 + Math.random() * 0.3));
+    for (let v = 0; v < visits; v++) {
+      const hour = pick<number>([
+        [10, 3], [11, 4], [12, 8], [13, 10], [14, 6], [15, 4], [16, 5], [17, 7], [18, 8], [19, 10], [20, 9], [21, 5],
+      ]);
+      const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(
+        new Date(Date.now() - d * 86400000),
+      );
+      let t = new Date(`${day}T${String(hour).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:00-04:00`);
+      if (t.getTime() > Date.now()) continue;
+      const person = Math.floor(Math.random() * 1000);
+      const byCar = Math.random() < 0.25;
+      const later = (min: number, max: number) => {
+        t = new Date(t.getTime() + (min + Math.random() * (max - min)) * 60000);
+        return t;
+      };
+
+      if (byCar) scan(person, 'PASEO-S1-ENTRADA', t);
+      scan(person, Math.random() < (byCar ? 0.5 : 0.7) ? 'PASEO-INGRESO-AMERICA' : 'PASEO-INGRESO-DALENCE', byCar ? later(2, 5) : t);
+
+      const night = hour >= 19;
+      const lunch = hour >= 12 && hour < 15;
+      const floorChance: Array<[string, number]> = [
+        ['P1', night ? 0.35 : 0.6],
+        ['P2', night ? 0.2 : 0.4],
+        ['P3', night || lunch ? 0.75 : 0.3],
+      ];
+      for (const [short, chance] of floorChance) {
+        if (Math.random() > chance) continue;
+        scan(person, `PASEO-${short}-ENTRADA`, later(3, 8));
+        if (Math.random() < 0.7) scan(person, `PASEO-${short}-SALIDA`, later(short === 'P3' ? 30 : 10, short === 'P3' ? 75 : 35));
+      }
+      if (Math.random() < 0.6) scan(person, 'PASEO-PB-SALIDA', later(5, 20));
+      if (byCar && Math.random() < 0.8) scan(person, 'PASEO-S1-SALIDA', later(2, 6));
+    }
+  }
+  return rows.filter((r) => new Date(String(r.created_at)).getTime() <= Date.now());
 }
 
 async function purchase(req: NextRequest) {
@@ -1111,6 +1308,7 @@ export async function handle(req: NextRequest, path: string[]) {
     else if (resource === 'pedidos') response = await orders(req);
     else if (resource === 'puntos') response = await points(req);
     else if (resource === 'checkin' && req.method === 'POST') response = await checkin(req);
+    else if (resource === 'mapa-calor') response = await heatmap(req);
     else if (resource === 'scanner' && req.method === 'POST') response = await scanner(req);
     else if (resource === 'compras' && req.method === 'POST') response = await purchase(req);
     else if (resource === 'gestion' && child) response = await manage(req, child);

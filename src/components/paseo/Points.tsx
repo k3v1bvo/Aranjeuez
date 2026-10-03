@@ -7,6 +7,7 @@ import { dateTime, levelFor } from '@/lib/paseo/model';
 import { api, useResource, useSession } from './Providers';
 import { Empty, ErrorState, Loading, Modal, PageTitle } from './UI';
 import { Code } from './Code';
+import { findStation, PENDING_QR_KEY } from '@/lib/paseo/stations';
 interface PointsData {
   user: User;
   movements: Movement[];
@@ -78,7 +79,7 @@ function TotemCameraReader({
           (value) => {
             if (!delivered && !stopped) {
               delivered = true;
-              receive.current(value, coords);
+              const st = findStation(value); receive.current(st ? st.code : value, coords);
             }
           },
           () => {},
@@ -139,6 +140,16 @@ export function Points() {
   
   const [camera, setCamera] = useState(false);
   const [checkinBusy, setCheckinBusy] = useState(false);
+  // Reclamar QR pendiente si venía de un escaneo con cámara antes de loguearse
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem(PENDING_QR_KEY);
+      if (pending) {
+        localStorage.removeItem(PENDING_QR_KEY);
+        handleEntranceCheckIn(pending);
+      }
+    } catch {}
+  }, []);
     async function handleEntranceCheckIn(customCode?: string, userCoords?: { lat: number; lng: number } | null) {
     setCheckinBusy(true);
     try {
@@ -200,6 +211,30 @@ export function Points() {
         description="Compra, acumula y disfruta más del Paseo."
       />
       {error && <ErrorState message={error} retry={reload} />}
+      
+      {/* Banner de Mapeo Peatonal y Puntos por Recorrido */}
+      <div className="mb-6 p-5 rounded-3xl bg-gradient-to-r from-[#061734] via-[#0b2554] to-[#061734] border border-[#FF6B1A]/40 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-xl bg-[#FF6B1A]/20 text-[#FF6B1A]">
+              <QrCode size={18} />
+            </span>
+            <h3 className="text-sm sm:text-base font-bold text-white">
+              ¡Gana puntos al recorrer cada nivel del Paseo!
+            </h3>
+          </div>
+          <p className="text-xs text-white/70 max-w-2xl leading-relaxed">
+            Escanea los códigos QR ubicados al inicio (+1 pt) y salida (+2 pts) de cada nivel, o en los accesos principales (+5 pts). No necesitas comprar para sumar puntos y ayudarnos a mapear el tráfico del edificio.
+          </p>
+        </div>
+        <button
+          onClick={() => setCamera(true)}
+          className="button flex items-center justify-center gap-2 py-3 px-5 rounded-2xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-xs shadow-lg hover:opacity-95 transition-all shrink-0"
+        >
+          <Camera size={16} /> Abrir Cámara para Escanear
+        </button>
+      </div>
+
       <div className="points-hero">
         <div>
           <span className="tag">

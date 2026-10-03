@@ -4,8 +4,11 @@ import React, { useState } from 'react';
 import { 
   Flame, Layers, MapPin, Users, Clock, Compass, 
   TrendingUp, Eye, Sparkles, Navigation, X, Store, CheckCircle,
-  ShieldAlert, PhoneCall, Info
+  ShieldAlert, PhoneCall, Info, DoorOpen, LogOut, RefreshCw, Trash2, Database
 } from 'lucide-react';
+import { api, useResource } from './Providers';
+import { STATIONS, FLOORS, type Station } from '@/lib/paseo/stations';
+import { toast } from 'sonner';
 import { ScrollReveal } from './ScrollReveal';
 
 export type FloorId = 'piso-pb' | 'subsuelo' | 'piso-1' | 'piso-2' | 'piso-3';
@@ -161,6 +164,49 @@ export function PaseoHeatmap() {
   const [viewMode, setViewMode] = useState<'heatmap' | 'directory'>('heatmap');
   const [timeOfDay, setTimeOfDay] = useState<'mediodia' | 'tarde' | 'noche'>('noche');
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+  const [showQrStations, setShowQrStations] = useState(true);
+  const [actionBusy, setActionBusy] = useState(false);
+
+  // Consultar telemetría real y simulada agregada desde la API
+  const { data: telemetry, loading: telemetryLoading, reload: reloadTelemetry } = useResource<{
+    days: number;
+    totals: { scans: number; real: number; demo: number };
+    floors: Array<{ id: FloorId; label: string; started: number; completed: number; visitors: number }>;
+    stations: Array<Station & { total: number; real: number; demo: number; buckets: Record<string, number>; visitors: number }>;
+  }>('mapa-calor?dias=7', 20000);
+
+  const handleGenerateDemo = async () => {
+    setActionBusy(true);
+    try {
+      const res = await api<{ ok: boolean; message: string }>('mapa-calor', {
+        method: 'POST',
+        body: JSON.stringify({ accion: 'demo' }),
+      });
+      toast.success(res.message || 'Datos de prueba generados con éxito.');
+      reloadTelemetry();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo generar datos.');
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const handleClearDemo = async () => {
+    if (!confirm('¿Deseas limpiar todos los escaneos de prueba?')) return;
+    setActionBusy(true);
+    try {
+      const res = await api<{ ok: boolean; message: string }>('mapa-calor', {
+        method: 'POST',
+        body: JSON.stringify({ accion: 'limpiar' }),
+      });
+      toast.success(res.message || 'Datos de prueba eliminados.');
+      reloadTelemetry();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error al limpiar datos.');
+    } finally {
+      setActionBusy(false);
+    }
+  };
 
   const currentData = FLOOR_DATA[activeFloor];
 
@@ -215,6 +261,70 @@ export function PaseoHeatmap() {
             </div>
           </div>
         </ScrollReveal>
+
+        {/* Barra de Control de Telemetría y Simulación Coherente */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-[#061734] via-[#081e42] to-[#061734] border border-white/10 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-xl bg-[#FF6B1A]/20 text-[#FF6B1A]">
+                <Database size={16} />
+              </span>
+              <div>
+                <span className="text-xs font-bold text-white block">
+                  Telemetría Espacial Coherente
+                </span>
+                <span className="text-[11px] text-white/50">
+                  {telemetry?.totals ? (
+                    <>
+                      <strong className="text-white">{telemetry.totals.scans}</strong> escaneos analizados (
+                      <span className="text-emerald-400 font-semibold">{telemetry.totals.real} reales</span> ·{' '}
+                      <span className="text-amber-300 font-semibold">{telemetry.totals.demo} de prueba</span>)
+                    </>
+                  ) : (
+                    'Cargando registros de telemetría...'
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowQrStations(!showQrStations)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                showQrStations 
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' 
+                  : 'bg-white/5 text-white/50 border-white/10 hover:text-white'
+              }`}
+            >
+              {showQrStations ? '✓ Mostrando QRs Inicio/Salida' : '+ Ver QRs en Plano'}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleGenerateDemo}
+              disabled={actionBusy}
+              className="py-1.5 px-3 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50"
+              title="Genera recorridos simulados con horas pico y distribución realista de pisos"
+            >
+              <Sparkles size={13} /> ⚡ Generar Datos de Prueba (7 días)
+            </button>
+            <button
+              onClick={handleClearDemo}
+              disabled={actionBusy}
+              className="py-1.5 px-3 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-red-300 border border-red-500/30 flex items-center gap-1.5 transition-all disabled:opacity-50"
+              title="Borra escaneos simulados de prueba"
+            >
+              <Trash2 size={13} /> Limpiar Pruebas
+            </button>
+            <button
+              onClick={() => reloadTelemetry()}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
+              title="Actualizar datos"
+            >
+              <RefreshCw size={13} />
+            </button>
+          </div>
+        </div>
 
         {/* Barra de Filtros: Selección de Nivel y Horario */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#061734]/80 border border-white/10 mb-6 backdrop-blur-md">
