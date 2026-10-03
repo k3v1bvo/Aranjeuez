@@ -1,13 +1,20 @@
 ﻿import type { Metadata } from "next";
-import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Montserrat, Inter, JetBrains_Mono } from 'next/font/google';
 import "./globals.css";
 import { ClientProviders } from "@/components/ClientProviders";
 
-const spaceGrotesk = Space_Grotesk({
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800', '900'],
+  variable: '--font-montserrat',
+});
+
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-sans',
+  variable: '--font-inter',
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -18,12 +25,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Paseo Aranjuez • Ecosistema Digital",
-  description: "Plataforma digital integrada de Paseo Aranjuez Cochabamba: Marketplace PaseoYa con retiros rápidos por QR, Club de Puntos y Asistente Virtual IA.",
-  keywords: ["Paseo Aranjuez", "Cochabamba", "Bolivia", "Marketplace", "Paseo Points", "PaseoYa", "Centro Comercial"],
+  title: "Paseo Aranjuez — Modernidad Andina & Ecosistema Digital",
+  description: "Plataforma digital unificada de Paseo Aranjuez (Cochabamba, Bolivia). Click & Collect (PaseoYa), Jarvis IA y Fidelización con Paseo Points.",
+  keywords: ["Paseo Aranjuez", "Cochabamba", "Bolivia", "Marketplace", "Jarvis IA", "Paseo Points", "Centro Comercial"],
   openGraph: {
-    title: "Paseo Aranjuez • Ecosistema Digital",
-    description: "Compra, acumula puntos y accede a un asistente inteligente en Paseo Aranjuez.",
+    title: "Paseo Aranjuez — Modernidad Andina",
+    description: "Ecosistema digital premium con alma cochabambina. PaseoYa, Jarvis IA y Paseo Points.",
     locale: "es_BO",
     type: "website",
   },
@@ -35,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased" style={{ background: "#0b0a16", color: "#f3f4f6" }}>
+    <html lang="es" data-scroll-behavior="smooth" className={`${montserrat.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased" style={{ background: "#030B1A", color: "#FFFFFF" }}>
         <ClientProviders>
           {children}
         </ClientProviders>

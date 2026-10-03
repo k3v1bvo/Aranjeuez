@@ -6,7 +6,7 @@ export function FloatingJarvisWidget() {
   const pathname = usePathname()
 
   // Hide on jarvis page itself
-  if (pathname === "/jarvis") return null
+  if (pathname === "/jarvis" || pathname === "/") return null
 
   return (
     <aside aria-label="Asistente Virtual" style={{
