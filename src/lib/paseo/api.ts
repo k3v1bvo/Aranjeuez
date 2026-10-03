@@ -21,7 +21,7 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
-import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail } from './email';
+import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail } from './email';
 
 const ORDER_FIELDS =
   '*,store:paseo_stores(id,name,floor,sector,local_num,schedule,reference),user:paseo_users(id,name,email),items:paseo_order_items(*)';
@@ -80,34 +80,133 @@ export async function catalog(): Promise<Catalog> {
   } as Catalog;
 }
 async function auth(req: NextRequest) {
-  if (req.method === 'GET')
-    return NextResponse.json({ user: await session(req.cookies.get('paseo_token')?.value) });
   const data = await body(req);
-  if (data.action === 'logout') {
-    const response = NextResponse.json({ success: true });
-    response.cookies.set('paseo_token', '', { path: '/', maxAge: 0 });
-    return response;
+
+  // 1. Recuperación de contraseña olvidada
+  if (data.action === 'forgot_password') {
+    rateLimit('forgot:' + (req.headers.get('x-forwarded-for') || 'local'), 10);
+    const email = string(data.email, 'Correo', 3, 254).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new ApiError(400, 'Introduce un correo electrónico válido.');
+    }
+
+    const record = checked(
+      await db()
+        .from('paseo_users')
+        .select('id,email,name,is_active')
+        .eq('email', email)
+        .maybeSingle(),
+    );
+
+    if (record && record.is_active) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+      let randomPart = '';
+      for (let i = 0; i < 6; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const tempPassword = `Aranjuez-${randomPart}`;
+      const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+      checked(
+        await db()
+          .from('paseo_users')
+          .update({ password: hashedPassword })
+          .eq('id', record.id),
+      );
+
+      void sendPaseoPasswordRecoveryEmail({
+        to: record.email,
+        name: record.name,
+        tempPassword,
+      });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: 'Si el correo está registrado, recibirás un mensaje con tu nueva contraseña temporal.',
+    });
   }
-  if (data.action === 'google') {
+
+  // 2. Cambio de contraseña desde el perfil
+  if (data.action === 'change_password') {
+    const user = await requireUser(req);
+    const currentPass = passwordValue(data.currentPassword);
+    const newPass = passwordValue(data.newPassword);
+    if (newPass.length < 8) {
+      throw new ApiError(400, 'La nueva contraseña debe tener al menos 8 caracteres.');
+    }
+
+    const record = checked(
+      await db()
+        .from('paseo_users')
+        .select('password')
+        .eq('id', user.id)
+        .single(),
+    );
+    const valid = await bcrypt.compare(currentPass, record?.password || '');
+    if (!valid) {
+      throw new ApiError(401, 'La contraseña actual no es correcta.');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPass, 12);
+    checked(
+      await db()
+        .from('paseo_users')
+        .update({ password: hashedPassword })
+        .eq('id', user.id),
+    );
+    return NextResponse.json({
+      ok: true,
+      message: 'Tu contraseña ha sido actualizada con éxito.',
+    });
+  }
+
+  // 3. Edición de datos del perfil
+  if (data.action === 'update_profile') {
+    const user = await requireUser(req);
+    const name = string(data.name, 'Nombre', 2, 80);
+    const phone = data.phone ? string(data.phone, 'Celular', 5, 25) : null;
+    const birthday = data.birthday ? string(data.birthday, 'Fecha de nacimiento', 10, 10) : null;
+
+    checked(
+      await db()
+        .from('paseo_users')
+        .update({ name, phone, birthday })
+        .eq('id', user.id),
+    );
+
+    const updated = checked(
+      await db().from('paseo_users').select(USER_FIELDS).eq('id', user.id).single(),
+    ) as User;
+    return signedResponse(updated);
+  }
+
+  // 4. Inicio de sesión con Google OAuth
+  if (data.action === 'google' || (data.provider === 'google' && data.accessToken)) {
     rateLimit('auth-google:' + (req.headers.get('x-forwarded-for') || 'local'), 20);
     const token = string(data.accessToken, 'Token de Google', 20, 4000);
     const { data: verified, error: verifyError } = await db().auth.getUser(token);
     const googleUser = verified?.user;
-    if (verifyError || !googleUser?.email)
+    if (verifyError || !googleUser?.email) {
       throw new ApiError(401, 'No pudimos verificar tu cuenta de Google. Intenta nuevamente.');
+    }
+
     const email = googleUser.email.toLowerCase();
     const meta = (googleUser.user_metadata || {}) as Record<string, unknown>;
     const rawName = String(meta.full_name || meta.name || email.split('@')[0]).trim();
     const name = rawName.length >= 2 ? rawName.slice(0, 80) : 'Cliente Paseo';
+
     const existing = checked(
       await db().from('paseo_users').select(USER_FIELDS).eq('email', email).maybeSingle(),
     ) as User | null;
+
     if (existing) {
-      if (!existing.is_active)
+      if (!existing.is_active) {
         throw new ApiError(403, 'Tu cuenta está inactiva. Contacta a administración.');
+      }
       return signedResponse(existing);
     }
-    // Contraseña aleatoria imposible de adivinar: la cuenta solo entra por Google
+
     const randomSecret = randomUUID() + randomUUID();
     const id = checked(
       await db().rpc('paseo_register', {
@@ -124,14 +223,16 @@ async function auth(req: NextRequest) {
     void sendPaseoWelcomeEmail(created.email, created.name, created.points);
     return signedResponse(created);
   }
+
+  // 5. Registro o Login convencional con email y password
   rateLimit('auth:' + (req.headers.get('x-forwarded-for') || 'local'), 15);
   const email = string(data.email, 'Correo', 3, 254).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     throw new ApiError(400, 'Introduce un correo válido.');
   const password = passwordValue(data.password);
+
   if (data.action === 'register') {
-    if (data.role && data.role !== 'cliente')
-      throw new ApiError(403, 'El registro público es solo para clientes.');
+    const isMerchant = data.accountType === 'comercio' || Boolean(data.storeName);
     const name = string(data.name, 'Nombre', 2, 80);
     const phone = data.phone ? string(data.phone, 'Celular', 5, 25) : null;
     const birthday = data.birthday ? string(data.birthday, 'Fecha de nacimiento', 10, 10) : null;
@@ -144,6 +245,7 @@ async function auth(req: NextRequest) {
       throw new ApiError(400, 'Fecha de nacimiento inválida.');
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)
       throw new ApiError(503, 'Falta configurar el secreto de sesión.');
+
     const id = checked(
       await db().rpc('paseo_register', {
         p_email: email,
@@ -153,11 +255,41 @@ async function auth(req: NextRequest) {
         p_birthday: birthday,
       }),
     );
+
+    if (isMerchant) {
+      checked(
+        await db()
+          .from('paseo_users')
+          .update({ role: 'comercio' })
+          .eq('id', id),
+      );
+
+      const storeName = string(data.storeName || `${name} Store`, 'Nombre del comercio', 2, 100);
+      const storeCategory = string(data.storeCategory || 'Comercio General', 'Categoría', 2, 50);
+      const storeFloor = string(data.storeFloor || 'Piso 1', 'Piso', 1, 50);
+      const storeLocal = string(data.storeLocal || 'Por asignar', 'Local', 1, 50);
+      const storeDescription = string(data.storeDescription || '', 'Descripción', 0, 500);
+
+      checked(
+        await db().from('paseo_stores').insert({
+          name: storeName,
+          category: storeCategory,
+          floor: storeFloor,
+          local_num: storeLocal,
+          phone: phone,
+          description: storeDescription,
+          owner_id: id,
+          is_active: true,
+        }),
+      );
+    }
+
     const user = checked(
       await db().from('paseo_users').select(USER_FIELDS).eq('id', id).single(),
     ) as User;
     return signedResponse(user);
   }
+
   if (data.action !== 'login') throw new ApiError(400, 'Acción de autenticación no disponible.');
   const record = checked(
     await db()

@@ -346,3 +346,76 @@ export async function sendPaseoOrderStatusEmail(opts: {
     return null;
   }
 }
+
+
+// 5. Recuperación de Contraseña Temporal
+export async function sendPaseoPasswordRecoveryEmail(opts: {
+  to: string;
+  name: string;
+  tempPassword: string;
+}) {
+  try {
+    const transporter = getTransporter();
+    const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #030B1A; color: #FFFFFF; margin: 0; padding: 24px; }
+        .container { max-width: 580px; margin: 0 auto; background: #061734; border: 1px solid rgba(255, 107, 26, 0.4); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #061734 0%, #162447 100%); padding: 32px 24px; text-align: center; border-bottom: 2px solid #FF6B1A; }
+        .title { font-size: 24px; font-weight: 900; color: #FFFFFF; margin: 0; letter-spacing: 1px; }
+        .subtitle { font-size: 13px; color: #D4A24C; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px; }
+        .body { padding: 32px 24px; line-height: 1.6; color: #E2E8F0; }
+        .pass-box { background: rgba(255, 107, 26, 0.12); border: 2px dashed #FF6B1A; border-radius: 16px; padding: 22px; text-align: center; margin: 24px 0; }
+        .pass-val { font-size: 30px; font-weight: 900; color: #FF6B1A; margin: 6px 0; font-family: monospace; letter-spacing: 2px; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #B84D0B 0%, #FF6B1A 100%); color: #FFFFFF !important; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 14px; margin-top: 16px; text-align: center; }
+        .notice { font-size: 12px; color: #94A3B8; margin-top: 16px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border-left: 3px solid #D4A24C; }
+        .footer { padding: 20px; text-align: center; font-size: 11px; color: #94A3B8; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 class="title">PASEO ARANJUEZ</h1>
+          <div class="subtitle">Recuperación de Contraseña</div>
+        </div>
+        <div class="body">
+          <p>Hola <strong>${opts.name}</strong>,</p>
+          <p>Recibimos una solicitud para restablecer tu contraseña en la plataforma digital de <strong>Paseo Aranjuez</strong>.</p>
+          <p>Hemos generado una nueva contraseña temporal de acceso seguro para tu cuenta:</p>
+          
+          <div class="pass-box">
+            <div style="font-size: 11px; color: #D4A24C; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Tu Contraseña Temporal</div>
+            <div class="pass-val">${opts.tempPassword}</div>
+            <div style="font-size: 12px; color: #CBD5E1;">Válida para iniciar sesión de inmediato</div>
+          </div>
+
+          <center>
+            <a href="${APP_URL}/auth/login" class="btn">Ingresar a Mi Cuenta</a>
+          </center>
+
+          <div class="notice">
+            <strong>Recomendación de seguridad:</strong> Al ingresar, puedes dirigirte a tu <em>Perfil</em> para cambiar esta contraseña temporal por la que prefieras, o continuar usándola si así lo deseas.
+          </div>
+        </div>
+        <div class="footer">
+          © ${new Date().getFullYear()} Paseo Aranjuez · Cochabamba, Bolivia. Si no solicitaste este cambio, puedes ignorar este mensaje.
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    return await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: opts.to,
+      subject: `🔑 Tu nueva contraseña de acceso a Paseo Aranjuez`,
+      html,
+    });
+  } catch (error: any) {
+    console.error("[Email Password Recovery Error]:", error?.message || error);
+    return null;
+  }
+}
