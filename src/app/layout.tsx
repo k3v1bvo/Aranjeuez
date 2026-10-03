@@ -4,6 +4,7 @@ import { Providers } from '@/components/paseo/Providers';
 import { Shell } from '@/components/paseo/Shell';
 
 export const metadata: Metadata = {
+  manifest: '/manifest.json',
   title: 'Paseo Aranjuez — Centro Comercial & Empresarial | Cochabamba',
   description:
     'Aquí se combinan los negocios, el placer y el entretenimiento de manera perfecta. Descubre tiendas oficiales, terrazas gourmet, PaseoYa Click & Collect y Paseo Points.',

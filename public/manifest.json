@@ -1,0 +1,26 @@
+﻿{
+  "name": "Paseo Aranjuez — Cochabamba",
+  "short_name": "Paseo Aranjuez",
+  "description": "Centro Comercial y Empresarial. PaseoYa Click & Collect, Asistente Jarvis y Paseo Points.",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#030B1A",
+  "theme_color": "#061734",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/aranjuez-official-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/aranjuez-logo-apple.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "business"]
+}
