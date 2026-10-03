@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { ArrowUpRight, Gift, Mail, ShieldCheck, Sparkles, UserRound, ArrowRight, Lock, Phone } from 'lucide-react';
+import { ArrowUpRight, Gift, Mail, ShieldCheck, Sparkles, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, useSession } from './Providers';
 import { getPublicDB } from '@/lib/paseo/supabase';
@@ -11,8 +11,6 @@ import type { User } from '@/lib/paseo/model';
 import { homeFor, levelFor } from '@/lib/paseo/model';
 import { ErrorState, Loading, PageTitle } from './UI';
 import { Code } from './Code';
-import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
-import { ChakanaIcon } from './ChakanaIcon';
 
 export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
@@ -42,37 +40,33 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       });
       if (oauthError) throw new Error(oauthError.message);
     } catch (err: any) {
-      setError(err?.message || 'Error al conectar con Google OAuth.');
-      toast.error('No se pudo iniciar sesión con Google.');
-    } finally {
+      setError(err?.message || 'Error al conectar con el servicio de Google.');
+      toast.error(err?.message || 'No se pudo iniciar con Google.');
       setBusy(false);
     }
   }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
     setBusy(true);
     setError('');
-    const form = new FormData(e.currentTarget);
-    const body: Record<string, unknown> = {
-      action: register ? 'register' : 'login',
-      email: String(form.get('email') || '').trim().toLowerCase(),
-      password: String(form.get('password') || ''),
-    };
-    if (register) {
-      body.name = String(form.get('name') || '').trim();
-      body.phone = String(form.get('phone') || '').trim() || null;
-      body.birthday = String(form.get('birthday') || '').trim() || null;
-      body.role = 'cliente';
-    }
     try {
-      const response = await api<{ user: User }>('auth', {
+      const { user } = await api<{ user: User }>('auth', {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          action: register ? 'register' : 'login',
+          ...Object.fromEntries(form),
+        }),
       });
-      setUser(response.user);
-      toast.success(register ? '¡Cuenta creada con éxito!' : '¡Bienvenido de vuelta!');
-      router.push(homeFor(response.user.role));
+      setUser(user);
+      toast.success(
+        register
+          ? `¡Bienvenido al Club, ${user.name}! +50 puntos asignados.`
+          : `¡Hola de nuevo, ${user.name}!`
+      );
+      router.push(homeFor(user.role));
+      router.refresh();
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'No pudimos iniciar sesión.';
       setError(msg);
@@ -83,36 +77,64 @@ export function AuthForm({ register = false }: { register?: boolean }) {
   }
 
   return (
-    <div className="py-12 sm:py-16 px-4 max-w-xl mx-auto">
-      <div className="rounded-3xl glass-andino border border-white/10 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
-        {/* Marca de agua Chakana dorada */}
-        <div className="absolute -top-12 -right-12 w-64 h-64 opacity-10 pointer-events-none text-[#D4A24C]">
-          <ChakanaIcon size={256} rotateOnHover={false} />
+    <div className="container auth-layout">
+      <section className="auth-story">
+        <span className="module-icon lavender">
+          <Sparkles size={28} />
+        </span>
+        <p className="eyebrow">Tu Paseo, más cerca</p>
+        <h1>
+          {register ? 'Hay mucho por descubrir. Y por ganar.' : 'Qué bueno tenerte de vuelta.'}
+        </h1>
+        <p>Una cuenta para tus compras, tus puntos y todos esos planes que empiezan en el Paseo.</p>
+        <div className="auth-benefit">
+          <ShoppingIcon />
+          <span>Compra online y retira en tu tienda con PaseoYa.</span>
         </div>
-
-        <div className="text-center mb-8 relative z-10">
-          <div className="flex justify-center mb-4">
-            <PaseoAranjuezLogo size="lg" showSubtitle={true} />
-          </div>
-          <span className="text-xs uppercase font-bold text-[#D4A24C] tracking-widest block mb-1">
-            {register ? 'Registro Oficial de Clientes' : 'Acceso Seguro a tu Cuenta'}
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black font-display text-white">
-            {register ? 'Crea tu Cuenta en el Paseo' : 'Iniciar Sesión'}
-          </h1>
-          <p className="text-xs text-white/60 mt-1 max-w-sm mx-auto">
-            {register
-              ? 'Acumula puntos en cada compra y retira tus pedidos sin filas.'
-              : 'Ingresa para ver tus compras, saldo de puntos y códigos de retiro.'}
-          </p>
+        <div className="auth-benefit">
+          <Gift size={20} />
+          <span>Suma puntos y canjea experiencias exclusivas.</span>
         </div>
+        <div className="auth-benefit">
+          <ShieldCheck size={20} />
+          <span>Historial de pedidos y compras siempre a mano.</span>
+        </div>
+      </section>
 
-        {/* Botón Google OAuth Oficial */}
+      <section className="form-card">
+        <p className="eyebrow">{register ? 'Súmate al Club' : 'Mi cuenta'}</p>
+        <h2>{register ? 'Crea tu cuenta' : 'Inicia sesión'}</h2>
+        <p className="muted">
+          {register
+            ? 'Completa tus datos y empieza a explorar.'
+            : 'Clientes, comercios y administración ingresan aquí.'}
+        </p>
+
+        {/* Botón Oficial Google OAuth */}
         <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={busy}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl bg-white hover:bg-white/95 text-gray-800 font-bold text-sm shadow-md transition-all mb-5 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+          className="google-btn"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            width: '100%',
+            padding: '12px 18px',
+            borderRadius: '12px',
+            backgroundColor: '#ffffff',
+            color: '#1f2937',
+            border: '1px solid rgba(255,255,255,0.2)',
+            fontWeight: 700,
+            fontSize: '14px',
+            cursor: busy ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            marginBottom: '16px',
+            marginTop: '8px',
+          }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path
@@ -135,187 +157,150 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           <span>{register ? 'Registrarse con Google' : 'Continuar con Google'}</span>
         </button>
 
-        <div className="flex items-center gap-3 my-5 text-xs text-white/40 uppercase tracking-wider">
-          <div className="flex-1 h-px bg-white/10" />
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            margin: '18px 0',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: '12px',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+          }}
+        >
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
           <span>O con correo electrónico</span>
-          <div className="flex-1 h-px bg-white/10" />
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
         </div>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} className="form-stack">
           {register && (
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1.5">
-                Nombre completo
-              </label>
+            <label>
+              Nombre completo
               <input
                 name="name"
-                type="text"
-                required
                 autoComplete="name"
-                placeholder="Ej. Mateo Quiroga"
-                className="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF6B1A]"
+                required
+                minLength={2}
+                maxLength={80}
+                placeholder="Tu nombre"
               />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-semibold text-white/80 mb-1.5">
-              Correo electrónico
             </label>
+          )}
+          <label>
+            Correo electrónico
             <input
-              name="email"
               type="email"
-              required
+              name="email"
               autoComplete="email"
-              placeholder="tu@correo.com"
-              className="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF6B1A]"
+              required
+              maxLength={254}
+              placeholder="tucorreo@ejemplo.com"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-white/80 mb-1.5">Contraseña</label>
+          </label>
+          <label>
+            Contraseña
             <input
               name="password"
               type="password"
+              autoComplete={register ? 'new-password' : 'current-password'}
               required
               minLength={8}
+              maxLength={72}
               placeholder="Mínimo 8 caracteres"
-              className="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF6B1A]"
             />
-          </div>
-
+          </label>
           {register && (
-            <div>
-              <label className="block text-xs font-semibold text-white/80 mb-1.5">
-                Celular <span className="text-white/40">(opcional)</span>
+            <>
+              <label>
+                Celular <span className="muted">(opcional)</span>
+                <input name="phone" autoComplete="tel" type="tel" maxLength={25} />
               </label>
-              <input
-                name="phone"
-                type="tel"
-                placeholder="+591 ..."
-                className="w-full bg-black/40 border border-white/15 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#FF6B1A]"
-              />
-            </div>
+              <label>
+                Fecha de nacimiento <span className="muted">(opcional)</span>
+                <input name="birthday" type="date" autoComplete="bday" />
+              </label>
+            </>
           )}
-
-          {error && <p className="text-xs text-red-400 py-1">{error}</p>}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-sm shadow-xl shadow-[#FF6B1A]/20 btn-primary-andino disabled:opacity-50"
-          >
-            {busy ? 'Procesando…' : register ? 'Crear mi Cuenta' : 'Ingresar'}
+          {error && (
+            <p className="inline-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button className="button full" disabled={busy}>
+            {busy ? 'Un momento…' : register ? 'Crear mi cuenta' : 'Ingresar'}{' '}
+            <ArrowUpRight size={17} />
           </button>
         </form>
 
-        <p className="text-xs text-white/60 text-center mt-6">
-          {register ? '¿Ya tienes una cuenta?' : '¿Aún no tienes cuenta?'}{' '}
-          <Link
-            href={register ? '/auth/login' : '/auth/registro'}
-            className="text-[#FF6B1A] font-bold hover:underline ml-1"
-          >
-            {register ? 'Inicia sesión aquí' : 'Regístrate gratis'}
+        <p className="auth-switch">
+          {register ? '¿Ya tienes cuenta?' : '¿Primera vez por aquí?'}{' '}
+          <Link href={register ? '/auth/login' : '/auth/registro'}>
+            {register ? 'Inicia sesión' : 'Regístrate'}
           </Link>
         </p>
-      </div>
+      </section>
     </div>
   );
 }
 
+function ShoppingIcon() {
+  return <UserRound size={20} />;
+}
+
 export function Profile() {
   const { user, loading, error, refresh } = useSession();
-
-  if (loading)
-    return (
-      <div className="py-24 text-center">
-        <Loading label="Cargando perfil…" />
-      </div>
-    );
-
-  if (error)
-    return (
-      <div className="py-24 px-4 max-w-4xl mx-auto">
-        <ErrorState message={error} retry={refresh} />
-      </div>
-    );
-
+  if (loading) return <Loading />;
+  if (error) return <ErrorState message={error} retry={refresh} />;
   if (!user)
     return (
-      <div className="py-24 px-4 max-w-md mx-auto text-center">
-        <h2 className="text-2xl font-bold text-white mb-4">Inicia sesión para ver tu perfil</h2>
-        <Link
-          className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-sm"
-          href="/auth/login"
-        >
+      <div className="container">
+        <PageTitle title="Tu cuenta del Paseo" />
+        <Link className="button" href="/auth/login">
           Iniciar sesión
         </Link>
       </div>
     );
-
   const level = levelFor(user.lifetime_points);
-
   return (
-    <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-      {/* Tarjeta de Membresía Digital */}
-      <div className="rounded-3xl glass-andino border-2 border-[#D4A24C]/40 p-8 sm:p-10 mb-8 shadow-2xl relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-64 h-64 opacity-15 pointer-events-none text-[#D4A24C]">
-          <ChakanaIcon size={256} rotateOnHover={false} />
+    <div className="container narrow">
+      <PageTitle
+        eyebrow="Club Paseo Aranjuez"
+        title="Tu tarjeta del Paseo"
+        description="Preséntala al comprar en un establecimiento participante para sumar puntos."
+      />
+      <section className="membership-card">
+        <div className="membership-head">
+          <span>PASEO · ARANJUEZ</span>
+          <span className="tag">{level.name}</span>
         </div>
-
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <h2>{user.name}</h2>
+        <p>
+          <Mail size={15} /> {user.email}
+        </p>
+        <Code type="user" token={user.qr_token} label="QR de membresía" />
+        <div className="membership-bottom">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full bg-[#D4A24C]/20 border border-[#D4A24C]/40 text-xs font-bold text-[#D4A24C] uppercase tracking-wider">
-                Membresía Paseo
-              </span>
-              <span className="px-3 py-1 rounded-full bg-white/10 text-xs text-white/80">
-                Nivel {level.name}
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white font-display">{user.name}</h1>
-            <p className="text-xs text-white/60 mt-0.5">{user.email}</p>
-
-            <div className="flex items-baseline gap-2 mt-4">
-              <span className="text-4xl font-black text-white font-mono">{user.points}</span>
-              <span className="text-sm font-bold text-[#D4A24C]">Paseo Points disponibles</span>
-            </div>
+            <strong>{user.points.toLocaleString('es-BO')}</strong>
+            <small>Puntos disponibles</small>
           </div>
-
-          <div className="bg-black/30 p-4 rounded-2xl border border-white/10 text-center">
-            <Code type="user" token={user.qr_token} label="QR de Membresía" />
+          <div>
+            <strong>{user.lifetime_points.toLocaleString('es-BO')}</strong>
+            <small>Puntos acumulados</small>
           </div>
         </div>
-      </div>
-
-      {/* Accesos Rápidos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <Link
-          href="/cliente/puntos"
-          className="rounded-3xl glass-andino border border-white/10 p-6 hover:border-[#FF6B1A]/40 transition-all shadow-lg flex items-center justify-between group"
-        >
-          <div>
-            <span className="text-xs uppercase font-bold text-[#D4A24C] block mb-1">Fidelidad</span>
-            <h3 className="text-xl font-bold text-white group-hover:text-[#FF6B1A] transition-colors">
-              Paseo Points & Beneficios
-            </h3>
-            <p className="text-xs text-white/60 mt-1">Canjea cafés, combos y descuentos.</p>
-          </div>
-          <ArrowRight className="w-5 h-5 text-[#FF6B1A] group-hover:translate-x-1 transition-transform" />
+      </section>
+      <div className="quick-grid">
+        <Link className="card" href="/cliente/puntos">
+          <Gift />
+          <h3>Mis beneficios</h3>
+          <p>Descubre qué puedes canjear.</p>
         </Link>
-
-        <Link
-          href="/cliente/pedidos"
-          className="rounded-3xl glass-andino border border-white/10 p-6 hover:border-[#FF6B1A]/40 transition-all shadow-lg flex items-center justify-between group"
-        >
-          <div>
-            <span className="text-xs uppercase font-bold text-[#FF6B1A] block mb-1">Click & Collect</span>
-            <h3 className="text-xl font-bold text-white group-hover:text-[#FF6B1A] transition-colors">
-              Mis Pedidos & Códigos
-            </h3>
-            <p className="text-xs text-white/60 mt-1">Revisa tus retiros activos en el mall.</p>
-          </div>
-          <ArrowRight className="w-5 h-5 text-[#FF6B1A] group-hover:translate-x-1 transition-transform" />
+        <Link className="card" href="/cliente/pedidos">
+          <ShieldCheck />
+          <h3>Mis pedidos</h3>
+          <p>Consulta tus próximos retiros.</p>
         </Link>
       </div>
     </div>
