@@ -1,5 +1,407 @@
 @import 'tailwindcss';
 
+/* =============================================
+   TIENDA TÁCTICA — Antigravity Design System
+   Glassmorphism · Spatial Depth · Premium Motion
+   Inspired by: antigravity-design-expert skill
+   ============================================= */
+
+@theme {
+  /* Surface Tokens */
+  --color-bg-primary: #050507;
+  --color-bg-secondary: #0D0D10;
+  --color-bg-tertiary: #141418;
+  --color-bg-card: #17171C;
+  --color-border: #22222A;
+  --color-border-strong: #35353E;
+
+  /* Typography Colors */
+  --color-text-primary: #F5F5F7;
+  --color-text-secondary: #A1A1AA;
+  --color-text-muted: #5E5E68;
+
+  /* Tactical Matte Gold Accent */
+  --color-accent: #C8A961;
+  --color-accent-hover: #DEC07A;
+  --color-accent-dim: rgba(200, 169, 97, 0.12);
+  --color-accent-glow: rgba(200, 169, 97, 0.25);
+
+  /* Status Colors */
+  --color-danger: #E5484D;
+  --color-success: #30A46C;
+  --color-warning: #F5A623;
+
+  /* Legacy aliases for compatibility */
+  --color-tactical-950: #050507;
+  --color-tactical-900: #0A0A0B;
+  --color-tactical-800: #141416;
+  --color-tactical-700: #1C1C1F;
+  --color-tactical-600: #26262A;
+  --color-tactical-500: #6B6B72;
+  --color-tactical-400: #A1A1AA;
+  --color-tactical-300: #D4D4D8;
+  --color-tactical-200: #E4E4E7;
+  --color-tactical-100: #F4F4F5;
+  --color-tactical-50: #F5F5F7;
+
+  --color-amber-accent: #C8A961;
+  --color-amber-glow: #D9BC78;
+  --color-green-tactical: #30A46C;
+  --color-green-dim: #183e2b;
+  --color-red-alert: #E5484D;
+  --color-red-dim: #4c1719;
+  --color-blue-ops: #3b82f6;
+
+  /* Glassmorphism */
+  --color-glass-border: rgba(255, 255, 255, 0.07);
+  --color-glass-bg: rgba(14, 14, 18, 0.82);
+  --color-glass-bg-light: rgba(255, 255, 255, 0.025);
+
+  /* Fonts */
+  --font-sans: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-montserrat: var(--font-montserrat), sans-serif;
+  --font-inter: var(--font-inter), sans-serif;
+
+  /* MODERNIDAD ANDINA — PASEO ARANJUEZ DESIGN SYSTEM */
+  --color-vesubio: #B84D0B;
+  --color-vesubio-glow: #FF6B1A;
+  --color-vesubio-light: #FF8F4D;
+  --color-negro-perla: #061734;
+  --color-negro-profundo: #030B1A;
+  --color-blanco-puro: #FFFFFF;
+  --color-verde-oliva: #7A8B5C;
+  --color-dorado-andino: #D4A24C;
+  --color-plata: #C0C7D1;
+  --color-bronce: #A9714B;
+  --color-platino: #8E9AAF;
+
+  /* Elevation shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.35);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.45);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 40px rgba(200, 169, 97, 0.15), 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-vesubio-glow: 0 8px 28px rgba(184, 77, 11, 0.45);
+}
+
+/* ============ MODERNIDAD ANDINA KEYFRAMES & UTILITIES ============ */
+@keyframes led-glow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.led-effect {
+  background: linear-gradient(90deg, #B84D0B, #FF6B1A, #D4A24C, #FF6B1A, #B84D0B);
+  background-size: 200% 200%;
+  animation: led-glow 4s ease infinite;
+}
+
+@keyframes pulse-qr {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(255, 107, 26, 0.4), 0 0 50px rgba(184, 77, 11, 0.2);
+    border-color: #FF6B1A;
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(255, 107, 26, 0.75), 0 0 90px rgba(212, 162, 76, 0.45);
+    border-color: #D4A24C;
+  }
+}
+
+.pulse-qr {
+  animation: pulse-qr 2.4s ease-in-out infinite;
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 35px rgba(255, 107, 26, 0.55));
+  }
+  50% {
+    transform: translateY(-8px) scale(1.04);
+    filter: drop-shadow(0 0 55px rgba(212, 162, 76, 0.75));
+  }
+}
+
+.float-orb {
+  animation: float-orb 3.5s ease-in-out infinite;
+}
+
+.glass-andino {
+  background: rgba(6, 23, 52, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 107, 26, 0.2);
+}
+
+.glass-andino-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-andino-hover:hover {
+  background: rgba(6, 23, 52, 0.94);
+  border-color: rgba(184, 77, 11, 0.45);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px -10px rgba(184, 77, 11, 0.4);
+}
+
+/* Micro-interacción: Botón con flecha que se mueve 3px */
+.btn-arrow-hover:hover .arrow-icon {
+  transform: translateX(3px);
+}
+.btn-arrow-left-hover:hover .arrow-left-icon {
+  transform: translateX(-3px);
+}
+.arrow-icon, .arrow-left-icon {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============ REGLA 2: HOVER EN CARDS ============ */
+.card-hover-product {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-product:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px -8px rgba(184, 77, 11, 0.4), 0 0 24px rgba(255, 107, 26, 0.15);
+  border-color: rgba(184, 77, 11, 0.45);
+}
+
+.card-hover-reward {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-reward:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(212, 162, 76, 0.22);
+  border-color: rgba(212, 162, 76, 0.4);
+}
+
+.card-hover-level {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), border-color 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-level:hover {
+  transform: translateY(-4px);
+  border-color: #D4A24C;
+}
+
+.card-hover-store {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover-store:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+/* ============ REGLA 3: HOVER EN BOTONES ============ */
+.btn-primary-andino {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms;
+}
+.btn-primary-andino:hover {
+  transform: scale(1.02) translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 107, 26, 0.45);
+}
+.btn-primary-andino:active {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+.btn-secondary-andino {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-secondary-andino:hover {
+  border-color: #FF6B1A;
+  color: #FF6B1A;
+  transform: translateY(-2px);
+}
+.btn-secondary-andino:active {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+.btn-ghost-andino {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-ghost-andino:hover {
+  background: rgba(184, 77, 11, 0.08);
+  color: #FF6B1A;
+}
+.btn-ghost-andino:active {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+.btn-icon-andino {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-icon-andino:hover {
+  transform: scale(1.1);
+}
+.btn-icon-andino:active {
+  transform: scale(0.95);
+  transition-duration: 100ms;
+}
+
+.btn-pill-andino {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-pill-andino:hover {
+  border-color: #B84D0B;
+  color: #FF6B1A;
+}
+
+/* ============ REGLA 5: QR SCANNER CORNERS ============ */
+@keyframes qr-corner-blink {
+  0%, 100% { opacity: 0.3; transform: scale(0.96); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+.qr-scanner-corner {
+  animation: qr-corner-blink 2000ms ease-in-out infinite;
+}
+
+/* ============ REGLA 17: INPUTS Y FLOATING LABELS ============ */
+.floating-input-group {
+  position: relative;
+}
+.floating-input {
+  width: 100%;
+  padding: 1rem 1rem 0.6rem 1rem;
+  background: rgba(3, 11, 26, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.85rem;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  transition: border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.floating-input:focus {
+  border-color: #B84D0B;
+  box-shadow: 0 0 0 3px rgba(184, 77, 11, 0.2);
+  outline: none;
+}
+.floating-label {
+  position: absolute;
+  left: 1rem;
+  top: 0.95rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
+  pointer-events: none;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), color 200ms cubic-bezier(0.4, 0, 0.2, 1), font-size 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: left top;
+}
+.floating-input:focus ~ .floating-label,
+.floating-input:not(:placeholder-shown) ~ .floating-label {
+  transform: translateY(-0.65rem) scale(0.8);
+  color: #FF8F4D;
+  font-weight: 600;
+}
+
+/* ============ REGLA 18: MICRO-INTERACCIONES ============ */
+/* Avatar con anillo de nivel rotando lentamente (10s) */
+@keyframes ring-rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.avatar-ring-rotating {
+  animation: ring-rotate-slow 10s linear infinite;
+}
+
+/* Badge de notificaciones pulsando cada 3s */
+@keyframes badge-pulse-3s {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.badge-pulse {
+  animation: badge-pulse-3s 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Punto En línea de Jarvis pulsando cada 2s */
+@keyframes dot-online-2s {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.25); }
+}
+.dot-online {
+  animation: dot-online-2s 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Corazón favorito animación 400ms */
+@keyframes heart-beat-anim {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.heart-active {
+  animation: heart-beat-anim 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  color: #EF4444 !important;
+  fill: #EF4444 !important;
+}
+
+/* Chips de sugerencias */
+.chip-suggestion {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms, background-color 200ms;
+}
+.chip-suggestion:hover {
+  transform: translateY(-2px);
+  border-color: #B84D0B;
+}
+
+/* Micro-interacción: Rebote del Carrito */
+@keyframes cart-bounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.3); }
+  65% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.cart-bounce-anim {
+  animation: cart-bounce 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Skeleton Shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Pulso de éxito para números */
+@keyframes number-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.pulse-number-done {
+  animation: number-pulse 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* REGLA 20: Scroll Suave Global con compensación de 80px */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+/* Respeto a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.bg-pattern-andino {
+  background-color: #030B1A;
+  background-image: 
+    radial-gradient(rgba(255, 107, 26, 0.09) 1px, transparent 1px),
+    radial-gradient(rgba(212, 162, 76, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+}
+
+/* ============ BASE STYLES ============ */
 :root {
   --paper: #faf9f6;
   --surface: #fff;

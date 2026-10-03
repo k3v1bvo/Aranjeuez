@@ -1,2 +1,5 @@
-import { Home } from '@/components/paseo/Catalog';
-export default Home;
+import { PaseoModernidadLanding } from '@/components/paseo/PaseoModernidadLanding';
+
+export default function HomePage() {
+  return <PaseoModernidadLanding />;
+}

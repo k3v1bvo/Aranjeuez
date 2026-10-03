@@ -26,6 +26,7 @@ export function Shell({ children, demo }: { children: React.ReactNode; demo: boo
   const { user, logout } = useSession();
   const cart = useCart();
   const pathname = usePathname();
+  if (pathname === '/') return <main id="main">{children}</main>;
   const active = (href: string) =>
     href === '/cliente'
       ? pathname === '/cliente' ||
