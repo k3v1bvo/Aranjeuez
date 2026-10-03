@@ -99,6 +99,8 @@ Anchos exigidos: 320, 480, 768, 1024 y 1440 px. Capturas locales y resultado de 
 - El rate limit es por instancia; no se presenta como una solución distribuida de detección de fraude.
 - Quitar Edge Functions del repositorio no despublica las que pudieran existir ya en Supabase.
 - La prueba de Vercel depende de que la integración Git y las variables del proyecto estén configuradas. El push no equivale por sí mismo a un despliegue exitoso.
+- La validación de origen reconoce los dominios de producción y despliegue suministrados por Vercel; la cookie usa Secure en Vercel. No se confía en cabeceras de dominio enviadas por el cliente.
+- La última comprobación de Jarvis completó las cuatro consultas reales: recomendación con presupuesto, promociones/eventos, ubicación/horario y establecimiento inexistente.
 
 ## 5. Resumen para presentación
 

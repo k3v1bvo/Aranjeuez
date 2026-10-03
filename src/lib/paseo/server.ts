@@ -81,7 +81,8 @@ export async function signedResponse(user: User) {
     httpOnly: true,
     secure:
       process.env.NODE_ENV === 'production' &&
-      process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') === true,
+      (process.env.VERCEL === '1' ||
+        process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') === true),
     sameSite: 'lax',
     path: '/',
     maxAge: 43200,
@@ -90,8 +91,14 @@ export async function signedResponse(user: User) {
 }
 export function checkMutation(req: NextRequest) {
   const origin = req.headers.get('origin');
-  const expected = new URL(process.env.NEXT_PUBLIC_APP_URL || req.url).origin;
-  if (origin && origin !== expected) throw new ApiError(403, 'Origen de solicitud no permitido.');
+  const allowed = new Set([new URL(process.env.NEXT_PUBLIC_APP_URL || req.url).origin]);
+  // Domains supplied by the hosting platform, never by client forwarding headers.
+  if (process.env.VERCEL === '1') {
+    for (const domain of [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]) {
+      if (domain) allowed.add(new URL(`https://${domain}`).origin);
+    }
+  }
+  if (origin && !allowed.has(origin)) throw new ApiError(403, 'Origen de solicitud no permitido.');
   if (!req.headers.get('content-type')?.includes('application/json'))
     throw new ApiError(415, 'Envía datos JSON.');
 }
