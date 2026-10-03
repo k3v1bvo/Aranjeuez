@@ -264,36 +264,58 @@ export function NavbarPaseo({
 
             {/* Usuario autenticado o botón Ingresar */}
             {user ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 {user.role === 'comercio' && (
                   <Link
-                    href="/comercio/perfil"
-                    className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FF6B1A]/20 border border-[#FF6B1A]/40 text-[#FF6B1A] hover:bg-[#FF6B1A]/30 transition-all mr-1"
-                    title="Mi Establecimiento"
+                    href="/comercio"
+                    className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FF6B1A]/20 border border-[#FF6B1A]/40 text-[#FF6B1A] hover:bg-[#FF6B1A]/30 transition-all shadow-sm"
+                    title="Panel Mi Tienda & Caja"
                   >
                     <Store className="w-3.5 h-3.5" />
                     <span>Mi Tienda</span>
                   </Link>
                 )}
+                {user.role === 'admin' && (
+                  <Link
+                    href="/admin/overview"
+                    className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#D4A24C]/20 border border-[#D4A24C]/40 text-[#D4A24C] hover:bg-[#D4A24C]/30 transition-all shadow-sm"
+                    title="Panel de Administración"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Panel Admin</span>
+                  </Link>
+                )}
+
+                {/* Chip con Identificación Visible del Usuario */}
                 <Link
                   href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin/overview' : '/cliente/perfil'}
-                  className="relative p-0.5 rounded-full group cursor-pointer"
-                  title={'Sesión de ' + user.name + ' (Nivel ' + user.level + ')'}
-                  aria-label="Mi Perfil"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 transition-all group max-w-[190px]"
+                  title={'Sesión activa de ' + user.name + ' (' + (user.role || 'cliente').toUpperCase() + ') - Clic para ver perfil'}
                 >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#B84D0B] via-[#D4A24C] to-[#FF6B1A] avatar-ring-rotating opacity-80 group-hover:opacity-100" />
-                  <div className="relative w-8 h-8 rounded-full bg-[#061734] border-2 border-white/20 flex items-center justify-center overflow-hidden">
-                    <User className="w-4 h-4 text-white/90 group-hover:text-[#FF6B1A] transition-colors" />
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#B84D0B] to-[#FF6B1A] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm border border-white/20">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="flex flex-col text-left overflow-hidden">
+                    <span className="text-xs font-bold text-white truncate group-hover:text-[#FF6B1A] transition-colors leading-tight">
+                      {user.name}
+                    </span>
+                    <span className="text-[10px] text-[#D4A24C] font-semibold leading-tight capitalize truncate">
+                      {user.role === 'admin' ? '👑 Admin' : user.role === 'comercio' ? '🏪 Comercio' : (user.points || 0) + ' pts'}
+                    </span>
                   </div>
                 </Link>
+
+                {/* Botón Cerrar Sesión Claro y Visible */}
                 {onLogout && (
                   <button
                     onClick={onLogout}
-                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-red-400 transition-colors"
-                    title="Cerrar sesión"
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-300 hover:text-red-200 text-xs font-bold transition-all shadow-sm"
+                    title="Cerrar sesión de Paseo Aranjuez"
                     aria-label="Cerrar sesión"
                   >
                     <LogOut className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Cerrar sesión</span>
+                    <span className="sm:hidden">Salir</span>
                   </button>
                 )}
               </div>
@@ -312,7 +334,65 @@ export function NavbarPaseo({
 
       {/* Menú Desplegable Mobile */}
       {isMobileMenuOpen && (
-        <div className="md:hidden sticky top-[65px] z-40 w-full backdrop-blur-2xl bg-[#061734]/95 border-b border-white/15 px-4 py-4 space-y-2 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden sticky top-[65px] z-40 w-full backdrop-blur-2xl bg-[#061734]/98 border-b border-white/15 px-4 py-4 space-y-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Tarjeta de Usuario Identificado en Mobile */}
+          {user ? (
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/15 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#B84D0B] to-[#FF6B1A] text-white flex items-center justify-center font-black text-sm shadow-md border border-white/20">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white leading-tight">{user.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-white/10 text-white/90 uppercase tracking-wide">
+                        {user.role === 'admin' ? '👑 Admin' : user.role === 'comercio' ? '🏪 Comercio' : 'Cliente'}
+                      </span>
+                      <span className="text-xs font-black text-[#D4A24C] font-mono">
+                        {(user.points || 0).toLocaleString()} pts
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Link
+                  href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin/overview' : '/cliente/perfil'}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-2.5 py-1 rounded-lg bg-[#FF6B1A]/20 border border-[#FF6B1A]/40 text-[#FF6B1A] text-xs font-bold hover:bg-[#FF6B1A]/30 transition-all"
+                >
+                  Perfil
+                </Link>
+              </div>
+
+              {onLogout && (
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onLogout();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-red-200 font-bold text-xs transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#B84D0B]/20 to-[#FF6B1A]/20 border border-[#FF6B1A]/30 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white">¿Tienes cuenta en Paseo?</p>
+                <p className="text-[11px] text-white/70">Ingresa para acumular puntos y retiros</p>
+              </div>
+              <Link
+                href="/auth/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="px-3.5 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white shadow-md hover:brightness-110 transition-all"
+              >
+                Ingresar
+              </Link>
+            </div>
+          )}
+
           <Link
             href="/"
             onClick={() => setIsMobileMenuOpen(false)}

@@ -81,7 +81,28 @@ export async function catalog(): Promise<Catalog> {
   } as Catalog;
 }
 async function auth(req: NextRequest) {
+  // 0. Consulta de sesión activa actual (GET /api/paseo/auth)
+  if (req.method === 'GET') {
+    const token = req.cookies.get('paseo_token')?.value;
+    const currentUser = await session(token);
+    return NextResponse.json({ user: currentUser });
+  }
+
   const data = await body(req);
+
+  // 0.1 Cierre de sesión (POST { action: 'logout' })
+  if (data.action === 'logout') {
+    const response = NextResponse.json({ ok: true, message: 'Sesión cerrada correctamente.' });
+    response.cookies.set('paseo_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    return response;
+  }
 
   // 1. Recuperación de contraseña olvidada
   if (data.action === 'forgot_password') {

@@ -17,7 +17,7 @@ import { Code } from './Code';
 
 export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
-  const { setUser } = useSession();
+  const { user, setUser, logout } = useSession();
   const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(register ? 'register' : 'login');
   const [accountType, setAccountType] = useState<'cliente' | 'comercio'>('cliente');
   const [busy, setBusy] = useState(false);
@@ -96,6 +96,74 @@ export function AuthForm({ register = false }: { register?: boolean }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (user) {
+    return (
+      <div className="container auth-layout" style={{ maxWidth: '520px', margin: '40px auto' }}>
+        <div className="form-card" style={{ padding: '36px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #B84D0B, #FF6B1A)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(255, 107, 26, 0.3)', border: '2px solid rgba(255,255,255,0.2)' }}>
+            {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <span className="tag" style={{ textTransform: 'uppercase', marginBottom: '8px', background: 'rgba(212, 162, 76, 0.2)', color: '#D4A24C', border: '1px solid rgba(212, 162, 76, 0.4)' }}>
+            Sesión Activa
+          </span>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginTop: '8px', marginBottom: '4px' }}>
+            {user.name}
+          </h2>
+          <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
+            {user.email}
+          </p>
+          <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.06)', padding: '6px 16px', borderRadius: '12px', marginBottom: '28px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#D4A24C' }}>
+              Rol: {user.role.toUpperCase()}
+            </span>
+            <span style={{ color: 'rgba(255,255,255,0.3)' }}>•</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#FF6B1A' }}>
+              {(user.points || 0).toLocaleString()} Puntos
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <Link
+              href={homeFor(user.role)}
+              className="button primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+            >
+              {user.role === 'admin'
+                ? 'Ir al Panel de Administración'
+                : user.role === 'comercio'
+                ? 'Ir al Panel de Mi Tienda & Caja'
+                : 'Ir al Catálogo & PaseoYa'}
+            </Link>
+
+            <Link
+              href="/cliente/perfil"
+              className="button light"
+              style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+            >
+              Ver Mi Perfil & Credencial QR
+            </Link>
+
+            <button
+              onClick={() => logout().catch((e) => toast.error(e.message))}
+              className="button"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '12px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#fca5a5',
+                cursor: 'pointer',
+              }}
+            >
+              Cerrar Sesión (Ingresar con otra cuenta)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
