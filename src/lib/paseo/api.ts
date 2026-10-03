@@ -20,6 +20,7 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
+import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail } from './email';
 
 const ORDER_FIELDS =
   '*,store:paseo_stores(id,name,floor,sector,local_num,schedule,reference),user:paseo_users(id,name,email),items:paseo_order_items(*)';
@@ -91,6 +92,61 @@ async function auth(req: NextRequest) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     throw new ApiError(400, 'Introduce un correo válido.');
   const password = passwordValue(data.password);
+  if (data.action === 'google') {
+    rateLimit('auth-google:' + (req.headers.get('x-forwarded-for') || 'local'), 30);
+    const email = string(data.email, 'Correo', 3, 254).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new ApiError(400, 'Introduce un correo válido.');
+    const name = string(data.name || email.split('@')[0], 'Nombre', 2, 80);
+    const avatar_url = typeof data.avatar_url === 'string' ? data.avatar_url : null;
+
+    let record = checked(
+      await db()
+        .from('paseo_users')
+        .select(USER_FIELDS)
+        .eq('email', email)
+        .maybeSingle(),
+    );
+
+    let isNew = false;
+    if (!record) {
+      isNew = true;
+      const fakePass = await bcrypt.hash('GoogleOAuthUser2026', 12);
+      const created = checked(
+        await db()
+          .from('paseo_users')
+          .insert({
+            email,
+            name,
+            password: fakePass,
+            role: 'cliente',
+            points: 50,
+            lifetime_points: 50,
+            avatar_url,
+            is_active: true,
+          })
+          .select(USER_FIELDS)
+          .single(),
+      );
+      const newRecord = created as User;
+      record = newRecord;
+
+      // Movimiento de bienvenida
+      await db().from('paseo_point_movements').insert({
+        user_id: newRecord.id,
+        amount: 50,
+        reason: 'Bono de bienvenida Club Paseo Aranjuez',
+      });
+
+      // Correo SMTP de bienvenida en segundo plano
+      void sendPaseoWelcomeEmail(newRecord.email, newRecord.name, 50);
+    } else if (!record.is_active) {
+      throw new ApiError(403, 'Tu cuenta se encuentra inactiva. Contacta a administración.');
+    }
+
+    return signedResponse(record as User);
+  }
+
   if (data.action === 'register') {
     if (data.role && data.role !== 'cliente')
       throw new ApiError(403, 'El registro público es solo para clientes.');
