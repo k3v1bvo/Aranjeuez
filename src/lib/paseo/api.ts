@@ -21,7 +21,7 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
-import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail } from './email';
+import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail, sendPaseoMerchantPromotedEmail } from './email';
 
 const ORDER_FIELDS =
   '*,store:paseo_stores(id,name,floor,sector,local_num,schedule,reference),user:paseo_users(id,name,email),items:paseo_order_items(*)';
@@ -34,7 +34,7 @@ const TABLES: Record<string, string> = {
   categorias: 'paseo_categories',
   usuarios: 'paseo_users',
 };
-const ownResources = new Set(['productos', 'promociones']);
+const ownResources = new Set(['productos', 'promociones', 'tiendas']);
 function visibleOrder<T extends { pickup_code?: string; qr_token?: string }>(order: T, user: User) {
   if (user.role === 'cliente') return order;
   const { pickup_code: _pickup, qr_token: _token, ...safe } = order;
@@ -832,13 +832,28 @@ async function manage(req: NextRequest, resource: string) {
     throw new ApiError(405, 'Usa la opción desactivar para conservar el historial.');
   const fields = validateFields(resource, data);
   if (user.role !== 'admin') {
-    await ownsStore(user, uuid(fields.store_id));
-    if (req.method === 'PATCH') {
-      const previous = checked(
-        await client.from(table).select('store_id').eq('id', uuid(data.id)).maybeSingle(),
-      );
-      if (!previous) throw new ApiError(404, 'Registro no encontrado.');
-      await ownsStore(user, previous.store_id);
+    if (resource === 'tiendas') {
+      if (req.method === 'POST') {
+        fields.owner_id = user.id;
+      } else if (req.method === 'PATCH') {
+        const prevStore = checked(
+          await client.from('paseo_stores').select('owner_id').eq('id', uuid(data.id)).maybeSingle(),
+        );
+        if (!prevStore) throw new ApiError(404, 'Establecimiento no encontrado.');
+        if (prevStore.owner_id !== user.id) {
+          throw new ApiError(403, 'Solo puedes modificar tu propio establecimiento.');
+        }
+        delete fields.owner_id;
+      }
+    } else {
+      await ownsStore(user, uuid(fields.store_id));
+      if (req.method === 'PATCH') {
+        const previous = checked(
+          await client.from(table).select('store_id').eq('id', uuid(data.id)).maybeSingle(),
+        );
+        if (!previous) throw new ApiError(404, 'Registro no encontrado.');
+        await ownsStore(user, previous.store_id);
+      }
     }
   }
   if (resource === 'usuarios') {
@@ -847,11 +862,28 @@ async function manage(req: NextRequest, resource: string) {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Correo inválido.');
       fields.email = email;
       fields.password = await bcrypt.hash(passwordValue(data.password), 12);
-    } else if (data.id === user.id && (fields.role !== 'admin' || fields.is_active !== true))
+      if (fields.role === 'comercio') {
+        void sendPaseoMerchantPromotedEmail({
+          to: email,
+          name: String(fields.name || 'Comercio Paseo Aranjuez'),
+        }).catch((e) => console.error('[Merchant Email Error]:', e));
+      }
+    } else if (data.id === user.id && (fields.role !== 'admin' || fields.is_active !== true)) {
       throw new ApiError(
         400,
         'No puedes desactivar tu propia cuenta ni quitarte el rol de administrador.',
       );
+    } else if (req.method === 'PATCH' && fields.role === 'comercio') {
+      const prevUser = checked(
+        await client.from('paseo_users').select('name,email,role').eq('id', uuid(data.id)).maybeSingle(),
+      );
+      if (prevUser && prevUser.role !== 'comercio') {
+        void sendPaseoMerchantPromotedEmail({
+          to: prevUser.email,
+          name: String(fields.name || prevUser.name || 'Comercio Paseo Aranjuez'),
+        }).catch((e) => console.error('[Merchant Promo Email Error]:', e));
+      }
+    }
   }
   if (resource === 'tiendas' && fields.owner_id) {
     const owner = checked(

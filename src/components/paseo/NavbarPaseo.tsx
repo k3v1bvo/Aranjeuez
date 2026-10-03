@@ -5,7 +5,7 @@ import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import { 
   QrCode, Sparkles, ShoppingBag, Bot, Flame, Compass, Sun, Moon, 
-  User, ClipboardList, Layers, LogOut, Menu, X 
+  User, ClipboardList, Layers, LogOut, Menu, X, Store 
 } from 'lucide-react';
 
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
@@ -152,7 +152,16 @@ export function NavbarPaseo({
               Espacios
             </Link>
 
-            {user?.role === 'admin' && (
+            {user?.role === 'comercio' && (
+              <Link
+                href="/comercio"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30 hover:bg-[#FF6B1A]/20 transition-all"
+              >
+                <Store className="w-4 h-4 text-[#FF6B1A]" />
+                Mi Negocio
+              </Link>
+            )}
+          {user?.role === 'admin' && (
               <Link
                 href="/admin/analytics"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
@@ -256,6 +265,16 @@ export function NavbarPaseo({
             {/* Usuario autenticado o botón Ingresar */}
             {user ? (
               <div className="flex items-center gap-1.5">
+                {user.role === 'comercio' && (
+                  <Link
+                    href="/comercio/perfil"
+                    className="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FF6B1A]/20 border border-[#FF6B1A]/40 text-[#FF6B1A] hover:bg-[#FF6B1A]/30 transition-all mr-1"
+                    title="Mi Establecimiento"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    <span>Mi Tienda</span>
+                  </Link>
+                )}
                 <Link
                   href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin/overview' : '/cliente/perfil'}
                   className="relative p-0.5 rounded-full group cursor-pointer"
@@ -333,6 +352,16 @@ export function NavbarPaseo({
             <Compass className="w-4 h-4 text-[#7A8B5C]" />
             Espacios
           </Link>
+          {user?.role === 'comercio' && (
+            <Link
+              href="/comercio"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF6B1A] hover:bg-[#FF6B1A]/10 transition-all"
+            >
+              <Store className="w-4 h-4 text-[#FF6B1A]" />
+              Panel de Comercio (Mi Tienda)
+            </Link>
+          )}
           {user?.role === 'admin' && (
             <Link
               href="/admin/analytics"

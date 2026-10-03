@@ -419,3 +419,90 @@ export async function sendPaseoPasswordRecoveryEmail(opts: {
     return null;
   }
 }
+
+// 6. Notificación de cuenta promovida / habilitada como Comercio Oficial
+export async function sendPaseoMerchantPromotedEmail(opts: {
+  to: string;
+  name: string;
+  storeName?: string;
+}) {
+  try {
+    const transporter = getTransporter();
+    const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #030B1A; color: #FFFFFF; margin: 0; padding: 24px; }
+        .container { max-width: 580px; margin: 0 auto; background: #061734; border: 1px solid rgba(255, 107, 26, 0.4); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #061734 0%, #162447 100%); padding: 32px 24px; text-align: center; border-bottom: 2px solid #FF6B1A; }
+        .badge { display: inline-block; background: rgba(255, 107, 26, 0.2); border: 1px solid #FF6B1A; color: #FF6B1A; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+        .title { font-size: 24px; font-weight: 900; color: #FFFFFF; margin: 0; }
+        .subtitle { font-size: 13px; color: #D4A24C; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px; }
+        .body { padding: 32px 24px; line-height: 1.6; color: #E2E8F0; }
+        .features-box { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 20px; margin: 24px 0; }
+        .feature-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+        .feature-item:last-child { margin-bottom: 0; }
+        .feature-icon { background: rgba(255, 107, 26, 0.15); border: 1px solid rgba(255, 107, 26, 0.3); border-radius: 8px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; color: #FF6B1A; font-weight: bold; font-size: 14px; flex-shrink: 0; }
+        .btn { display: inline-block; background: linear-gradient(135deg, #B84D0B 0%, #FF6B1A 100%); color: #FFFFFF !important; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: bold; font-size: 14px; margin-top: 16px; text-align: center; box-shadow: 0 8px 20px rgba(255, 107, 26, 0.3); }
+        .footer { padding: 20px; text-align: center; font-size: 11px; color: #94A3B8; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="badge">Cuenta de Negocio Activada</div>
+          <h1 class="title">PASEO ARANJUEZ</h1>
+          <div class="subtitle">Ecosistema Comercial & Empresarial</div>
+        </div>
+        <div class="body">
+          <p>Estimado/a <strong>${opts.name}</strong>,</p>
+          <p>Nos complace informarte que la Administración de <strong>Paseo Aranjuez</strong> ha habilitado tu cuenta con el rol de <strong>Dueño de Comercio Oficial</strong>.</p>
+          
+          <div class="features-box">
+            <div style="font-size: 12px; color: #D4A24C; text-transform: uppercase; font-weight: bold; margin-bottom: 12px; letter-spacing: 1px;">Privilegios y Herramientas Habilitadas:</div>
+            <div class="feature-item">
+              <span class="feature-icon">🏪</span>
+              <div><strong>Perfil de Establecimiento:</strong> Configura y actualiza el nombre de tu tienda, piso, sector, número de local, horarios y teléfono de contacto.</div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">📦</span>
+              <div><strong>Catálogo y Productos:</strong> Sube tus productos, fotos, precios en Bs. y controla el stock en tiempo real.</div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">🏷️</span>
+              <div><strong>Promociones y Descuentos:</strong> Crea ofertas especiales para los visitantes y miembros del Club Paseo.</div>
+            </div>
+            <div class="feature-item">
+              <span class="feature-icon">📷</span>
+              <div><strong>Caja & Validación (Scanner):</strong> Escanea los códigos QR de los clientes para aplicar descuentos, verificar compras de PaseoYa y canjes de puntos.</div>
+            </div>
+          </div>
+
+          <p>El siguiente paso es completar la información de tu local para que los clientes puedan encontrarte fácilmente en el centro comercial:</p>
+
+          <center>
+            <a href="${APP_URL}/comercio/perfil" class="btn">Configurar Mi Establecimiento Ahora</a>
+          </center>
+        </div>
+        <div class="footer">
+          © ${new Date().getFullYear()} Paseo Aranjuez • Av. América Este & Pantaleón Dalence, Cochabamba, Bolivia.<br>
+          Si tienes alguna consulta, puedes contactar directamente al equipo administrativo.
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    return await transporter.sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: opts.to,
+      subject: `🎉 ¡Felicidades! Tu cuenta fue habilitada como Comercio en Paseo Aranjuez`,
+      html,
+    });
+  } catch (error: any) {
+    console.error("[Email Merchant Promoted Error]:", error?.message || error);
+    return null;
+  }
+}

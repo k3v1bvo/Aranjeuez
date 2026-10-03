@@ -69,6 +69,7 @@ export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
     ['promotions', 'Promociones'],
     ['events', 'Eventos'],
     ['categories', 'Categorías'],
+    ['qrs', 'Tótems & QRs'],
     ['analytics', 'Estadísticas y Calor'],
     ['audit', 'Movimientos y auditoría'],
     ['alerts', 'Alertas'],
@@ -76,6 +77,7 @@ export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
   ];
   const commerce = [
     ['', 'Resumen y pedidos'],
+    ['perfil', 'Mi Establecimiento'],
     ['productos', 'Mis productos'],
     ['scanner', 'Caja y validación'],
     ['promociones', 'Promociones'],

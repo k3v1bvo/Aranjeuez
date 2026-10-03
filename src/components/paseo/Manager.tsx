@@ -43,6 +43,7 @@ const configs: Record<string, { title: string; fields: Field[] }> = {
       { key: 'reference', label: 'Referencia de ubicación', optional: true },
       { key: 'schedule', label: 'Horarios', optional: true },
       { key: 'phone', label: 'Teléfono', optional: true },
+      { key: 'image_url', label: 'URL de Logo / Fachada (HTTPS)', type: 'url', optional: true },
     ],
   },
   recompensas: {
