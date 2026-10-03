@@ -91,14 +91,42 @@ export async function signedResponse(user: User) {
 }
 export function checkMutation(req: NextRequest) {
   const origin = req.headers.get('origin');
-  const allowed = new Set([new URL(process.env.NEXT_PUBLIC_APP_URL || req.url).origin]);
-  // Domains supplied by the hosting platform, never by client forwarding headers.
-  if (process.env.VERCEL === '1') {
-    for (const domain of [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL]) {
-      if (domain) allowed.add(new URL(`https://${domain}`).origin);
+  if (origin) {
+    const allowed = new Set<string>([
+      new URL(req.url).origin,
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3001',
+    ]);
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+      try {
+        allowed.add(new URL(process.env.NEXT_PUBLIC_APP_URL).origin);
+      } catch {}
     }
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      try {
+        allowed.add(new URL(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`).origin);
+      } catch {}
+    }
+    if (process.env.VERCEL_URL) {
+      try {
+        allowed.add(new URL(`https://${process.env.VERCEL_URL}`).origin);
+      } catch {}
+    }
+
+    let host = '';
+    try {
+      host = new URL(origin).hostname;
+    } catch {}
+    const isAllowed =
+      allowed.has(origin) ||
+      host.endsWith('.vercel.app') ||
+      host === 'localhost' ||
+      host === '127.0.0.1';
+
+    if (!isAllowed) throw new ApiError(403, 'Origen de solicitud no permitido.');
   }
-  if (origin && !allowed.has(origin)) throw new ApiError(403, 'Origen de solicitud no permitido.');
   if (!req.headers.get('content-type')?.includes('application/json'))
     throw new ApiError(415, 'Envía datos JSON.');
 }

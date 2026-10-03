@@ -25,31 +25,23 @@ export default function AuthCallbackPage() {
         }
 
         const email = session.user.email;
-        const name =
-          session.user.user_metadata?.full_name ||
-          session.user.user_metadata?.name ||
-          email?.split('@')[0] ||
-          'Usuario Paseo';
-        const avatar_url =
-          session.user.user_metadata?.avatar_url ||
-          session.user.user_metadata?.picture ||
-          null;
-
         if (email && active) {
           setStatus('Sincronizando cuenta y puntos de membresía...');
           const res = await fetch('/api/paseo/auth', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'google', email, name, avatar_url }),
+            body: JSON.stringify({ action: 'google', accessToken: session.access_token }),
           });
           const data = await res.json();
-          if (active) {
-            if (data.isNew) {
-              setStatus('¡Bienvenido al Club Paseo Aranjuez! +50 Puntos acreditados.');
-            } else {
-              setStatus('¡Sesión iniciada con éxito! Redirigiendo...');
+          await supabase.auth.signOut();
+          if (!res.ok) {
+            if (active) {
+              setStatus(data.error || 'No pudimos iniciar sesión con Google.');
+              setTimeout(() => router.push('/auth/login'), 2500);
             }
+            return;
           }
+          if (active) setStatus('¡Sesión iniciada! Redirigiendo...');
         }
 
         setTimeout(() => {

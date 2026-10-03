@@ -1,14 +1,16 @@
+import "server-only";
 import nodemailer from "nodemailer";
 
 const FROM_NAME = process.env.SMTP_FROM_NAME || "Paseo Aranjuez";
-const FROM_EMAIL = process.env.SMTP_USER || "ayniprotocol@gmail.com";
+const FROM_EMAIL = process.env.SMTP_USER || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://aranjuez.vercel.app";
 
 function getTransporter() {
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT) || 465;
-  const user = process.env.SMTP_USER || "ayniprotocol@gmail.com";
-  const pass = (process.env.SMTP_PASSWORD || "ujccnzxebbpqzhaw").replace(/\s+/g, "");
+  const user = process.env.SMTP_USER || "";
+  const pass = (process.env.SMTP_PASSWORD || "").replace(/\s+/g, "");
+  if (!user || !pass) throw new Error("SMTP no configurado (SMTP_USER / SMTP_PASSWORD).");
 
   return nodemailer.createTransport({
     host,

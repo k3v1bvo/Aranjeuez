@@ -1,5 +1,6 @@
 import 'server-only';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ApiError,
@@ -87,66 +88,47 @@ async function auth(req: NextRequest) {
     response.cookies.set('paseo_token', '', { path: '/', maxAge: 0 });
     return response;
   }
+  if (data.action === 'google') {
+    rateLimit('auth-google:' + (req.headers.get('x-forwarded-for') || 'local'), 20);
+    const token = string(data.accessToken, 'Token de Google', 20, 4000);
+    const { data: verified, error: verifyError } = await db().auth.getUser(token);
+    const googleUser = verified?.user;
+    if (verifyError || !googleUser?.email)
+      throw new ApiError(401, 'No pudimos verificar tu cuenta de Google. Intenta nuevamente.');
+    const email = googleUser.email.toLowerCase();
+    const meta = (googleUser.user_metadata || {}) as Record<string, unknown>;
+    const rawName = String(meta.full_name || meta.name || email.split('@')[0]).trim();
+    const name = rawName.length >= 2 ? rawName.slice(0, 80) : 'Cliente Paseo';
+    const existing = checked(
+      await db().from('paseo_users').select(USER_FIELDS).eq('email', email).maybeSingle(),
+    ) as User | null;
+    if (existing) {
+      if (!existing.is_active)
+        throw new ApiError(403, 'Tu cuenta está inactiva. Contacta a administración.');
+      return signedResponse(existing);
+    }
+    // Contraseña aleatoria imposible de adivinar: la cuenta solo entra por Google
+    const randomSecret = randomUUID() + randomUUID();
+    const id = checked(
+      await db().rpc('paseo_register', {
+        p_email: email,
+        p_password: await bcrypt.hash(randomSecret, 12),
+        p_name: name,
+        p_phone: null,
+        p_birthday: null,
+      }),
+    );
+    const created = checked(
+      await db().from('paseo_users').select(USER_FIELDS).eq('id', id).single(),
+    ) as User;
+    void sendPaseoWelcomeEmail(created.email, created.name, created.points);
+    return signedResponse(created);
+  }
   rateLimit('auth:' + (req.headers.get('x-forwarded-for') || 'local'), 15);
   const email = string(data.email, 'Correo', 3, 254).toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     throw new ApiError(400, 'Introduce un correo válido.');
   const password = passwordValue(data.password);
-  if (data.action === 'google') {
-    rateLimit('auth-google:' + (req.headers.get('x-forwarded-for') || 'local'), 30);
-    const email = string(data.email, 'Correo', 3, 254).toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      throw new ApiError(400, 'Introduce un correo válido.');
-    const name = string(data.name || email.split('@')[0], 'Nombre', 2, 80);
-    const avatar_url = typeof data.avatar_url === 'string' ? data.avatar_url : null;
-
-    let record = checked(
-      await db()
-        .from('paseo_users')
-        .select(USER_FIELDS)
-        .eq('email', email)
-        .maybeSingle(),
-    );
-
-    let isNew = false;
-    if (!record) {
-      isNew = true;
-      const fakePass = await bcrypt.hash('GoogleOAuthUser2026', 12);
-      const created = checked(
-        await db()
-          .from('paseo_users')
-          .insert({
-            email,
-            name,
-            password: fakePass,
-            role: 'cliente',
-            points: 50,
-            lifetime_points: 50,
-            avatar_url,
-            is_active: true,
-          })
-          .select(USER_FIELDS)
-          .single(),
-      );
-      const newRecord = created as User;
-      record = newRecord;
-
-      // Movimiento de bienvenida
-      await db().from('paseo_point_movements').insert({
-        user_id: newRecord.id,
-        amount: 50,
-        reason: 'Bono de bienvenida Club Paseo Aranjuez',
-      });
-
-      // Correo SMTP de bienvenida en segundo plano
-      void sendPaseoWelcomeEmail(newRecord.email, newRecord.name, 50);
-    } else if (!record.is_active) {
-      throw new ApiError(403, 'Tu cuenta se encuentra inactiva. Contacta a administración.');
-    }
-
-    return signedResponse(record as User);
-  }
-
   if (data.action === 'register') {
     if (data.role && data.role !== 'cliente')
       throw new ApiError(403, 'El registro público es solo para clientes.');
