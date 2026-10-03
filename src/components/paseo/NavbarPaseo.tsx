@@ -1,9 +1,11 @@
-﻿'use client';
+'use client';
+
+import Link from 'next/link';
 
 import React, { useState, useEffect } from 'react';
 import { 
   QrCode, Sparkles, ShoppingBag, Bot, Flame, Compass, Sun, Moon, 
-  User, ClipboardList, Layers 
+  User, ClipboardList, Layers, LogOut, Menu, X 
 } from 'lucide-react';
 
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
@@ -18,6 +20,7 @@ interface NavbarPaseoProps {
   onOpenAuth?: () => void;
   onOpenCart?: () => void;
   onOpenOrders?: () => void;
+  onLogout?: () => void;
   cartCount?: number;
   user?: {
     name: string;
@@ -36,12 +39,14 @@ export function NavbarPaseo({
   onOpenAuth,
   onOpenCart,
   onOpenOrders,
+  onLogout,
   cartCount = 0,
   user = null,
 }: NavbarPaseoProps) {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isCartBouncing, setIsCartBouncing] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Regla 12: Detección de scroll > 40px para aplicar compresión y blur
   useEffect(() => {
@@ -88,8 +93,8 @@ export function NavbarPaseo({
 
           {/* Menú Desktop (sin emojis, usando Lucide) */}
           <nav className="hidden md:flex items-center gap-1.5">
-            <button
-              onClick={() => onSelectTab && onSelectTab('inicio')}
+            <Link
+              href="/"
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'inicio'
                   ? 'text-white bg-white/10 shadow-sm border border-white/10'
@@ -97,10 +102,10 @@ export function NavbarPaseo({
               }`}
             >
               Inicio
-            </button>
+            </Link>
 
-            <button
-              onClick={() => onSelectTab && onSelectTab('paseoya')}
+            <Link
+              href="/cliente"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'paseoya'
                   ? 'text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30'
@@ -109,10 +114,10 @@ export function NavbarPaseo({
             >
               <ShoppingBag className="w-4 h-4 text-[#FF6B1A]" />
               PaseoYa
-            </button>
+            </Link>
 
-            <button
-              onClick={() => onSelectTab && onSelectTab('jarvis')}
+            <Link
+              href="/jarvis"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'jarvis'
                   ? 'text-[#D4A24C] bg-[#D4A24C]/10 border border-[#D4A24C]/30'
@@ -121,10 +126,10 @@ export function NavbarPaseo({
             >
               <Bot className="w-4 h-4 text-[#D4A24C]" />
               Jarvis
-            </button>
+            </Link>
 
-            <button
-              onClick={() => onSelectTab && onSelectTab('puntos')}
+            <Link
+              href="/cliente/puntos"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'puntos'
                   ? 'text-[#FF8F4D] bg-[#FF8F4D]/10 border border-[#FF8F4D]/30'
@@ -133,10 +138,10 @@ export function NavbarPaseo({
             >
               <Flame className="w-4 h-4 text-[#FF8F4D]" />
               Paseo Points
-            </button>
+            </Link>
 
-            <button
-              onClick={() => onSelectTab && onSelectTab('espacios')}
+            <Link
+              href="/#espacios"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'espacios'
                   ? 'text-[#7A8B5C] bg-[#7A8B5C]/10 border border-[#7A8B5C]/30'
@@ -145,9 +150,10 @@ export function NavbarPaseo({
             >
               <Compass className="w-4 h-4 text-[#7A8B5C]" />
               Espacios
-            </button>
-                      <button
-              onClick={() => onSelectTab && onSelectTab('mapa')}
+            </Link>
+
+            <Link
+              href="/#mapa"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
                 activeTab === 'mapa'
                   ? 'text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30'
@@ -156,7 +162,7 @@ export function NavbarPaseo({
             >
               <Layers className="w-4 h-4 text-[#FF6B1A]" />
               Mapa de Calor
-            </button>
+            </Link>
           </nav>
 
           {/* Acciones Rápidas */}
@@ -176,35 +182,31 @@ export function NavbarPaseo({
               </button>
             )}
 
-            {/* Botón Carrito de Compras (Regla 18: Rebote 400ms) */}
-            {onOpenCart && (
-              <button
-                onClick={onOpenCart}
-                className={`relative p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-all border border-white/10 ${
-                  isCartBouncing ? 'cart-bounce-anim text-[#FF6B1A]' : ''
-                }`}
-                aria-label="Abrir canasta"
-              >
-                <ShoppingBag className="w-4 h-4" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FF6B1A] text-white text-[10px] font-black flex items-center justify-center border-2 border-[#061734] badge-pulse">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-            )}
+            {/* Botón Carrito de Compras */}
+            <Link
+              href="/carrito"
+              className={`relative p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white transition-all border border-white/10 ${
+                isCartBouncing ? 'cart-bounce-anim text-[#FF6B1A]' : ''
+              }`}
+              aria-label="Abrir canasta"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FF6B1A] text-white text-[10px] font-black flex items-center justify-center border-2 border-[#061734] badge-pulse">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
 
             {/* Botón Mis Pedidos */}
-            {onOpenOrders && (
-              <button
-                onClick={onOpenOrders}
-                className="hidden sm:flex items-center gap-1.5 p-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all border border-white/10"
-                title="Ver estado de mis pedidos"
-              >
-                <ClipboardList className="w-3.5 h-3.5 text-[#D4A24C]" />
-                <span className="hidden lg:inline">Mis Pedidos</span>
-              </button>
-            )}
+            <Link
+              href="/cliente/pedidos"
+              className="hidden sm:flex items-center gap-1.5 p-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all border border-white/10"
+              title="Ver estado de mis pedidos"
+            >
+              <ClipboardList className="w-3.5 h-3.5 text-[#D4A24C]" />
+              <span className="hidden lg:inline">Mis Pedidos</span>
+            </Link>
 
             {/* Saldo de Puntos (Solo si logueado) */}
             {user && (
@@ -239,19 +241,41 @@ export function NavbarPaseo({
               <span>Mi QR</span>
             </button>
 
+            
+            {/* Botón Menú Mobile */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white border border-white/10 transition-all"
+              aria-label="Abrir menú"
+            >
+              {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+
             {/* Usuario autenticado o botón Ingresar */}
             {user ? (
-              <a
-                href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin' : '/cliente/perfil'}
-                className="relative p-0.5 rounded-full group cursor-pointer"
-                title={'Sesión de ' + user.name + ' (Nivel ' + user.level + ')'}
-                aria-label="Mi Perfil"
-              >
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#B84D0B] via-[#D4A24C] to-[#FF6B1A] avatar-ring-rotating opacity-80 group-hover:opacity-100" />
-                <div className="relative w-8 h-8 rounded-full bg-[#061734] border-2 border-white/20 flex items-center justify-center overflow-hidden">
-                  <User className="w-4 h-4 text-white/90 group-hover:text-[#FF6B1A] transition-colors" />
-                </div>
-              </a>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin/overview' : '/cliente/perfil'}
+                  className="relative p-0.5 rounded-full group cursor-pointer"
+                  title={'Sesión de ' + user.name + ' (Nivel ' + user.level + ')'}
+                  aria-label="Mi Perfil"
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#B84D0B] via-[#D4A24C] to-[#FF6B1A] avatar-ring-rotating opacity-80 group-hover:opacity-100" />
+                  <div className="relative w-8 h-8 rounded-full bg-[#061734] border-2 border-white/20 flex items-center justify-center overflow-hidden">
+                    <User className="w-4 h-4 text-white/90 group-hover:text-[#FF6B1A] transition-colors" />
+                  </div>
+                </Link>
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-red-400 transition-colors"
+                    title="Cerrar sesión"
+                    aria-label="Cerrar sesión"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             ) : (
               <a
                 href="/auth/login"
@@ -264,6 +288,68 @@ export function NavbarPaseo({
           </div>
         </div>
       </header>
+
+      {/* Menú Desplegable Mobile */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden sticky top-[65px] z-40 w-full backdrop-blur-2xl bg-[#061734]/95 border-b border-white/15 px-4 py-4 space-y-2 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <Link
+            href="/"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-all"
+          >
+            Inicio
+          </Link>
+          <Link
+            href="/cliente"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF6B1A] hover:bg-[#FF6B1A]/10 transition-all"
+          >
+            <ShoppingBag className="w-4 h-4 text-[#FF6B1A]" />
+            PaseoYa
+          </Link>
+          <Link
+            href="/jarvis"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#D4A24C] hover:bg-[#D4A24C]/10 transition-all"
+          >
+            <Bot className="w-4 h-4 text-[#D4A24C]" />
+            Jarvis
+          </Link>
+          <Link
+            href="/cliente/puntos"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF8F4D] hover:bg-[#FF8F4D]/10 transition-all"
+          >
+            <Flame className="w-4 h-4 text-[#FF8F4D]" />
+            Paseo Points
+          </Link>
+          <Link
+            href="/#espacios"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#7A8B5C] hover:bg-[#7A8B5C]/10 transition-all"
+          >
+            <Compass className="w-4 h-4 text-[#7A8B5C]" />
+            Espacios
+          </Link>
+          <Link
+            href="/#mapa"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF6B1A] hover:bg-[#FF6B1A]/10 transition-all"
+          >
+            <Layers className="w-4 h-4 text-[#FF6B1A]" />
+            Mapa de Calor
+          </Link>
+          <Link
+            href="/cliente/pedidos"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-white/80 hover:text-white hover:bg-white/5 transition-all"
+          >
+            <ClipboardList className="w-4 h-4 text-[#D4A24C]" />
+            Mis Pedidos
+          </Link>
+        </div>
+      )}
+
 
       {/* Modal QR Pulsante */}
       {user && (

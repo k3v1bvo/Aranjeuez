@@ -13,6 +13,7 @@ import { AnimatedCounter } from './AnimatedCounter';
 import { ConfettiEffect } from './ConfettiEffect';
 import { ScrollRevealContainer, ScrollRevealItem, ScrollReveal } from './ScrollReveal';
 import { usePaseoToast } from './PaseoToast';
+import { useSession } from './Providers';
 
 
 interface PaseoPointsShowcaseProps {
@@ -21,7 +22,11 @@ interface PaseoPointsShowcaseProps {
 
 export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
   const { showToast } = usePaseoToast();
-  const [points, setPoints] = useState<number>(MOCK_USER.points);
+  const { user } = useSession();
+  const activePoints = user ? (user.points || 0) : 0;
+  const activeLevel = activePoints >= 1000 ? 'Platino' : activePoints >= 500 ? 'Oro' : activePoints >= 200 ? 'Plata' : 'Bronce';
+  const activeName = user ? user.name : 'Miembro Paseo';
+  const [points, setPoints] = useState<number>(activePoints);
   const [claimedReward, setClaimedReward] = useState<string | null>(null);
   const [isConfettiActive, setIsConfettiActive] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
@@ -133,7 +138,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C0C7D1]/20 to-[#D4A24C]/20 border border-[#D4A24C] shadow-lg shadow-[#D4A24C]/15">
                     <Award className="w-4 h-4 text-[#D4A24C]" />
                     <span className="text-xs font-black uppercase tracking-wider text-white">
-                      Nivel {MOCK_USER.level}
+                      Nivel {user ? activeLevel : "Bronce"}
                     </span>
                   </div>
                 </div>
@@ -141,11 +146,11 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 {/* Fila Central: Saldo de Puntos Animado */}
                 <div className="my-5 relative z-10">
                   <span className="text-[11px] uppercase font-bold tracking-widest text-[#D4A24C] block mb-1">
-                    Saldo de {MOCK_USER.name}
+                    {user ? `Saldo de ${activeName}` : "Club Paseo Points"}
                   </span>
                   <div className="flex items-baseline gap-3">
                     <div className="text-5xl sm:text-6xl font-black text-white font-display tracking-tight tabular-nums drop-shadow-md">
-                      <AnimatedCounter value={points} duration={1800} />
+                      <AnimatedCounter value={user ? activePoints : 0} duration={1800} />
                     </div>
                     <span className="text-lg font-black text-[#FF8F4D] uppercase font-mono tracking-wider">
                       PTS
@@ -181,7 +186,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 {/* Fila Inferior: Botones de Acción */}
                 <div className="flex items-center gap-3 relative z-10">
                   <button
-                    onClick={onOpenQr}
+                    onClick={() => { if (user) onOpenQr(); else window.location.href = '/auth/login'; }}
                     className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-xs uppercase tracking-wider btn-primary-andino flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B1A]/30 border border-white/20"
                   >
                     <QrCode className="w-4 h-4" />

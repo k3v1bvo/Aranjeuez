@@ -3798,3 +3798,103 @@ table td {
 table tr:hover td {
   background: rgba(255, 255, 255, 0.03) !important;
 }
+
+/* ============================================================
+   HIGH-CONTRAST DARK THEME FIXES — NO WHITE-ON-WHITE
+   ============================================================ */
+
+.metric-card,
+.module-strip,
+.search-field,
+.form-card,
+.surface,
+.checkout-summary,
+.order-card,
+.management-row,
+.reward-card,
+.chat-panel,
+.stat-card,
+.card,
+.store-card,
+.product-card,
+.state-box,
+.panel-nav,
+.table-wrap,
+.filter-card,
+.dialog,
+.modal-box {
+  background: rgba(6, 23, 52, 0.85) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #FFFFFF !important;
+}
+
+.metric-card strong,
+.stat-card strong,
+.metric-card span,
+.stat-card span {
+  color: #FFFFFF !important;
+}
+
+.metric-card svg {
+  color: #D4A24C !important;
+}
+
+.metric-card small,
+.stat-card small {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.category-filters button {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.category-filters button.active {
+  background: linear-gradient(135deg, #B84D0B, #FF6B1A) !important;
+  border-color: rgba(255, 107, 26, 0.5) !important;
+  color: #FFFFFF !important;
+}
+
+.tabs button {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.tabs button.active {
+  background: linear-gradient(135deg, #B84D0B, #FF6B1A) !important;
+  color: #FFFFFF !important;
+}
+
+.management-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.management-row:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.management-row strong,
+.management-row span,
+.management-row p {
+  color: #FFFFFF !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #FFFFFF !important;
+}
+
+label {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.muted, small, .small {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+input, textarea, select {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
