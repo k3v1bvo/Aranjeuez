@@ -505,11 +505,82 @@ async function scanner(req: NextRequest) {
   throw new ApiError(400, 'Tipo de código inválido.');
 }
 
+
+function parseGeofence(locationStr: string = '') {
+  const DEFAULT_GEOFENCE = {
+    radius: 200,
+    lat: -17.37365,
+    lng: -66.15582,
+    strict: false,
+    address: 'Av. América Este & Pantaleón Dalence, Cochabamba',
+  };
+
+  if (!locationStr) return DEFAULT_GEOFENCE;
+
+  const parts = locationStr.split('|| GEOFENCE:');
+  const address = parts[0].trim() || DEFAULT_GEOFENCE.address;
+
+  if (parts.length > 1) {
+    try {
+      const geo = JSON.parse(parts[1].trim());
+      return {
+        radius: Number(geo.radius) || 200,
+        lat: Number(geo.lat) || -17.37365,
+        lng: Number(geo.lng) || -66.15582,
+        strict: Boolean(geo.strict),
+        address,
+      };
+    } catch {
+      return { ...DEFAULT_GEOFENCE, address };
+    }
+  }
+
+  return { ...DEFAULT_GEOFENCE, address };
+}
+
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return Math.round(R * c);
+}
+
 async function checkin(req: NextRequest) {
   const user = await requireUser(req);
   const client = db();
   const data = await body(req).catch(() => ({}));
   const rawCode = String((data as { code?: string })?.code || 'PASEO-TOTEM-LOBBY').toUpperCase();
+  const userLat = typeof (data as Record<string, unknown>)?.userLat === 'number' ? Number((data as Record<string, unknown>).userLat) : null;
+  const userLng = typeof (data as Record<string, unknown>)?.userLng === 'number' ? Number((data as Record<string, unknown>).userLng) : null;
+
+  // Cargar configuración de geocerca del edificio
+  const rawSettings = checked(
+    await client.from('paseo_settings').select('location').eq('id', 1).maybeSingle()
+  );
+  const geo = parseGeofence(rawSettings?.location);
+
+  let distanceToPaseo: number | null = null;
+  let inGeofence = true;
+
+  if (userLat !== null && userLng !== null) {
+    distanceToPaseo = getDistanceMeters(userLat, userLng, geo.lat, geo.lng);
+    inGeofence = distanceToPaseo <= geo.radius;
+
+    if (geo.strict && !inGeofence) {
+      throw new ApiError(
+        400,
+        `Estás a ${distanceToPaseo}m del edificio Paseo Aranjuez. Para validar tu recorrido debes estar dentro del perímetro oficial (máx. ${geo.radius}m).`
+      );
+    }
+  }
 
   const TOTEMS: Record<
     string,
@@ -629,7 +700,12 @@ async function checkin(req: NextRequest) {
     ok: true,
     pointsAwarded,
     stationName: station.name,
-    message: `¡Bienvenido a Paseo Aranjuez! Sumaste ${pointsAwarded} puntos en ${station.sector}.`,
+    distanceToPaseo,
+    inGeofence,
+    geofenceRadius: geo.radius,
+    message: distanceToPaseo !== null
+      ? `¡Bienvenido a ${station.name}! (${inGeofence ? 'Dentro del perímetro ✓' : 'Aviso de proximidad'}: ${distanceToPaseo}m). Sumaste +${pointsAwarded} pts.`
+      : `¡Bienvenido a ${station.name}! Sumaste +${pointsAwarded} pts en tu recorrido.`,
   });
 }
 
@@ -971,7 +1047,16 @@ async function dashboard(req: NextRequest) {
     user.role === 'admin'
       ? checked(await client.from('paseo_questions').select('topic').limit(1000))
       : [];
-  const settings = checked(await client.from('paseo_settings').select('*').eq('id', 1).single());
+  const rawSettings = checked(await client.from('paseo_settings').select('*').eq('id', 1).single());
+  const geo = parseGeofence(rawSettings?.location);
+  const settings = {
+    ...rawSettings,
+    location: geo.address,
+    geofence_radius: geo.radius,
+    geofence_lat: geo.lat,
+    geofence_lng: geo.lng,
+    geofence_strict: geo.strict,
+  };
   return NextResponse.json({
     orders: orderRows,
     movements: movementRows,
@@ -987,11 +1072,22 @@ async function dashboard(req: NextRequest) {
 async function settings(req: NextRequest) {
   const user = await requireUser(req, ['admin']);
   const data = await body(req);
+
+  const geoObj = {
+    radius: typeof data.geofence_radius === 'number' ? Math.max(50, Math.min(5000, Number(data.geofence_radius))) : 200,
+    lat: typeof data.geofence_lat === 'number' ? Number(data.geofence_lat) : -17.37365,
+    lng: typeof data.geofence_lng === 'number' ? Number(data.geofence_lng) : -66.15582,
+    strict: Boolean(data.geofence_strict),
+  };
+
+  const address = string(data.location, 'Ubicación', 2, 200);
+  const locationWithGeo = `${address} || GEOFENCE:${JSON.stringify(geoObj)}`;
+
   const values = {
     points_ratio: number(data.points_ratio, 'Equivalencia', 0.01, 100),
     welcome_points: number(data.welcome_points, 'Bienvenida', 0, 10000, true),
     paseo_name: string(data.paseo_name, 'Nombre', 2, 100),
-    location: string(data.location, 'Ubicación', 2, 250),
+    location: locationWithGeo,
   };
   checked(await db().from('paseo_settings').update(values).eq('id', 1));
   checked(
@@ -999,7 +1095,7 @@ async function settings(req: NextRequest) {
       actor_id: user.id,
       action: 'configuracion_editada',
       entity: 'configuracion',
-      detail: values,
+      detail: { ...values, geofence: geoObj },
     }),
   );
   return NextResponse.json({ success: true });

@@ -4,7 +4,7 @@ import { QrStationManager } from './QrStationManager';
 import { QrCode, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowUpRight, Coins, Package, ShoppingBag, Users } from 'lucide-react';
+import { ArrowUpRight, Coins, Package, ShoppingBag, Users, MapPin, Compass } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Movement, Order, Product, Settings, Store, User } from '@/lib/paseo/model';
 import { dateTime, money } from '@/lib/paseo/model';
@@ -239,24 +239,70 @@ function Analytics({ data }: { data: Summary }) {
   );
 }
 function SettingsForm({ settings }: { settings: Settings }) {
-  const [values, setValues] = useState(settings);
+  const [values, setValues] = useState<Settings>({
+    ...settings,
+    geofence_radius: settings.geofence_radius ?? 200,
+    geofence_lat: settings.geofence_lat ?? -17.37365,
+    geofence_lng: settings.geofence_lng ?? -66.15582,
+    geofence_strict: settings.geofence_strict ?? false,
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [gpsStatus, setGpsStatus] = useState<string>('');
+  const [testingGps, setTestingGps] = useState(false);
+
   async function save() {
     setBusy(true);
     setError('');
     try {
       await api('configuracion', { method: 'PATCH', body: JSON.stringify(values) });
-      toast.success('Configuración guardada');
+      toast.success('Configuración guardada correctamente');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No pudimos guardar.');
     } finally {
       setBusy(false);
     }
   }
+
+  function testDeviceGps() {
+    if (!navigator.geolocation) {
+      setGpsStatus('La geolocalización no está soportada en este navegador.');
+      return;
+    }
+    setTestingGps(true);
+    setGpsStatus('Obteniendo coordenadas GPS de tu dispositivo...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setTestingGps(false);
+        const { latitude, longitude } = pos.coords;
+        const R = 6371e3;
+        const φ1 = (latitude * Math.PI) / 180;
+        const φ2 = ((values.geofence_lat ?? -17.37365) * Math.PI) / 180;
+        const Δφ = (((values.geofence_lat ?? -17.37365) - latitude) * Math.PI) / 180;
+        const Δλ = (((values.geofence_lng ?? -66.15582) - longitude) * Math.PI) / 180;
+        const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const dist = Math.round(R * c);
+
+        const radius = values.geofence_radius ?? 200;
+        const inside = dist <= radius;
+        setGpsStatus(
+          inside
+            ? `🟢 ¡Estás dentro del perímetro! Distancia actual: ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+            : `⚠️ Fuera del perímetro: Tu dispositivo está a ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+        );
+      },
+      (err) => {
+        setTestingGps(false);
+        setGpsStatus(`No se pudo obtener GPS: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
   return (
     <form
-      className="surface settings-form"
+      className="surface settings-form space-y-6"
       onSubmit={(e) => {
         e.preventDefault();
         void save();
@@ -273,12 +319,12 @@ function SettingsForm({ settings }: { settings: Settings }) {
         />
       </label>
       <label>
-        Ubicación y referencia
+        Ubicación y referencia física
         <textarea
           required
           minLength={2}
           maxLength={250}
-          rows={3}
+          rows={2}
           value={values.location}
           onChange={(e) => setValues({ ...values, location: e.target.value })}
         />
@@ -309,9 +355,95 @@ function SettingsForm({ settings }: { settings: Settings }) {
           />
         </label>
       </div>
+
+      {/* Sección Geocerca y Telemetría */}
+      <div className="p-5 rounded-2xl bg-white/5 border border-[#FF6B1A]/30 space-y-4">
+        <div className="flex items-center gap-2 text-white font-bold text-base">
+          <MapPin size={18} className="text-[#FF6B1A]" />
+          <span>Perímetro de Geocerca & Telemetría Espacial</span>
+        </div>
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Define el radio de proximidad física alrededor del edificio Paseo Aranjuez para validar
+          la presencia del cliente, activar la telemetría del mapa de calor y permitir la suma de puntos en los tótems de entrada.
+        </p>
+
+        <div className="form-grid">
+          <label>
+            Radio de Geocerca (Metros)
+            <input
+              type="number"
+              min="50"
+              max="5000"
+              step="10"
+              required
+              value={values.geofence_radius ?? 200}
+              onChange={(e) => setValues({ ...values, geofence_radius: Number(e.target.value) })}
+            />
+            <small className="text-slate-400 text-[11px] block mt-1">
+              Recomendado: 200 metros (cubre accesos América, Pando y parqueos).
+            </small>
+          </label>
+
+          <label className="flex flex-col justify-center">
+            <span className="text-xs font-semibold text-slate-300 mb-2">Validación Estricta</span>
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={Boolean(values.geofence_strict)}
+                onChange={(e) => setValues({ ...values, geofence_strict: e.target.checked })}
+              />
+              <span className="text-xs">
+                Bloquear escaneo si el cliente está fuera del radio (Desactivado = modo flexible con registro)
+              </span>
+            </label>
+          </label>
+        </div>
+
+        <div className="form-grid">
+          <label>
+            Latitud del Edificio Paseo Aranjuez
+            <input
+              type="number"
+              step="0.000001"
+              required
+              value={values.geofence_lat ?? -17.37365}
+              onChange={(e) => setValues({ ...values, geofence_lat: Number(e.target.value) })}
+            />
+          </label>
+          <label>
+            Longitud del Edificio Paseo Aranjuez
+            <input
+              type="number"
+              step="0.000001"
+              required
+              value={values.geofence_lng ?? -66.15582}
+              onChange={(e) => setValues({ ...values, geofence_lng: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+
+        {/* Calibrador GPS en vivo */}
+        <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={testDeviceGps}
+            disabled={testingGps}
+            className="button secondary small inline-flex items-center gap-1.5"
+          >
+            <Compass size={15} />
+            {testingGps ? 'Midiendo GPS...' : '📍 Calibrar / Probar mi GPS actual'}
+          </button>
+          {gpsStatus && (
+            <span className="text-xs text-slate-200 font-medium bg-black/40 px-3 py-1.5 rounded-lg border border-white/10">
+              {gpsStatus}
+            </span>
+          )}
+        </div>
+      </div>
+
       <p className="notice">
-        La equivalencia se aplica a nuevas compras. Los pedidos existentes conservan los puntos
-        calculados cuando se crearon.
+        La equivalencia y la geocerca se aplican inmediatamente. Los tótems de entrada registrarán
+        la proximidad del visitante con base en el radio configurado.
       </p>
       {error && (
         <p className="form-error" role="alert">

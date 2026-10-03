@@ -1,5 +1,6 @@
-﻿'use client';
+'use client';
 
+import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
@@ -269,9 +270,17 @@ export function QrStationManager() {
             </p>
           </div>
 
-          <div className="text-right">
-            <span className="text-xs text-white/40 block">Total en memoria</span>
-            <strong className="text-lg font-bold text-white font-mono">{telemetryLogs.length} eventos</strong>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 flex items-center gap-2">
+              <MapPin size={14} className="text-[#FF6B1A]" />
+              <span>Geocerca: <strong>200m</strong> alrededor del edificio</span>
+            </div>
+            <Link
+              href="/admin/settings"
+              className="px-3 py-1.5 rounded-xl bg-[#FF6B1A]/10 hover:bg-[#FF6B1A]/20 border border-[#FF6B1A]/30 text-xs text-[#FF6B1A] font-bold transition-all text-center"
+            >
+              Configurar Radio en Ajustes →
+            </Link>
           </div>
         </div>
 
@@ -294,6 +303,7 @@ export function QrStationManager() {
                   <th className="pb-3">Nivel (Z)</th>
                   <th className="pb-3">Coordenadas (X, Y)</th>
                   <th className="pb-3">Puntos</th>
+                  <th className="pb-3">Geocerca / GPS</th>
                   <th className="pb-3">Tipo</th>
                   <th className="pb-3 pr-2 text-right">Estado</th>
                 </tr>
@@ -325,6 +335,15 @@ export function QrStationManager() {
                       </td>
                       <td className="py-3 font-bold text-[#FF6B1A]">
                         {d.points_granted ? `+${d.points_granted} pts` : d.amount ? `Bs. ${d.amount}` : '+5 pts'}
+                      </td>
+                      <td className="py-3 font-mono text-[11px]">
+                        {d.distance_meters !== undefined && d.distance_meters !== null ? (
+                          <span className={d.in_geofence ? 'text-emerald-400 font-bold' : 'text-amber-400 font-semibold'}>
+                            {d.in_geofence ? '🟢' : '📍'} {Number(d.distance_meters)}m
+                          </span>
+                        ) : (
+                          <span className="text-white/40">Tótem Físico</span>
+                        )}
                       </td>
                       <td className="py-3">
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 border border-white/10 uppercase">

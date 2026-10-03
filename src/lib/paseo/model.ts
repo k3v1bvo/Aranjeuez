@@ -127,6 +127,10 @@ export interface Settings {
   welcome_points: number;
   paseo_name: string;
   location: string;
+  geofence_radius?: number;
+  geofence_lat?: number;
+  geofence_lng?: number;
+  geofence_strict?: boolean;
   demo_mode?: boolean;
 }
 export interface Catalog {

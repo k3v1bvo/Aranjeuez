@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState, useId, useEffect } from 'react';
-import { Gift, Sparkles, ArrowUpRight, Camera, QrCode } from 'lucide-react';
+import { Gift, Sparkles, ArrowUpRight, Camera, QrCode, MapPin, Compass } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Movement, Redemption, Reward, User } from '@/lib/paseo/model';
 import { dateTime, levelFor } from '@/lib/paseo/model';
@@ -19,15 +19,51 @@ function TotemCameraReader({
   onCode,
   onClose,
 }: {
-  onCode: (value: string) => void;
+  onCode: (value: string, coords?: { lat: number; lng: number } | null) => void;
   onClose: () => void;
 }) {
   const id = 'camera-totem-' + useId().replace(/:/g, '');
   const [error, setError] = useState('');
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [locating, setLocating] = useState(true);
+
   const receive = useRef(onCode);
   useEffect(() => {
     receive.current = onCode;
   }, [onCode]);
+
+  // Obtener geolocalización para telemetría y geocerca
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocating(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lng: longitude });
+
+        // Distancia a Paseo Aranjuez (-17.37365, -66.15582)
+        const R = 6371e3;
+        const φ1 = (latitude * Math.PI) / 180;
+        const φ2 = (-17.37365 * Math.PI) / 180;
+        const Δφ = ((-17.37365 - latitude) * Math.PI) / 180;
+        const Δλ = ((-66.15582 - longitude) * Math.PI) / 180;
+        const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const dist = Math.round(R * c);
+
+        setDistance(dist);
+        setLocating(false);
+      },
+      () => {
+        setLocating(false);
+      },
+      { timeout: 7000, enableHighAccuracy: true }
+    );
+  }, []);
+
   useEffect(() => {
     let stopped = false;
     let reader: import('html5-qrcode').Html5Qrcode | undefined;
@@ -38,11 +74,11 @@ function TotemCameraReader({
         reader = new Html5Qrcode(id);
         await reader.start(
           { facingMode: 'environment' },
-          { fps: 8, qrbox: { width: 200, height: 200 } },
+          { fps: 8, qrbox: { width: 220, height: 220 } },
           (value) => {
             if (!delivered && !stopped) {
               delivered = true;
-              receive.current(value);
+              receive.current(value, coords);
             }
           },
           () => {},
@@ -61,9 +97,28 @@ function TotemCameraReader({
         })
         .catch(() => {});
     };
-  }, [id]);
+  }, [id, coords]);
+
   return (
     <Modal title="Escanear Tótem de Entrada" onClose={onClose}>
+      <div className="mb-3 p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+        {locating ? (
+          <span className="text-slate-400 flex items-center gap-1.5">
+            <Compass size={14} className="animate-spin text-[#FF6B1A]" />
+            Detectando perímetro de Paseo Aranjuez...
+          </span>
+        ) : distance !== null ? (
+          <div className="flex items-center justify-between">
+            <span className={distance <= 200 ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'}>
+              {distance <= 200 ? '🟢 Perímetro Aranjuez verificado' : '📍 Proximidad detectada'}
+            </span>
+            <span className="text-slate-300 font-mono">~{distance} metros</span>
+          </div>
+        ) : (
+          <span className="text-slate-400">📍 Perímetro de proximidad (Radio: 200m)</span>
+        )}
+      </div>
+
       <div className="camera-reader" id={id} />
       {error && (
         <p className="form-error" role="alert">
@@ -74,7 +129,6 @@ function TotemCameraReader({
     </Modal>
   );
 }
-
 export function Points() {
   const { data, loading, error, reload } = useResource<PointsData>('puntos', 15000);
   const { refresh } = useSession();
@@ -85,12 +139,16 @@ export function Points() {
   
   const [camera, setCamera] = useState(false);
   const [checkinBusy, setCheckinBusy] = useState(false);
-  async function handleEntranceCheckIn(customCode?: string) {
+    async function handleEntranceCheckIn(customCode?: string, userCoords?: { lat: number; lng: number } | null) {
     setCheckinBusy(true);
     try {
-      const res = await api<{ ok: boolean; message: string; pointsAwarded?: number }>('checkin', {
+      const res = await api<{ ok: boolean; message: string; pointsAwarded?: number; distanceToPaseo?: number }>('checkin', {
         method: 'POST',
-        body: JSON.stringify({ code: customCode || 'PASEO-TOTEM-LOBBY' }),
+        body: JSON.stringify({
+          code: customCode || 'PASEO-TOTEM-LOBBY',
+          userLat: userCoords?.lat,
+          userLng: userCoords?.lng,
+        }),
       });
       toast.success(res.message || '¡Ingreso registrado! Puntos sumados');
       setCamera(false);
