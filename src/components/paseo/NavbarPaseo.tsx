@@ -23,7 +23,9 @@ interface NavbarPaseoProps {
     name: string;
     points: number;
     level: 'Bronce' | 'Plata' | 'Oro' | 'Platino';
-  };
+    role?: string;
+    qrToken?: string;
+  } | null;
 }
 
 export function NavbarPaseo({
@@ -35,11 +37,7 @@ export function NavbarPaseo({
   onOpenCart,
   onOpenOrders,
   cartCount = 0,
-  user = {
-    name: MOCK_USER.name,
-    points: MOCK_USER.points,
-    level: MOCK_USER.level,
-  },
+  user = null,
 }: NavbarPaseoProps) {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -208,58 +206,77 @@ export function NavbarPaseo({
               </button>
             )}
 
-            {/* Saldo de Puntos */}
-            <div 
-              onClick={() => onSelectTab && onSelectTab('puntos')}
-              className="cursor-pointer hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#061734] border border-[#D4A24C]/30 hover:border-[#D4A24C] transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#D4A24C] animate-pulse" />
-              <div className="flex flex-col text-right">
-                <span className="text-[9px] text-white/60 uppercase font-semibold leading-none">Puntos</span>
-                <span className="text-xs font-black text-[#D4A24C] font-mono tabular-nums leading-none mt-0.5">
-                  {user.points.toLocaleString()}
-                </span>
+            {/* Saldo de Puntos (Solo si logueado) */}
+            {user && (
+              <div 
+                onClick={() => onSelectTab && onSelectTab('puntos')}
+                className="cursor-pointer hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#061734] border border-[#D4A24C]/30 hover:border-[#D4A24C] transition-all"
+                title="Tus Paseo Points"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#D4A24C] animate-pulse" />
+                <div className="flex flex-col text-right">
+                  <span className="text-[9px] text-white/60 uppercase font-semibold leading-none">Puntos</span>
+                  <span className="text-xs font-black text-[#D4A24C] font-mono tabular-nums leading-none mt-0.5">
+                    {user.points.toLocaleString()}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Botón Mi QR */}
             <button
-              onClick={() => setIsQrOpen(true)}
+              onClick={() => {
+                if (user) {
+                  setIsQrOpen(true);
+                } else {
+                  window.location.href = '/auth/login';
+                }
+              }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white btn-primary-andino border border-white/20"
+              title={user ? 'Mi Credencial QR' : 'Inicia sesión para ver tu QR'}
             >
               <QrCode className="w-3.5 h-3.5" />
               <span>Mi QR</span>
             </button>
 
-            {/* Avatar de Usuario con Anillo Giratorio de Nivel (Regla 18) / Botón Iniciar Sesión */}
-            {onOpenAuth && (
-              <button
-                onClick={onOpenAuth}
+            {/* Usuario autenticado o botón Ingresar */}
+            {user ? (
+              <a
+                href={user.role === 'comercio' ? '/comercio' : user.role === 'admin' ? '/admin' : '/cliente/perfil'}
                 className="relative p-0.5 rounded-full group cursor-pointer"
-                title={`Sesión de ${user.name} (Nivel ${user.level})`}
-                aria-label="Perfil y Autenticación"
+                title={'Sesión de ' + user.name + ' (Nivel ' + user.level + ')'}
+                aria-label="Mi Perfil"
               >
-                {/* Anillo de nivel con gradiente rotando 10s */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#B84D0B] via-[#D4A24C] to-[#FF6B1A] avatar-ring-rotating opacity-80 group-hover:opacity-100" />
                 <div className="relative w-8 h-8 rounded-full bg-[#061734] border-2 border-white/20 flex items-center justify-center overflow-hidden">
                   <User className="w-4 h-4 text-white/90 group-hover:text-[#FF6B1A] transition-colors" />
                 </div>
-              </button>
+              </a>
+            ) : (
+              <a
+                href="/auth/login"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white btn-primary-andino border border-white/20 shadow-md hover:brightness-110 transition-all"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Ingresar</span>
+              </a>
             )}
           </div>
         </div>
       </header>
 
       {/* Modal QR Pulsante */}
-      <QrPulsanteModal
-        isOpen={isQrOpen}
-        onClose={() => setIsQrOpen(false)}
-        userName={user.name}
-        points={user.points}
-        level={user.level}
-        pinCode={MOCK_USER.pinCode}
-        qrToken={MOCK_USER.qrToken}
-      />
+      {user && (
+        <QrPulsanteModal
+          isOpen={isQrOpen}
+          onClose={() => setIsQrOpen(false)}
+          userName={user.name}
+          points={user.points}
+          level={user.level}
+          pinCode="8821"
+          qrToken={user.qrToken || "PASEO-VIP-001"}
+        />
+      )}
     </>
   );
 }

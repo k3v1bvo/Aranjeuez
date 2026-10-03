@@ -49,16 +49,21 @@ export function PaseoModernidadLanding() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
 
   // Estado del usuario activo
-  const [currentUser, setCurrentUser] = useState({
-    name: MOCK_USER.name,
-    points: MOCK_USER.points,
-    level: MOCK_USER.level as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
-  });
+  const [currentUser, setCurrentUser] = useState<{
+    name: string;
+    points: number;
+    level: 'Bronce' | 'Plata' | 'Oro' | 'Platino';
+    role?: string;
+    qrToken?: string;
+  } | null>(null);
 
   // Cargar sesión real autenticada desde el servidor si existe
   useEffect(() => {
     fetch('/api/paseo/auth')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Not logged in');
+        return res.json();
+      })
       .then((data) => {
         if (data?.user) {
           const pts = data.user.points || 0;
@@ -67,10 +72,14 @@ export function PaseoModernidadLanding() {
             name: data.user.name,
             points: pts,
             level: lvl,
+            role: data.user.role,
+            qrToken: data.user.qr_token,
           });
+        } else {
+          setCurrentUser(null);
         }
       })
-      .catch(() => {});
+      .catch(() => setCurrentUser(null));
   }, []);
 
   // Estado del Carrito PaseoYa
@@ -205,7 +214,7 @@ export function PaseoModernidadLanding() {
                 onExploreMarketplace={() => setActiveTab('paseoya')}
                 onOpenJarvis={() => setIsJarvisChatOpen(true)}
                 onOpenPoints={() => setActiveTab('puntos')}
-                onOpenQr={() => setIsQrOpen(true)}
+                onOpenQr={() => { if (currentUser) setIsQrOpen(true); else window.location.href = '/auth/login'; }}
               />
               <PaseoYaShowcase 
                 onOpenQr={() => setIsQrOpen(true)} 
@@ -504,26 +513,34 @@ export function PaseoModernidadLanding() {
         <FooterPaseo />
 
         {/* Modal QR de Credencial */}
-        <QrPulsanteModal
-          isOpen={isQrOpen}
-          onClose={() => setIsQrOpen(false)}
-          userName={currentUser.name}
-          points={currentUser.points}
-          level={currentUser.level}
-          pinCode={MOCK_USER.pinCode}
-          qrToken={MOCK_USER.qrToken}
-        />
+        {currentUser && (
+          <QrPulsanteModal
+            isOpen={isQrOpen}
+            onClose={() => setIsQrOpen(false)}
+            userName={currentUser.name}
+            points={currentUser.points}
+            level={currentUser.level}
+            pinCode="8821"
+            qrToken={currentUser.qrToken || 'PASEO-VIP-001'}
+          />
+        )}
 
         {/* Modal de Inicio de Sesión y Registro */}
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
           onSuccessLogin={(data) => {
-            setCurrentUser((prev) => ({
-              ...prev,
+            const pts = (data as any).points || 50;
+            const lvl: 'Bronce' | 'Plata' | 'Oro' | 'Platino' =
+              pts >= 1000 ? 'Platino' : pts >= 500 ? 'Oro' : pts >= 200 ? 'Plata' : 'Bronce';
+            setCurrentUser({
               name: data.name,
-              level: data.role === 'comercio' ? 'Oro' : prev.level,
-            }));
+              points: pts,
+              level: lvl,
+              role: data.role,
+              qrToken: (data as any).qr_token,
+            });
+            setIsAuthModalOpen(false);
           }}
         />
 

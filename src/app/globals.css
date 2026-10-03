@@ -427,7 +427,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 15px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
@@ -3587,4 +3587,214 @@ strong {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================================
+   PASEO ARANJUEZ — LUXURY DARK GLASSMORHPISM DESIGN SYSTEM
+   Modernidad Andina UI/UX · Chakana Tokens & Deep Obsidian Navy
+   ============================================================ */
+
+body {
+  background-color: #030B1A !important;
+  color: #F8F9FB !important;
+}
+
+.site-header {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: rgba(6, 23, 52, 0.90) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.announcement {
+  background: #020712 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.site-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: #020712 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.desktop-nav a {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 6px 12px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.desktop-nav a.active,
+.desktop-nav a:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.card,
+.store-card,
+.product-card,
+.table-wrap,
+.filter-bar,
+.panel-nav {
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: rgba(6, 23, 52, 0.70) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s !important;
+  color: #ffffff !important;
+}
+
+.card:hover,
+.store-card:hover,
+.product-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(255, 107, 26, 0.4) !important;
+  box-shadow: 0 16px 36px -8px rgba(255, 107, 26, 0.25) !important;
+}
+
+.category-art {
+  background: linear-gradient(135deg, rgba(6, 23, 52, 0.95), rgba(15, 38, 77, 0.85)) !important;
+  color: #D4A24C !important;
+}
+
+.button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: linear-gradient(135deg, #B84D0B 0%, #FF6B1A 100%) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 20px -4px rgba(255, 107, 26, 0.35) !important;
+  transition: all 0.2s ease !important;
+}
+
+.button:hover:not(:disabled) {
+  filter: brightness(1.1) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 28px -4px rgba(255, 107, 26, 0.5) !important;
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.button.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 107, 26, 0.4) !important;
+}
+
+input,
+textarea,
+select {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  color: #ffffff !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #FF6B1A !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 26, 0.2) !important;
+}
+
+.membership-card {
+  padding: 32px !important;
+  background: linear-gradient(135deg, #0a1f44 0%, #061734 60%, #170b04 100%) !important;
+  border: 2px solid rgba(212, 162, 76, 0.45) !important;
+  border-radius: 28px !important;
+  box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.membership-card .code-display {
+  margin: 25px auto !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  color: white !important;
+  max-width: 280px !important;
+}
+
+.points-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 5px 12px !important;
+  border-radius: 9999px !important;
+  background: rgba(212, 162, 76, 0.15) !important;
+  border: 1px solid rgba(212, 162, 76, 0.35) !important;
+  color: #D4A24C !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  font-family: monospace !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.points-pill:hover {
+  background: rgba(212, 162, 76, 0.25) !important;
+  border-color: #D4A24C !important;
+}
+
+.mobile-nav {
+  background: rgba(6, 23, 52, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+.mobile-nav a {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.mobile-nav a.active {
+  color: #FF6B1A !important;
+}
+
+.jarvis-float {
+  background: linear-gradient(135deg, #061734 0%, #0d2858 100%) !important;
+  border: 1px solid rgba(212, 162, 76, 0.4) !important;
+  color: #D4A24C !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 162, 76, 0.2) !important;
+}
+
+table th {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: #D4A24C !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  padding: 12px 16px !important;
+}
+
+table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  padding: 12px 16px !important;
+}
+
+table tr:hover td {
+  background: rgba(255, 255, 255, 0.03) !important;
 }
