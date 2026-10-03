@@ -6,6 +6,7 @@ import { AndeanHero } from './AndeanHero';
 import { PaseoYaShowcase } from './PaseoYaShowcase';
 import { PaseoPointsShowcase } from './PaseoPointsShowcase';
 import { CulturalSection } from './CulturalSection';
+import { PaseoHeatmap } from './PaseoHeatmap';
 import { FooterPaseo } from './FooterPaseo';
 import { QrPulsanteModal } from './QrPulsanteModal';
 import { JarvisOrb } from './JarvisOrb';
@@ -139,6 +140,7 @@ export function PaseoModernidadLanding() {
                 onAddToCartItem={handleAddToCartItem}
               />
               <PaseoPointsShowcase onOpenQr={() => setIsQrOpen(true)} />
+              <PaseoHeatmap />
               <CulturalSection />
             </>
           )}
@@ -250,6 +252,13 @@ export function PaseoModernidadLanding() {
           {activeTab === 'espacios' && (
             <div className="pt-6">
               <CulturalSection />
+            </div>
+          )}
+
+          {/* Tab Mapa de Calor Directo */}
+          {activeTab === 'mapa' && (
+            <div className="pt-6">
+              <PaseoHeatmap />
             </div>
           )}
         </main>

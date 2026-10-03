@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { 
   QrCode, Sparkles, ShoppingBag, Bot, Flame, Compass, Sun, Moon, 
-  User, ClipboardList 
+  User, ClipboardList, Layers 
 } from 'lucide-react';
 import { ChakanaIcon } from './ChakanaIcon';
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
@@ -147,6 +147,17 @@ export function NavbarPaseo({
             >
               <Compass className="w-4 h-4 text-[#7A8B5C]" />
               Espacios
+            </button>
+                      <button
+              onClick={() => onSelectTab && onSelectTab('mapa')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'mapa'
+                  ? 'text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Layers className="w-4 h-4 text-[#FF6B1A]" />
+              Mapa de Calor
             </button>
           </nav>
 
