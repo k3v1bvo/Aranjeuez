@@ -21,6 +21,23 @@ export function Points() {
   const [coupon, setCoupon] = useState<Redemption | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
+  const [checkinBusy, setCheckinBusy] = useState(false);
+  async function handleEntranceCheckIn() {
+    setCheckinBusy(true);
+    try {
+      const res = await api<{ ok: boolean; message: string; pointsAwarded?: number }>('checkin', {
+        method: 'POST',
+      });
+      toast.success(res.message || '¡Ingreso registrado! +5 puntos');
+      reload();
+      void refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No pudimos registrar tu ingreso.');
+    } finally {
+      setCheckinBusy(false);
+    }
+  }
+
   const key = useRef('');
   async function redeem() {
     if (!selected) return;

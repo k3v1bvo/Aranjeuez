@@ -196,9 +196,11 @@ export function PaseoModernidadLanding() {
           <PaseoPointsShowcase onOpenQr={() => { if (currentUser) setIsQrOpen(true); else window.location.href = '/auth/login'; }} />
         </div>
 
-        <div id="mapa">
-          <PaseoHeatmap />
-        </div>
+        {currentUser?.role === 'admin' && (
+          <div id="mapa">
+            <PaseoHeatmap />
+          </div>
+        )}
 
         <div id="espacios">
           <CulturalSection />

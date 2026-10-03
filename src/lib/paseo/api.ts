@@ -504,6 +504,86 @@ async function scanner(req: NextRequest) {
   }
   throw new ApiError(400, 'Tipo de código inválido.');
 }
+
+async function checkin(req: NextRequest) {
+  const user = await requireUser(req);
+  const client = db();
+
+  rateLimit(`checkin:${user.id}`, 6);
+
+  // Cooldown de 30 minutos para evitar abusos
+  const recent = checked(
+    await client
+      .from('paseo_point_movements')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .ilike('reason', '%ingreso%')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  );
+
+  if (recent && recent.created_at) {
+    const elapsed = Date.now() - new Date(recent.created_at).getTime();
+    if (elapsed < 30 * 60 * 1000) {
+      const waitMin = Math.ceil((30 * 60 * 1000 - elapsed) / 60000);
+      return NextResponse.json({
+        ok: true,
+        alreadyCheckedIn: true,
+        message: `¡Ya registraste tu ingreso recientemente! Vuelve en ${waitMin} min para sumar más puntos.`,
+      });
+    }
+  }
+
+  const pointsAwarded = 5;
+  await client.from('paseo_point_movements').insert({
+    user_id: user.id,
+    amount: pointsAwarded,
+    reason: 'Ingreso al Paseo Aranjuez (+5 pts)',
+  });
+
+  const currentUserData = checked(
+    await client.from('paseo_users').select('points,lifetime_points').eq('id', user.id).single()
+  );
+  if (currentUserData) {
+    await client
+      .from('paseo_users')
+      .update({
+        points: (currentUserData.points || 0) + pointsAwarded,
+        lifetime_points: (currentUserData.lifetime_points || 0) + pointsAwarded,
+      })
+      .eq('id', user.id);
+  }
+
+  // Telemetría interna silenciosa (x, y, z):
+  // z = 0 (Planta Baja), x = 50 (Entrada Central), y = 88 (Lobby & Puertas Principales)
+  try {
+    await client.from('paseo_audit').insert({
+      actor_id: user.id,
+      action: 'telemetry_scan',
+      entity: 'heat_telemetry',
+      detail: {
+        x: 50,
+        y: 88,
+        z: 0,
+        floor: 'Planta Baja',
+        sector: 'Lobby Principal & Acceso Av. América',
+        type: 'entrance_checkin',
+        points: pointsAwarded,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch {
+    // Silencioso
+  }
+
+  return NextResponse.json({
+    ok: true,
+    pointsAwarded,
+    message: '¡Bienvenido a Paseo Aranjuez! Sumaste 5 puntos a tu cuenta.',
+  });
+}
+
 async function purchase(req: NextRequest) {
   const user = await requireUser(req, ['comercio', 'admin']);
   const data = await body(req);
@@ -516,8 +596,59 @@ async function purchase(req: NextRequest) {
       p_reference: string(data.reference, 'Referencia de compra', 3, 100),
     }),
   );
-  return NextResponse.json(
-    { purchase: checked(await db().from('paseo_purchases').select('*').eq('id', id).single()) },
+  
+    // Telemetría silenciosa interna de ubicación (x, y, z) del local
+    try {
+      const client = db();
+      const storeInfo = checked(
+        await client
+          .from('paseo_stores')
+          .select('id,name,floor,sector,local_num')
+          .eq('id', uuid(data.storeId))
+          .maybeSingle()
+      );
+      if (storeInfo) {
+        let z = 1;
+        const fl = (storeInfo.floor || '').toLowerCase();
+        if (fl.includes('subsuelo')) z = -1;
+        else if (fl.includes('baja') || fl.includes('pb') || fl.includes('lobby')) z = 0;
+        else if (fl.includes('1')) z = 1;
+        else if (fl.includes('2')) z = 2;
+        else if (fl.includes('3') || fl.includes('terraza')) z = 3;
+        else if (fl.includes('torre') || fl.includes('4')) z = 4;
+
+        const hash = storeInfo.name
+          .split('')
+          .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        const x = 20 + (hash % 60);
+        const y = 20 + ((hash * 7) % 60);
+
+        await client.from('paseo_audit').insert({
+          actor_id: user.id,
+          action: 'telemetry_scan',
+          entity: 'heat_telemetry',
+          detail: {
+            x,
+            y,
+            z,
+            floor: storeInfo.floor || `Piso ${z}`,
+            sector: storeInfo.sector || 'Comercial',
+            local_num: storeInfo.local_num,
+            store_id: storeInfo.id,
+            store_name: storeInfo.name,
+            customer_id: data.customerId,
+            amount: data.amount,
+            type: 'qr_purchase',
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+    } catch {
+      // Silencioso
+    }
+
+    return NextResponse.json(
+      { purchase: checked(await db().from('paseo_purchases').select('*').eq('id', id).single()) },
     { status: 201 },
   );
 }
@@ -802,6 +933,7 @@ export async function handle(req: NextRequest, path: string[]) {
       response = NextResponse.json(await catalog());
     else if (resource === 'pedidos') response = await orders(req);
     else if (resource === 'puntos') response = await points(req);
+    else if (resource === 'checkin' && req.method === 'POST') response = await checkin(req);
     else if (resource === 'scanner' && req.method === 'POST') response = await scanner(req);
     else if (resource === 'compras' && req.method === 'POST') response = await purchase(req);
     else if (resource === 'gestion' && child) response = await manage(req, child);

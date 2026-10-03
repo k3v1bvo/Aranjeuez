@@ -152,17 +152,19 @@ export function NavbarPaseo({
               Espacios
             </Link>
 
-            <Link
-              href="/#mapa"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === 'mapa'
-                  ? 'text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30'
-                  : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-[#FF6B1A]" />
-              Mapa de Calor
-            </Link>
+            {user?.role === 'admin' && (
+              <Link
+                href="/admin/analytics"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                  activeTab === 'mapa'
+                    ? 'text-[#FF6B1A] bg-[#FF6B1A]/10 border border-[#FF6B1A]/30'
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Layers className="w-4 h-4 text-[#FF6B1A]" />
+                Mapa de Calor (Admin)
+              </Link>
+            )}
           </nav>
 
           {/* Acciones Rápidas */}
@@ -331,14 +333,16 @@ export function NavbarPaseo({
             <Compass className="w-4 h-4 text-[#7A8B5C]" />
             Espacios
           </Link>
-          <Link
-            href="/#mapa"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF6B1A] hover:bg-[#FF6B1A]/10 transition-all"
-          >
-            <Layers className="w-4 h-4 text-[#FF6B1A]" />
-            Mapa de Calor
-          </Link>
+          {user?.role === 'admin' && (
+            <Link
+              href="/admin/analytics"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#FF6B1A] hover:bg-[#FF6B1A]/10 transition-all"
+            >
+              <Layers className="w-4 h-4 text-[#FF6B1A]" />
+              Mapa de Calor (Admin)
+            </Link>
+          )}
           <Link
             href="/cliente/pedidos"
             onClick={() => setIsMobileMenuOpen(false)}

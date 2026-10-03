@@ -1,4 +1,5 @@
 'use client';
+import { PaseoHeatmap } from './PaseoHeatmap';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowUpRight, Coins, Package, ShoppingBag, Users } from 'lucide-react';
@@ -338,6 +339,9 @@ function Reports({ section }: { section: string }) {
       {section === 'analytics' && (
         <>
           <Metrics data={data} />
+          <div className="my-8 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+            <PaseoHeatmap />
+          </div>
           <Analytics data={data} />
         </>
       )}
