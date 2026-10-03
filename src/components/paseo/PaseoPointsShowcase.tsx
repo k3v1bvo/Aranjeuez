@@ -1,5 +1,7 @@
 'use client';
 
+import { ChakanaIcon } from './ChakanaIcon';
+
 import React, { useState } from 'react';
 import { 
   Flame, Award, Shield, Star, Crown, Check, QrCode, 
@@ -108,7 +110,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
 
                 {/* Marca de Agua Chakana de Fondo */}
                 <div className="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
-                  <Crown size={240} className="text-[#D4A24C]" />
+                  <ChakanaIcon size={240} className="text-[#D4A24C]" />
                 </div>
 
                 {/* Fila Superior: Chip EMV, Nombre del Mall y Nivel Actual */}

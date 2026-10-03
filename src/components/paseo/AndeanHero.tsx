@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { JarvisOrb } from './JarvisOrb';
-import { ArrowRight, ShoppingBag, Sparkles, MapPin, QrCode, Award, Compass, Clock } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Sparkles, MapPin, Zap } from 'lucide-react';
+import { ChakanaIcon } from './ChakanaIcon';
 
 interface AndeanHeroProps {
   onExploreMarketplace: () => void;
@@ -18,8 +19,8 @@ export function AndeanHero({
   onOpenQr,
 }: AndeanHeroProps) {
   return (
-    <section className="relative overflow-hidden pt-12 pb-20 px-4 sm:px-6 lg:px-8 bg-[#030B1A]">
-      {/* Resplandor ambiental de fondo */}
+    <section className="relative overflow-hidden pt-12 pb-20 px-4 sm:px-6 lg:px-8 bg-pattern-andino">
+      {/* Resplandor ambiental superior */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-gradient-to-b from-[#B84D0B]/20 via-[#FF6B1A]/10 to-transparent blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -27,24 +28,25 @@ export function AndeanHero({
           
           {/* Columna Izquierda: Mensaje Central */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
-            {/* Ubicación Oficial */}
+            {/* Badge de Ubicación con Chakana */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#061734]/90 border border-[#D4A24C]/40 text-xs font-semibold uppercase tracking-wider text-white shadow-lg mb-6 backdrop-blur-md">
+              <ChakanaIcon size={14} className="text-[#FF6B1A]" />
               <MapPin className="w-3.5 h-3.5 text-[#D4A24C]" />
-              <span>Cochabamba, Bolivia</span>
-              <span className="text-white/40">•</span>
-              <span className="text-[#D4A24C]">Av. América E-0834</span>
+              <span>Cochabamba</span>
+              <span className="text-white/40">·</span>
+              <span className="text-[#D4A24C]">Av. América & Pando</span>
             </div>
 
             {/* Gran Título Display */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08] mb-6">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.08] mb-6 font-display">
               PASEO{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B1A] via-[#D4A24C] to-[#B84D0B]">
                 ARANJUEZ.
               </span>
             </h1>
 
-            <p className="text-lg sm:text-xl text-white/80 max-w-2xl font-sans mb-8 leading-relaxed">
-              El centro comercial, gastronómico y empresarial de referencia en Cochabamba: compra y retira sin filas con <strong className="text-[#FF6B1A]">PaseoYa</strong>, acumula beneficios exclusivos con <strong className="text-[#D4A24C]">Paseo Points</strong> y consulta recomendaciones en vivo con <strong className="text-[#FF8F4D]">Jarvis IA</strong>.
+            <p className="text-lg sm:text-xl text-white/75 max-w-2xl font-sans mb-8 leading-relaxed">
+              El centro comercial, gastronómico y corporativo más vanguardista de la ciudad en una sola plataforma: retiro ágil con <strong className="text-[#FF6B1A]">PaseoYa</strong>, asistencia inteligente con <strong className="text-[#D4A24C]">Jarvis</strong> y beneficios exclusivos en cada visita con <strong className="text-[#FF8F4D]">Paseo Points</strong>.
             </p>
 
             {/* Botones de Acción */}
@@ -54,91 +56,62 @@ export function AndeanHero({
                 className="flex items-center justify-center gap-3 px-7 py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white shadow-xl shadow-[#B84D0B]/35 hover:scale-[1.02] active:scale-[0.98] transition-all w-full sm:w-auto"
               >
                 <ShoppingBag className="w-5 h-5" />
-                <span>Explorar Tiendas (PaseoYa)</span>
+                <span>Explorar PaseoYa</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
-                onClick={onOpenPoints}
-                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-semibold text-base bg-[#061734] hover:bg-white/10 text-white border border-white/20 hover:border-[#D4A24C]/60 transition-all w-full sm:w-auto"
+                onClick={onOpenQr}
+                className="flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-bold text-base glass-andino hover:bg-white/10 text-white transition-all w-full sm:w-auto border border-white/20"
               >
-                <Award className="w-5 h-5 text-[#D4A24C]" />
-                <span>Paseo Points VIP</span>
+                <Sparkles className="w-5 h-5 text-[#D4A24C]" />
+                <span>Mi Credencial QR</span>
               </button>
             </div>
 
-            {/* Métricas Reales del Mall */}
+            {/* Métricas con tabular-nums */}
             <div className="grid grid-cols-3 gap-6 pt-6 border-t border-white/10 w-full max-w-lg">
               <div>
-                <p className="text-2xl sm:text-3xl font-black text-white font-mono">47+</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider mt-1">Locales y Marcas</p>
+                <span className="text-2xl sm:text-3xl font-black text-white font-display tabular-nums">47+</span>
+                <span className="text-xs text-white/50 block font-sans mt-0.5">Locales en Mall</span>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-black text-[#FF6B1A] font-mono">4</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider mt-1">Niveles Comerciales</p>
+                <span className="text-2xl sm:text-3xl font-black text-[#FF6B1A] font-display tabular-nums">100%</span>
+                <span className="text-xs text-white/50 block font-sans mt-0.5">Retiro en Local</span>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-black text-[#D4A24C] font-mono">2</p>
-                <p className="text-xs text-white/50 uppercase tracking-wider mt-1">Torres Corporativas</p>
+                <span className="text-2xl sm:text-3xl font-black text-[#D4A24C] font-display tabular-nums">1 Bs = 1 Pt</span>
+                <span className="text-xs text-white/50 block font-sans mt-0.5">Paseo Points</span>
               </div>
             </div>
           </div>
 
-          {/* Columna Derecha: Tarjeta Visual Interactiva con Jarvis */}
-          <div className="lg:col-span-5 flex flex-col items-center">
-            <div className="relative w-full max-w-md p-7 rounded-3xl bg-gradient-to-b from-[#08152B] to-[#040C1E] border border-white/15 shadow-2xl shadow-black/80 overflow-hidden">
+          {/* Columna Derecha: Tarjeta Jarvis */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center">
+            <div className="relative w-full max-w-md p-6 rounded-3xl glass-andino border border-[#FF6B1A]/20 shadow-2xl flex flex-col items-center text-center">
               
-              {/* Luz sutil superior */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#B84D0B] via-[#FF6B1A] to-[#D4A24C]" />
-
-              {/* Encabezado de la Tarjeta */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-white/70">Centro Comercial Abierto</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-white/60 bg-white/5 px-2.5 py-1 rounded-lg">
-                  <Clock className="w-3.5 h-3.5 text-[#D4A24C]" />
-                  <span>09:00 - 23:00</span>
-                </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#061734] border border-[#FF6B1A]/40 text-xs font-bold text-[#FF6B1A] mb-2 uppercase tracking-widest">
+                <Zap className="w-3.5 h-3.5 text-[#FF6B1A]" />
+                Asistente Virtual
               </div>
 
-              {/* Orbe Jarvis Centrado */}
-              <div className="flex flex-col items-center my-4">
-                <JarvisOrb onClick={onOpenJarvis} size="md" />
-                <h3 className="text-lg font-bold text-white mt-4 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#D4A24C]" />
-                  Jarvis · Concierge Paseo Aranjuez
-                </h3>
-                <p className="text-xs text-white/60 text-center max-w-xs mt-1">
-                  Encuentra restaurantes en El Cuarto, promociones de tiendas o ayuda con tu pedido Click & Collect.
-                </p>
-              </div>
+              <h3 className="text-xl font-black text-white font-display mb-1">
+                Jarvis Paseo
+              </h3>
+              <p className="text-xs text-white/60 mb-6">
+                Interactúa con el orbe o consulta horarios, tiendas y ubicaciones
+              </p>
 
-              {/* Acciones Rápidas */}
-              <div className="space-y-2.5 mt-6 pt-5 border-t border-white/10">
-                <button
-                  onClick={onOpenQr}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <QrCode className="w-4 h-4 text-[#FF6B1A]" />
-                    <span>Mi QR Paseo Points (Caja & Retiro)</span>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:translate-x-1 transition-transform" />
-                </button>
+              {/* Orbe Interactivo con Partículas */}
+              <JarvisOrb size="md" showControls={true} onClick={onOpenJarvis} />
 
-                <a
-                  href="#mapa"
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-semibold transition-all group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Compass className="w-4 h-4 text-[#D4A24C]" />
-                    <span>Mapa de Niveles & Afluencia</span>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-white/40 group-hover:translate-x-1 transition-transform" />
-                </a>
-              </div>
+              <button
+                onClick={onOpenJarvis}
+                className="mt-6 w-full py-3 px-4 rounded-xl font-bold text-sm bg-white/10 hover:bg-white/15 text-white transition-all flex items-center justify-center gap-2 border border-white/10"
+              >
+                <span>Consultar a Jarvis</span>
+                <ArrowRight className="w-4 h-4 text-[#D4A24C]" />
+              </button>
             </div>
           </div>
 
