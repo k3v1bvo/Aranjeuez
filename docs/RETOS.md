@@ -1,0 +1,544 @@
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+HACKATHON BY PASEO ARANJUEZ Documento Oficial de Retos
+1. Introducción
+La Hackathon by Paseo Aranjuez tiene como propósito impulsar el desarrollo de soluciones tecnológicas innovadoras que  puedan mejorar la experiencia de los visitantes, clientes, comercios y empresas que forman parte del ecosistema de Paseo  Aranjuez.
+Durante la competencia, los participantes deberán seleccionar uno de los tres retos planteados y desarrollar una propuesta  tecnológica funcional que responda a una necesidad concreta del Paseo.
+Los retos están orientados a tres áreas estratégicas:
+1. Fidelización y recurrencia de clientes.
+2. Inteligencia artificial y asistencia inteligente.
+3. Comercio digital integrado con visitas presenciales al Paseo.
+El objetivo no es únicamente desarrollar software, sino plantear soluciones que puedan tener una aplicación real dentro de  Paseo Aranjuez.
+Los equipos podrán utilizar las tecnologías, frameworks, lenguajes de programación, servicios de inteligencia artificial, bases de datos y herramientas que consideren necesarias, siempre que puedan demostrar claramente el funcionamiento de su  solución.
+2. Objetivo General de la Hackathon
+Diseñar y desarrollar soluciones tecnológicas innovadoras que permitan fortalecer el ecosistema comercial y digital de Paseo Aranjuez, mejorando la interacción entre:
+• Clientes.
+• Visitantes.
+• Tiendas.
+• Oficinas.
+• Empresas.
+• Emprendimientos.
+• Servicios.
+• Administración del Paseo.
+Las soluciones deberán buscar generar una experiencia más moderna, tecnológica e integrada.
+Además del funcionamiento técnico, se valorará la capacidad de los participantes para identificar correctamente el problema, diseñar una buena experiencia de usuario y presentar una solución que pueda evolucionar hacia un producto implementable.
+3. RETO 1
+Sistema de Fidelización de Clientes de Paseo Aranjuez
+3.1. Nombre del reto
+Paseo Points - Sistema Inteligente de Fidelización y Recompensas
+3.2. Contexto
+Paseo Aranjuez reúne diferentes negocios, tiendas, oficinas, emprendimientos y servicios que reciben diariamente clientes y  visitantes.
+Uno de los principales desafíos de cualquier espacio comercial es lograr que una persona no realice solamente una visita o  una compra ocasional, sino que tenga razones para regresar constantemente.
+PASEO ARANJUEZ · 1
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+Por este motivo se propone desarrollar un sistema centralizado de fidelización basado en puntos, donde las compras y  determinadas actividades realizadas dentro de Paseo Aranjuez generen beneficios para los clientes.
+El sistema deberá convertir cada interacción del cliente con el Paseo en una oportunidad para generar fidelización. 3.3. Problema a resolver
+Actualmente un cliente puede visitar diferentes establecimientos y realizar diferentes compras sin que exista necesariamente un ecosistema digital común que permita:
+• Reconocer su frecuencia de visita.
+• Premiar sus compras.
+• Incentivar nuevas visitas.
+• Crear promociones personalizadas.
+• Generar recompensas.
+• Incentivar al cliente a conocer diferentes negocios del Paseo.
+• Generar información sobre hábitos de consumo.
+El reto consiste en crear una solución capaz de conectar a los diferentes establecimientos mediante un único programa de  fidelización.
+3.4. Objetivo del reto
+Desarrollar una plataforma digital donde los clientes puedan acumular puntos al consumir productos o servicios dentro de  Paseo Aranjuez y posteriormente utilizar esos puntos para obtener beneficios.
+La solución debe ser fácil de utilizar tanto para los clientes como para los establecimientos.
+3.5. Funcionamiento esperado
+Como ejemplo:
+Un cliente visita un negocio de Paseo Aranjuez y realiza una compra por Bs 100.
+La plataforma podría establecer una regla como:
+Bs 1 gastado = 1 punto.
+El establecimiento registra la compra mediante el sistema y automáticamente se acreditan:
+100 puntos
+a la cuenta del cliente.
+Posteriormente, el cliente podría utilizar esos puntos para acceder a diferentes beneficios.
+Por ejemplo:
+• 300 puntos: cupón de descuento.
+• 500 puntos: beneficio especial.
+• 700 puntos: producto promocional.
+• 1.000 puntos: descuento en determinados establecimientos.
+• 1.500 puntos: acceso a una promoción exclusiva.
+Las reglas son solamente ejemplos. Los participantes podrán plantear modelos diferentes siempre que sean coherentes y  sostenibles.
+3.6. Usuarios del sistema
+La solución debería contemplar al menos tres tipos de usuarios.
+Cliente
+Podrá:
+• Crear una cuenta.
+• Iniciar sesión.
+• Consultar sus puntos.
+• Revisar movimientos.
+• Consultar beneficios.
+• Canjear recompensas.
+• Visualizar promociones.
+PASEO ARANJUEZ · 2
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+• Consultar establecimientos participantes.
+• Revisar su historial.
+Establecimiento
+Cada negocio participante podría contar con acceso para:
+• Registrar compras.
+• Asignar puntos.
+• Validar clientes.
+• Validar canjes.
+• Consultar movimientos relacionados con su establecimiento.
+• Crear promociones si el sistema lo permite.
+Administrador de Paseo Aranjuez
+El administrador deberá poder gestionar todo el ecosistema.
+Por ejemplo:
+• Registrar establecimientos.
+• Gestionar usuarios.
+• Administrar promociones.
+• Crear recompensas.
+• Configurar equivalencias de puntos.
+• Consultar estadísticas.
+• Revisar movimientos.
+• Detectar operaciones irregulares.
+• Consultar clientes frecuentes.
+• Consultar establecimientos con mayor actividad.
+3.7. Identificación del cliente
+Los equipos podrán proponer diferentes mecanismos.
+Por ejemplo:
+• Código QR personal.
+• Número de celular.
+• Correo electrónico.
+• Código único de usuario.
+• Tarjeta digital.
+• NFC.
+• Código generado desde una aplicación.
+Una posibilidad sería que cada cliente disponga de un QR personal.
+Cuando realiza una compra, el establecimiento escanea el QR, introduce el monto de la transacción y el sistema acredita  automáticamente los puntos correspondientes.
+3.8. Requisitos mínimos
+La propuesta deberá incluir como mínimo:
+• Registro de usuarios.
+• Inicio de sesión.
+• Perfil del cliente.
+• Sistema de puntos.
+• Registro de transacciones.
+• Historial de puntos.
+• Catálogo de beneficios.
+• Canje de recompensas.
+• Panel para establecimientos.
+• Panel administrativo.
+• Mecanismo para identificar al cliente.
+PASEO ARANJUEZ · 3
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+• Base de datos.
+3.9. Funcionalidades adicionales
+Se valorarán características como:
+• Niveles de clientes: Bronce, Plata, Oro, Platinum. • Retos mensuales.
+• Bonificaciones por visitar diferentes negocios. • Puntos dobles en fechas especiales.
+• Puntos por cumpleaños.
+• Sistema de referidos.
+• Ranking de clientes.
+• Misiones.
+• Logros.
+• Gamificación.
+• Cupones digitales.
+• Notificaciones.
+• Promociones personalizadas.
+• Estadísticas.
+• Inteligencia artificial para recomendar promociones. • Detección de posibles fraudes.
+• Geolocalización dentro del Paseo.
+3.10. Ejemplo de experiencia
+Paso 1:
+El cliente crea su cuenta.
+Paso 2:
+Recibe un código QR personal.
+Paso 3:
+Realiza una compra en un establecimiento. Paso 4:
+El establecimiento escanea su QR.
+Paso 5:
+Se registra la compra.
+Paso 6:
+Los puntos aparecen automáticamente en la cuenta. Paso 7:
+El cliente revisa los premios disponibles.
+Paso 8:
+Selecciona una recompensa.
+Paso 9:
+El comercio valida el canje.
+Paso 10:
+El sistema registra toda la operación.
+PASEO ARANJUEZ · 4
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+4. RETO 2
+Asistente Inteligente para Paseo Aranjuez
+4.1. Nombre del reto
+Jarvis Paseo - Asistente Inteligente de Paseo Aranjuez
+4.2. Concepto
+El segundo reto consiste en crear un asistente inteligente inspirado conceptualmente en JARVIS de Iron Man, adaptado al  entorno de Paseo Aranjuez.
+La referencia a JARVIS se utiliza únicamente como inspiración para representar la idea de un asistente digital inteligente  capaz de mantener conversaciones, interpretar solicitudes y ayudar al usuario utilizando lenguaje natural.
+El objetivo será crear una inteligencia artificial que funcione como el asistente virtual de Paseo Aranjuez. 4.3. Problema a resolver
+Una persona que visita Paseo Aranjuez puede necesitar información como:
+• ¿Dónde puedo comer?
+• ¿Qué negocios están abiertos?
+• ¿Dónde puedo comprar determinado producto?
+• ¿Qué actividades existen hoy?
+• ¿Qué promociones están disponibles?
+• ¿Dónde está determinada oficina?
+• ¿Qué empresas existen?
+• ¿Dónde puedo estacionar?
+• ¿Qué eventos se realizarán?
+• ¿Qué servicios puedo encontrar?
+Actualmente obtener esa información puede requerir buscar en diferentes redes sociales, páginas, publicaciones o preguntar directamente.
+El reto consiste en centralizar esta información mediante un único asistente inteligente.
+4.4. Objetivo
+Desarrollar un asistente basado en inteligencia artificial capaz de responder preguntas relacionadas con Paseo Aranjuez y  ayudar al visitante a encontrar productos, servicios, negocios, oficinas, promociones, eventos e información relevante.
+4.5. Ejemplo de conversación
+Usuario:
+Tengo hambre y quiero comer algo rápido.
+Jarvis Paseo:
+Actualmente tienes varias opciones dentro de Paseo Aranjuez. ¿Prefieres hamburguesas, comida nacional, cafetería u otra  opción?
+Usuario:
+Necesito comprar un regalo para mi pareja.
+El sistema podría analizar los negocios disponibles y recomendar alternativas.
+Usuario:
+¿Dónde queda la tienda X?
+El asistente podría responder indicando:
+• Piso.
+• Sector.
+• Número de local.
+• Referencia.
+• Mapa.
+PASEO ARANJUEZ · 5
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+4.6. Capacidades mínimas
+El asistente deberá poder responder preguntas relacionadas con:
+Negocios
+• Nombre.
+• Descripción.
+• Ubicación.
+• Horarios.
+• Productos.
+• Servicios.
+Promociones
+• Descuentos.
+• Ofertas.
+• Beneficios.
+• Promociones temporales.
+Eventos
+• Nombre.
+• Fecha.
+• Hora.
+• Lugar.
+• Descripción.
+Ubicación
+Permitir al usuario encontrar lugares dentro del Paseo.
+Recomendaciones
+El asistente deberá intentar comprender la intención del usuario.
+Por ejemplo:
+“Necesito comprar un regalo.”
+En lugar de limitarse a buscar literalmente la palabra "regalo", debería recomendar alternativas disponibles dentro del Paseo. 4.7. Formas de interacción
+Los participantes podrán implementar el asistente mediante:
+• Chat.
+• Voz.
+• Chat + voz.
+• Aplicación móvil.
+• Aplicación web.
+• Pantalla o kiosco inteligente.
+• Bot de WhatsApp.
+• Página web.
+Se valorará especialmente una experiencia que haga sentir al usuario que realmente está conversando con un asistente. 4.8. Inteligencia Artificial
+Los participantes podrán utilizar:
+• Modelos de lenguaje.
+• APIs de inteligencia artificial.
+• Modelos locales.
+• RAG.
+• Bases de conocimiento.
+• Bases vectoriales.
+• Reconocimiento de voz.
+• Text-to-Speech.
+PASEO ARANJUEZ · 6
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+• Speech-to-Text.
+• Agentes inteligentes.
+Se valorará especialmente que la inteligencia artificial utilice información específica de Paseo Aranjuez y no solamente  respuestas genéricas obtenidas de un modelo.
+4.9. Base de conocimiento
+El sistema podría almacenar información estructurada de:
+• Empresas.
+• Tiendas.
+• Oficinas.
+• Restaurantes.
+• Productos.
+• Servicios.
+• Horarios.
+• Promociones.
+• Eventos.
+• Ubicaciones.
+El asistente utilizará esta información para construir sus respuestas.
+4.10. Funcionalidades adicionales
+Se valorarán propuestas que incorporen:
+• Reconocimiento de voz.
+• Respuestas mediante voz.
+• Avatar animado.
+• Interfaz futurista.
+• Mapas interactivos.
+• Navegación interna.
+• Recomendaciones personalizadas.
+• Integración con Paseo Points.
+• Integración con PaseoYa.
+• Historial de conversaciones.
+• Diferentes personalidades del asistente.
+• Soporte multilingüe.
+• Analítica de preguntas frecuentes.
+• Sistema de administración de conocimiento.
+4.11. Ejemplo avanzado
+Usuario:
+Jarvis, quiero comprar una camisa, tomar un café y después tengo una reunión a las 5.
+El sistema podría responder:
+Puedo ayudarte. Primero puedes visitar una tienda ubicada en el sector X. A pocos metros tienes una cafetería. Según el  horario que indicas, tienes aproximadamente 45 minutos disponibles antes de tu reunión.
+El objetivo es demostrar cómo la inteligencia artificial puede convertirse en una interfaz inteligente para interactuar con todo  el ecosistema de Paseo Aranjuez.
+PASEO ARANJUEZ · 7
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+5. RETO 3
+Plataforma de Pedidos y Marketplace del Paseo
+5.1. Nombre del reto
+PaseoYa
+Marketplace y plataforma de pedidos de Paseo Aranjuez
+5.2. Concepto
+PaseoYa deberá funcionar como una plataforma digital donde los diferentes establecimientos de Paseo Aranjuez puedan  publicar sus productos y servicios para que los clientes puedan consultarlos y realizar pedidos.
+La lógica puede tomar como referencia la experiencia de plataformas como PedidosYa, donde el usuario puede explorar  diferentes establecimientos, revisar productos, realizar un pedido y efectuar un pago.
+Sin embargo, PaseoYa tendrá una diferencia fundamental:
+PaseoYa no estará orientado principalmente al delivery. El cliente deberá acudir físicamente a Paseo Aranjuez para retirar  su compra.
+Esta condición forma parte central del reto.
+5.3. Problema a resolver
+Muchas veces una persona podría estar interesada en comprar productos disponibles dentro de Paseo Aranjuez, pero: • No conoce todos los establecimientos.
+• No sabe qué productos existen.
+• No conoce los precios.
+• No sabe si existe disponibilidad.
+• No quiere recorrer múltiples tiendas buscando un producto.
+• Quiere asegurarse de que algo esté disponible antes de trasladarse.
+PaseoYa deberá resolver este problema permitiendo explorar y comprar previamente desde internet. 5.4. Objetivo estratégico
+La plataforma tendrá dos objetivos simultáneos:
+Digitalizar las ventas de los establecimientos.
+y
+Generar tráfico presencial hacia Paseo Aranjuez.
+Por esta razón, incluso si la compra se realiza completamente por internet, el cliente deberá acudir al Paseo para retirar su  pedido.
+El comercio digital se convierte de esta manera en un incentivo para generar visitas físicas.
+5.5. Funcionamiento esperado
+Ejemplo:
+Un usuario ingresa a PaseoYa desde su celular.
+Encuentra diferentes categorías:
+• Tecnología.
+• Moda.
+• Comida.
+• Accesorios.
+• Servicios.
+• Regalos.
+• Hogar.
+• Entretenimiento.
+El usuario selecciona una tienda.
+Encuentra un producto.
+PASEO ARANJUEZ · 8
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+Por ejemplo:
+Audífonos Bluetooth - Bs 250
+Selecciona:
+Comprar
+Realiza su pedido.
+Puede realizar el pago mediante los métodos habilitados.
+Posteriormente recibe:
+Tu pedido estará disponible para retiro en Paseo Aranjuez.
+El sistema proporciona:
+• Número de pedido.
+• Comercio.
+• Ubicación.
+• Estado.
+• Horario de retiro.
+• Código QR o código de seguridad.
+El cliente deberá acudir personalmente a Paseo Aranjuez.
+Cuando llega, presenta su QR.
+El establecimiento valida el código.
+Finalmente el pedido cambia de:
+Listo para recoger
+a
+Entregado
+5.6. Condición obligatoria
+La característica principal de PaseoYa será:
+RETIRO PRESENCIAL OBLIGATORIO
+Los equipos no deberán plantear como modelo principal un sistema de delivery externo. El propósito del proyecto es utilizar el comercio electrónico para atraer clientes físicamente hacia Paseo Aranjuez. Esto permitirá que una persona que llega para recoger una compra también pueda:
+• Visitar otros negocios.
+• Consumir alimentos.
+• Conocer nuevas tiendas.
+• Participar en actividades.
+• Realizar compras adicionales.
+5.7. Usuarios del sistema
+Cliente
+Podrá:
+• Registrarse.
+• Iniciar sesión.
+• Explorar negocios.
+• Buscar productos.
+• Buscar categorías.
+• Revisar precios.
+• Agregar productos al carrito.
+• Realizar pedidos.
+• Consultar pedidos.
+• Recibir un código de retiro.
+PASEO ARANJUEZ · 9
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+• Revisar promociones.
+Comercio
+Cada establecimiento podrá disponer de un panel.
+Podrá:
+• Registrar productos.
+• Modificar productos.
+• Administrar precios.
+• Administrar inventario.
+• Recibir pedidos.
+• Confirmar pedidos.
+• Marcar pedidos como preparados.
+• Validar la entrega.
+• Consultar ventas.
+Administrador Paseo Aranjuez
+Podrá:
+• Administrar negocios.
+• Administrar usuarios.
+• Administrar categorías.
+• Supervisar pedidos.
+• Consultar estadísticas.
+• Gestionar promociones.
+• Consultar ventas generales.
+• Analizar comportamiento de clientes.
+5.8. Estados del pedido
+Se recomienda utilizar estados similares a:
+Pedido recibido
+↓
+Pedido confirmado
+↓
+Preparando pedido
+↓
+Listo para recoger
+↓
+Cliente llegó al Paseo
+↓
+Pedido entregado
+5.9. Código de retiro
+Cada pedido podrá generar automáticamente un:
+• Código QR.
+• PIN.
+• Código numérico.
+• Token digital.
+Este código deberá ser presentado físicamente al momento del retiro. El comercio deberá validar el código antes de entregar el producto.
+PASEO ARANJUEZ · 10
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+5.10. Marketplace
+La plataforma deberá permitir visualizar múltiples establecimientos.
+Ejemplo:
+Tecnología
+• Tienda A
+• Tienda B
+• Tienda C
+Moda
+• Tienda D
+• Tienda E
+Gastronomía
+• Restaurante A
+• Café B
+• Restaurante C
+Cada negocio tendrá su propio catálogo dentro de PaseoYa.
+5.11. Buscador global
+Una característica importante sería permitir búsquedas como:
+Audífonos Bluetooth
+y que PaseoYa pueda mostrar todos los negocios del Paseo que ofrecen ese producto o productos relacionados. Esto permitirá comparar:
+• Precio.
+• Características.
+• Disponibilidad.
+• Ubicación.
+5.12. Funcionalidades adicionales
+Se valorará la incorporación de:
+• Pago mediante QR.
+• Carrito de compras.
+• Favoritos.
+• Historial de compras.
+• Recomendaciones.
+• Promociones.
+• Cupones.
+• Productos destacados.
+• Tiendas favoritas.
+• Sistema de calificación.
+• Notificaciones.
+• Control de inventario.
+• Reserva de productos.
+• Inteligencia artificial.
+• Recomendaciones personalizadas.
+• Dashboard de ventas.
+• Integración con Paseo Points.
+• Integración con Jarvis Paseo.
+6. Integración entre los tres retos
+Aunque cada equipo deberá enfocarse principalmente en uno de los retos, se valorará la capacidad de demostrar cómo la  solución podría integrarse posteriormente con las otras plataformas.
+PASEO ARANJUEZ · 11
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+Los tres proyectos podrían formar parte de un único ecosistema tecnológico.
+Ejemplo
+Un cliente conversa con:
+Jarvis Paseo
+y pregunta:
+Necesito comprar un regalo.
+Jarvis identifica diferentes productos disponibles en:
+PaseoYa.
+El cliente selecciona uno y realiza la compra.
+La compra genera:
+Paseo Points.
+Posteriormente el usuario visita Paseo Aranjuez para recoger su producto.
+De esta manera:
+Jarvis Paseo
+↓
+ayuda al cliente.
+PaseoYa
+↓
+permite realizar la compra.
+Paseo Points
+↓
+premia la compra y genera fidelización.
+Los tres sistemas podrían convertirse en componentes de una futura plataforma digital integral de Paseo Aranjuez. 7. Requisitos Generales de Participación
+Cada equipo deberá seleccionar uno de los tres retos.
+La solución presentada deberá:
+• Resolver claramente el problema seleccionado.
+• Contar con una interfaz demostrable.
+• Contar con una lógica funcional.
+• Utilizar una arquitectura tecnológica coherente.
+• Considerar una posible implementación real.
+• Tener una buena experiencia de usuario.
+• Poder ser presentada mediante una demostración.
+No se exige que durante la hackathon se construya un producto comercial completamente terminado. Se espera principalmente un:
+MVP - Producto Mínimo Viable funcional.
+8. Tecnologías
+Los equipos tendrán libertad tecnológica.
+Podrán utilizar, entre otras:
+Frontend
+• A eleccion
+Backend
+• A eleccion
+PASEO ARANJUEZ · 12
+HACKATHON BY PASEO ARANJUEZ | DOCUMENTO OFICIAL DE RETOS
+Bases de datos
+• A eleccion
+Inteligencia Artificial
+• A elección.
+9. Entregables
+Cada equipo deberá presentar como mínimo:
+1. Prototipo funcional
+Debe demostrar las funcionalidades principales.
+2. Código fuente
+Repositorio o proyecto utilizado durante la competencia.
+3. Presentación
+Una presentación breve explicando:
+• Problema.
+• Solución.
+• Usuarios.
+• Propuesta de valor.
+• Funcionamiento.
+• Arquitectura.
+• Tecnologías utilizadas.
+• Posible implementación.
+4. Demostración
+El equipo deberá demostrar en vivo el funcionamiento de las principales funcionalidades. 5. Arquitectura
+Se deberá explicar brevemente:
+• Frontend.
+• Backend.
+• Base de datos.
+• APIs.
+• Inteligencia artificial, cuando corresponda.
+• Servicios externos utilizados.
+PASEO ARANJUEZ · 13

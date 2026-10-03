@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
-import path from "path";
+import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -7,11 +7,11 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "i.ibb.co" },
-      { protocol: "https", hostname: "ibb.co" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "via.placeholder.com" },
-      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: 'https', hostname: 'i.ibb.co' },
+      { protocol: 'https', hostname: 'ibb.co' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'via.placeholder.com' },
+      { protocol: 'https', hostname: '*.supabase.co' },
     ],
   },
 };
