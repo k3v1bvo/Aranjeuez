@@ -1,137 +1,185 @@
 'use client';
 
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  ArrowUpRight,
-  Grid2X2,
-  ShoppingBag,
-  Sparkles,
-  Gift,
-  UserRound,
-  MapPin,
-  LogOut,
-  LayoutDashboard,
-} from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutDashboard } from 'lucide-react';
 import { useCart, useSession } from './Providers';
-import { homeFor } from '@/lib/paseo/model';
-import { toast } from 'sonner';
+import { NavbarPaseo } from './NavbarPaseo';
+import { FooterPaseo } from './FooterPaseo';
+import { QrPulsanteModal } from './QrPulsanteModal';
+import { AuthModal } from './AuthModal';
+import { CartDrawerModal } from './CartDrawerModal';
+import { OrdersTrackerModal } from './OrdersTrackerModal';
+import { MOCK_USER } from '@/lib/mock-data';
+import { ToastProvider } from './PaseoToast';
 
-const links = [
-  { href: '/cliente', label: 'PaseoYa', icon: ShoppingBag },
-  { href: '/cliente/puntos', label: 'Paseo Points', icon: Gift },
-  { href: '/jarvis', label: 'Jarvis', icon: Sparkles },
-];
 export function Shell({ children, demo }: { children: React.ReactNode; demo: boolean }) {
   const { user, logout } = useSession();
   const cart = useCart();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  // If on root home page '/', PaseoModernidadLanding handles its own full-bleed layout
   if (pathname === '/') return <main id="main">{children}</main>;
-  const active = (href: string) =>
-    href === '/cliente'
-      ? pathname === '/cliente' ||
-        pathname.startsWith('/cliente/tiendas/') ||
-        pathname.startsWith('/producto/')
-      : pathname.startsWith(href);
-  return (
-    <>
-      <a className="skip-link" href="#main">
-        Saltar al contenido
-      </a>
-      <div className="announcement">
-        <span>
-          <MapPin size={13} /> Encuentra tu próximo plan. Vívelo en el Paseo.
-        </span>
-        {demo && <span className="demo-label">Entorno de demostración</span>}
-      </div>
-      <header className="site-header">
-        <div className="header-inner">
-          <Link className="brand" href="/" aria-label="Paseo Aranjuez, inicio">
-            <span className="brand-mark">
-              <Grid2X2 size={26} />
-            </span>
-            <span>
-              PASEO<span className="brand-sub">ARANJUEZ</span>
-            </span>
-          </Link>
-          <nav className="desktop-nav" aria-label="Navegación principal">
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className={active(l.href) ? 'active' : ''}>
-                {l.label}
-                {l.href === '/jarvis' && <Sparkles size={13} />}
-              </Link>
-            ))}
-          </nav>
-          <div className="header-actions">
-            <Link
-              className="cart-link"
-              href="/carrito"
-              aria-label={`Carrito, ${cart.count} productos`}
-            >
-              <ShoppingBag size={21} />
-              {cart.count > 0 && <span>{cart.count}</span>}
-            </Link>
-            {user ? (
-              <>
-                <Link
-                  className="account-button"
-                  href={user.role === 'cliente' ? '/cliente/perfil' : homeFor(user.role)}
-                >
-                  <UserRound size={17} />
-                  <span>{user.name.split(' ')[0]}</span>
-                </Link>
-                <button
-                  className="icon-button signout"
-                  aria-label="Cerrar sesión"
-                  onClick={() => logout().catch((e) => toast.error(e.message))}
-                >
-                  <LogOut size={17} />
-                </button>
-              </>
-            ) : (
-              <Link className="button small" href="/auth/login">
-                Ingresar <ArrowUpRight size={15} />
-              </Link>
-            )}
-          </div>
+
+  // If on admin or comercio panel, render dashboard layout with luxury glassmorphism
+  if (pathname.startsWith('/admin') || pathname.startsWith('/comercio')) {
+    const role = pathname.startsWith('/admin') ? 'admin' : 'comercio';
+    return (
+      <div className="min-h-screen bg-[#030B1A] text-white flex flex-col font-sans selection:bg-[#FF6B1A] selection:text-white">
+        <NavbarPaseo
+          activeTab="inicio"
+          onSelectTab={(tab) => {
+            if (tab === 'inicio') router.push('/');
+            else if (tab === 'paseoya') router.push('/cliente');
+            else if (tab === 'jarvis') router.push('/jarvis');
+            else if (tab === 'puntos') router.push('/cliente/puntos');
+          }}
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+          onOpenAuth={() => setIsAuthOpen(true)}
+          onOpenCart={() => setIsCartOpen(true)}
+          onOpenOrders={() => setIsOrdersOpen(true)}
+          cartCount={cart.count}
+          user={
+            user
+              ? {
+                  name: user.name,
+                  points: user.points || 0,
+                  level: (user.points || 0) >= 1000 ? 'Platino' : (user.points || 0) >= 500 ? 'Oro' : (user.points || 0) >= 200 ? 'Plata' : 'Bronce',
+                }
+              : undefined
+          }
+        />
+        <div className="flex-1 flex flex-col md:flex-row max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 gap-8">
+          <PanelNav role={role} />
+          <main className="flex-1 rounded-3xl glass-andino border border-white/10 p-6 md:p-8 shadow-2xl" id="main">
+            {children}
+          </main>
         </div>
-      </header>
-      <main id="main" tabIndex={-1}>
+        <FooterPaseo />
+      </div>
+    );
+  }
+
+  // Active tab determination based on pathname
+  let activeTab = 'inicio';
+  if (pathname.startsWith('/cliente/puntos')) activeTab = 'puntos';
+  else if (pathname.startsWith('/cliente') || pathname.startsWith('/producto')) activeTab = 'paseoya';
+  else if (pathname.startsWith('/jarvis')) activeTab = 'jarvis';
+
+  const currentUserData = user
+    ? {
+        name: user.name,
+        points: user.points || 0,
+        level: ((user.points || 0) >= 1000
+          ? 'Platino'
+          : (user.points || 0) >= 500
+          ? 'Oro'
+          : (user.points || 0) >= 200
+          ? 'Plata'
+          : 'Bronce') as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
+      }
+    : {
+        name: MOCK_USER.name,
+        points: MOCK_USER.points,
+        level: MOCK_USER.level as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
+      };
+
+  const handleSelectTab = (tab: string) => {
+    if (tab === 'inicio') router.push('/');
+    else if (tab === 'paseoya') router.push('/cliente');
+    else if (tab === 'jarvis') router.push('/jarvis');
+    else if (tab === 'puntos') router.push('/cliente/puntos');
+    else if (tab === 'espacios') router.push('/#espacios');
+    else if (tab === 'mapa') router.push('/#mapa');
+  };
+
+  return (
+    <ToastProvider>
+    <div
+      className={`min-h-screen ${
+        isDarkMode ? 'bg-[#030B1A] text-white' : 'bg-[#F8F9FB] text-[#061734]'
+      } flex flex-col font-sans selection:bg-[#FF6B1A] selection:text-white transition-colors duration-300`}
+    >
+      {/* Luxury Navbar matching the home page */}
+      <NavbarPaseo
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
+        onOpenOrders={() => setIsOrdersOpen(true)}
+        cartCount={cart.count}
+        user={currentUserData}
+      />
+
+      {/* Main page content wrapped in luxury dark container */}
+      <main className="flex-1 w-full" id="main">
         {children}
       </main>
-      <footer className="site-footer">
-        <Link className="brand" href="/">
-          <Grid2X2 size={24} />
-          <span>Paseo Aranjuez</span>
-        </Link>
-        <p>Descubre, disfruta y vuelve.</p>
-        <div>
-          <Link href="/cliente">Tiendas</Link>
-          <Link href="/jarvis">Asistente</Link>
-          <Link href="/auth/login">Acceso comercios</Link>
-        </div>
-      </footer>
-      <nav className="mobile-nav" aria-label="Navegación móvil">
-        {links.map((l) => (
-          <Link href={l.href} key={l.href} className={active(l.href) ? 'active' : ''}>
-            <l.icon size={21} />
-            <span>{l.label}</span>
-          </Link>
-        ))}
-        <Link href={user && user.role !== 'cliente' ? homeFor(user.role) : '/cliente/perfil'}>
-          <UserRound size={21} />
-          <span>Mi cuenta</span>
-        </Link>
-      </nav>
-      {pathname !== '/jarvis' && (
-        <Link className="jarvis-float" href="/jarvis" aria-label="Pregúntale a Jarvis">
-          <Sparkles size={19} />
-          <span>¿Un plan? Jarvis te ayuda</span>
-        </Link>
-      )}
-    </>
+
+      {/* Luxury Footer with Chakana and official Paseo branding */}
+      <FooterPaseo />
+
+      {/* QR Credential Modal */}
+      <QrPulsanteModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+        userName={currentUserData.name}
+        points={currentUserData.points}
+        level={currentUserData.level}
+        pinCode={MOCK_USER.pinCode}
+        qrToken={MOCK_USER.qrToken}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+
+      {/* Cart Drawer */}
+      <CartDrawerModal
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cart.items.map((it) => ({
+          id: it.product.id,
+          name: it.product.name,
+          storeName: it.product.store?.name || 'Tienda Paseo',
+          storeLocation: `${it.product.store?.floor || 'Mall'} · ${it.product.store?.local_num || ''}`,
+          price: it.product.price,
+          quantity: it.quantity,
+          imageUrl: it.product.image_url || 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+        }))}
+        onUpdateQuantity={(id, delta) => {
+          const item = cart.items.find((i) => i.product.id === id);
+          if (item) {
+            cart.quantity(id, item.quantity + delta);
+          }
+        }}
+        onRemoveItem={(id) => {
+          cart.remove(id);
+        }}
+        onClearCart={() => cart.clear()}
+        onOpenOrderTracker={() => {
+          setIsCartOpen(false);
+          setIsOrdersOpen(true);
+        }}
+      />
+
+      {/* Orders Tracker Modal */}
+      <OrdersTrackerModal isOpen={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} />
+    </div>
+    </ToastProvider>
   );
 }
+
 export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
   const pathname = usePathname();
   const admin = [
@@ -155,25 +203,41 @@ export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
     ['scanner', 'Caja y validación'],
     ['promociones', 'Promociones'],
   ];
+
   return (
-    <aside className="panel-nav">
-      <div className="panel-brand">
-        <LayoutDashboard size={21} />
-        <div>
-          <strong>{role === 'admin' ? 'Administración' : 'Mi establecimiento'}</strong>
-          <small>Paseo Aranjuez</small>
+    <aside className="w-full md:w-64 flex-shrink-0">
+      <div className="rounded-3xl glass-andino border border-white/10 p-5 shadow-xl">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/10 mb-4">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#B84D0B] to-[#FF6B1A] flex items-center justify-center text-white shadow-lg shadow-[#FF6B1A]/20">
+            <LayoutDashboard size={20} />
+          </div>
+          <div>
+            <strong className="block text-sm font-bold text-white font-display">
+              {role === 'admin' ? 'Administración' : 'Mi Comercio'}
+            </strong>
+            <small className="text-xs text-white/50">Paseo Aranjuez</small>
+          </div>
         </div>
+        <nav className="space-y-1.5" aria-label={`Panel ${role}`}>
+          {(role === 'admin' ? admin : commerce).map(([route, label]) => {
+            const href = `/${role}${route ? '/' + route : ''}`;
+            const isActive = pathname === href;
+            return (
+              <Link
+                href={href}
+                key={href}
+                className={`flex items-center px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white shadow-md'
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-      <nav aria-label={`Panel ${role}`}>
-        {(role === 'admin' ? admin : commerce).map(([route, label]) => {
-          const href = `/${role}${route ? '/' + route : ''}`;
-          return (
-            <Link href={href} key={href} className={pathname === href ? 'active' : ''}>
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
     </aside>
   );
 }
