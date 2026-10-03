@@ -19,6 +19,7 @@ export default async function Page({ params }: { params: Promise<{ section: stri
       'alerts',
       'settings',
       'payments',
+      'qrs',
     ].includes(section)
   )
     notFound();

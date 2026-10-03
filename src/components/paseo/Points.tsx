@@ -1,6 +1,6 @@
 'use client';
-import { useRef, useState } from 'react';
-import { Gift, Sparkles, ArrowUpRight } from 'lucide-react';
+import { useRef, useState, useId, useEffect } from 'react';
+import { Gift, Sparkles, ArrowUpRight, Camera, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Movement, Redemption, Reward, User } from '@/lib/paseo/model';
 import { dateTime, levelFor } from '@/lib/paseo/model';
@@ -14,6 +14,67 @@ interface PointsData {
   redemptions: Redemption[];
   settings: { points_ratio: number };
 }
+
+function TotemCameraReader({
+  onCode,
+  onClose,
+}: {
+  onCode: (value: string) => void;
+  onClose: () => void;
+}) {
+  const id = 'camera-totem-' + useId().replace(/:/g, '');
+  const [error, setError] = useState('');
+  const receive = useRef(onCode);
+  useEffect(() => {
+    receive.current = onCode;
+  }, [onCode]);
+  useEffect(() => {
+    let stopped = false;
+    let reader: import('html5-qrcode').Html5Qrcode | undefined;
+    let delivered = false;
+    const startup = import('html5-qrcode')
+      .then(async ({ Html5Qrcode }) => {
+        if (stopped) return;
+        reader = new Html5Qrcode(id);
+        await reader.start(
+          { facingMode: 'environment' },
+          { fps: 8, qrbox: { width: 200, height: 200 } },
+          (value) => {
+            if (!delivered && !stopped) {
+              delivered = true;
+              receive.current(value);
+            }
+          },
+          () => {},
+        );
+      })
+      .catch(() => {
+        if (!stopped)
+          setError('No pudimos abrir la cámara. Autoriza el acceso en tu navegador.');
+      });
+    return () => {
+      stopped = true;
+      void startup
+        .finally(async () => {
+          if (reader?.isScanning) await reader.stop();
+          reader?.clear();
+        })
+        .catch(() => {});
+    };
+  }, [id]);
+  return (
+    <Modal title="Escanear Tótem de Entrada" onClose={onClose}>
+      <div className="camera-reader" id={id} />
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      <p className="muted">Apunta la cámara al código QR impreso en el tótem o mostrador del Paseo.</p>
+    </Modal>
+  );
+}
+
 export function Points() {
   const { data, loading, error, reload } = useResource<PointsData>('puntos', 15000);
   const { refresh } = useSession();
@@ -21,14 +82,18 @@ export function Points() {
   const [coupon, setCoupon] = useState<Redemption | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
+  
+  const [camera, setCamera] = useState(false);
   const [checkinBusy, setCheckinBusy] = useState(false);
-  async function handleEntranceCheckIn() {
+  async function handleEntranceCheckIn(customCode?: string) {
     setCheckinBusy(true);
     try {
       const res = await api<{ ok: boolean; message: string; pointsAwarded?: number }>('checkin', {
         method: 'POST',
+        body: JSON.stringify({ code: customCode || 'PASEO-TOTEM-LOBBY' }),
       });
-      toast.success(res.message || '¡Ingreso registrado! +5 puntos');
+      toast.success(res.message || '¡Ingreso registrado! Puntos sumados');
+      setCamera(false);
       reload();
       void refresh();
     } catch (e) {
@@ -37,6 +102,7 @@ export function Points() {
       setCheckinBusy(false);
     }
   }
+
 
   const key = useRef('');
   async function redeem() {

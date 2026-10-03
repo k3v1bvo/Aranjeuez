@@ -508,16 +508,63 @@ async function scanner(req: NextRequest) {
 async function checkin(req: NextRequest) {
   const user = await requireUser(req);
   const client = db();
+  const data = await body(req).catch(() => ({}));
+  const rawCode = String((data as { code?: string })?.code || 'PASEO-TOTEM-LOBBY').toUpperCase();
 
-  rateLimit(`checkin:${user.id}`, 6);
+  const TOTEMS: Record<
+    string,
+    { name: string; floor: string; x: number; y: number; z: number; points: number; sector: string }
+  > = {
+    'PASEO-TOTEM-LOBBY': {
+      name: 'Tótem Entrada Principal & Lobby Av. América',
+      floor: 'Planta Baja',
+      x: 50,
+      y: 88,
+      z: 0,
+      points: 5,
+      sector: 'Lobby Principal',
+    },
+    'PASEO-TOTEM-PANDO': {
+      name: 'Tótem Acceso Boulevard Pando',
+      floor: 'Planta Baja',
+      x: 20,
+      y: 75,
+      z: 0,
+      points: 5,
+      sector: 'Acceso Pando',
+    },
+    'PASEO-TOTEM-TERRAZA': {
+      name: 'Tótem Mirador Terraza Gastronómica',
+      floor: 'Piso 3 · Terraza',
+      x: 75,
+      y: 25,
+      z: 3,
+      points: 10,
+      sector: 'Terraza Gastronómica',
+    },
+    'PASEO-TOTEM-PARKING': {
+      name: 'Tótem Parking & Click & Collect',
+      floor: 'Subsuelo 1',
+      x: 45,
+      y: 40,
+      z: -1,
+      points: 5,
+      sector: 'Subsuelo 1',
+    },
+  };
 
-  // Cooldown de 30 minutos para evitar abusos
+  const station = TOTEMS[rawCode] || TOTEMS['PASEO-TOTEM-LOBBY'];
+  const pointsAwarded = station.points;
+
+  rateLimit(`checkin:${user.id}:${rawCode}`, 8);
+
+  // Cooldown de 15 minutos por usuario y estación
   const recent = checked(
     await client
       .from('paseo_point_movements')
       .select('created_at')
       .eq('user_id', user.id)
-      .ilike('reason', '%ingreso%')
+      .ilike('reason', `%${station.sector}%`)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -525,21 +572,20 @@ async function checkin(req: NextRequest) {
 
   if (recent && recent.created_at) {
     const elapsed = Date.now() - new Date(recent.created_at).getTime();
-    if (elapsed < 30 * 60 * 1000) {
-      const waitMin = Math.ceil((30 * 60 * 1000 - elapsed) / 60000);
+    if (elapsed < 15 * 60 * 1000) {
+      const waitMin = Math.ceil((15 * 60 * 1000 - elapsed) / 60000);
       return NextResponse.json({
         ok: true,
         alreadyCheckedIn: true,
-        message: `¡Ya registraste tu ingreso recientemente! Vuelve en ${waitMin} min para sumar más puntos.`,
+        message: `¡Ya registraste tu visita en ${station.sector}! Vuelve en ${waitMin} min para sumar más puntos.`,
       });
     }
   }
 
-  const pointsAwarded = 5;
   await client.from('paseo_point_movements').insert({
     user_id: user.id,
     amount: pointsAwarded,
-    reason: 'Ingreso al Paseo Aranjuez (+5 pts)',
+    reason: `Visita ${station.sector} (+${pointsAwarded} pts)`,
   });
 
   const currentUserData = checked(
@@ -555,21 +601,23 @@ async function checkin(req: NextRequest) {
       .eq('id', user.id);
   }
 
-  // Telemetría interna silenciosa (x, y, z):
-  // z = 0 (Planta Baja), x = 50 (Entrada Central), y = 88 (Lobby & Puertas Principales)
+  // Telemetría interna silenciosa (x, y, z)
   try {
     await client.from('paseo_audit').insert({
       actor_id: user.id,
       action: 'telemetry_scan',
       entity: 'heat_telemetry',
       detail: {
-        x: 50,
-        y: 88,
-        z: 0,
-        floor: 'Planta Baja',
-        sector: 'Lobby Principal & Acceso Av. América',
-        type: 'entrance_checkin',
-        points: pointsAwarded,
+        x: station.x,
+        y: station.y,
+        z: station.z,
+        floor: station.floor,
+        sector: station.sector,
+        totem_code: rawCode,
+        totem_name: station.name,
+        type: 'totem_scan',
+        points_granted: pointsAwarded,
+        user_name: user.name,
         timestamp: new Date().toISOString(),
       },
     });
@@ -580,7 +628,8 @@ async function checkin(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     pointsAwarded,
-    message: '¡Bienvenido a Paseo Aranjuez! Sumaste 5 puntos a tu cuenta.',
+    stationName: station.name,
+    message: `¡Bienvenido a Paseo Aranjuez! Sumaste ${pointsAwarded} puntos en ${station.sector}.`,
   });
 }
 

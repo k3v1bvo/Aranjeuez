@@ -1,5 +1,7 @@
 'use client';
 import { PaseoHeatmap } from './PaseoHeatmap';
+import { QrStationManager } from './QrStationManager';
+import { QrCode, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { ArrowUpRight, Coins, Package, ShoppingBag, Users } from 'lucide-react';
@@ -436,6 +438,7 @@ export function AdminSection({ section }: { section: string }) {
     categories: 'categorias',
   };
   if (resources[section]) return <ResourceManager key={section} resource={resources[section]} />;
+  if (section === 'qrs' || section === 'totems') return <QrStationManager />;
   if (section === 'overview') return <Dashboard />;
   if (section === 'sales' || section === 'payments') return <Orders commerce />;
   return <Reports key={section} section={section} />;
