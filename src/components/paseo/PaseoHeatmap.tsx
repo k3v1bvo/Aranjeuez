@@ -1,71 +1,104 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Flame, Layers, MapPin, Users, Clock, Compass, 
-  TrendingUp, Eye, Sparkles, Navigation, X, Store, CheckCircle 
+  TrendingUp, Eye, Sparkles, Navigation, X, Store, CheckCircle,
+  ShoppingBag, ArrowRight
 } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
 
-export type FloorId = 'subsuelo' | 'piso-1' | 'piso-2' | 'piso-3';
+export type FloorId = 'pb' | 'piso-1' | 'piso-2' | 'piso-3' | 'piso-4' | 'torres';
 
 interface Hotspot {
   id: string;
+  storeId?: string;
   name: string;
   category: string;
   localNum: string;
-  x: number; // percentage
-  y: number; // percentage
+  x: number; // percentage 10 to 90
+  y: number; // percentage 15 to 85
   intensity: number; // 0 to 1
   visitors: number;
   status: 'Alta' | 'Media' | 'Baja';
+  schedule?: string;
+  description?: string;
 }
 
-const FLOOR_DATA: Record<FloorId, { name: string; subtitle: string; totalVisitors: number; hotspots: Hotspot[] }> = {
+// Fallback base data with real tenants from Paseo Aranjuez
+const INITIAL_FLOORS: Record<FloorId, { name: string; subtitle: string; totalVisitors: number; defaultHotspots: Hotspot[] }> = {
+  'pb': {
+    name: 'Planta Baja — Lobby Principal & Tecnología',
+    subtitle: 'Acceso Av. América, LYNX Samsung Store, Burbank, Gap, Perfumería Cosbelle',
+    totalVisitors: 1420,
+    defaultHotspots: [
+      { id: 'pb-1', name: 'Samsung Store (LYNX)', category: 'tecnologia', localNum: 'Local L9', x: 22, y: 35, intensity: 0.95, visitors: 340, status: 'Alta', schedule: '10:00 - 21:00', description: 'Smartphones Galaxy, smartwatches y punto tecnológico de entrada.' },
+      { id: 'pb-2', name: 'Burbank Bolivia', category: 'moda', localNum: 'Local #104', x: 45, y: 30, intensity: 0.88, visitors: 210, status: 'Alta', schedule: '10:00 - 21:00', description: 'Ropa urbana inspirada en la cultura boliviana.' },
+      { id: 'pb-3', name: 'Cinnabon', category: 'gastronomia', localNum: 'Local PB-09', x: 18, y: 70, intensity: 0.92, visitors: 280, status: 'Alta', schedule: '09:00 - 21:30', description: 'Rollos de canela calientes y frappés de paso al ingreso.' },
+      { id: 'pb-4', name: 'Perfumería Cosbelle', category: 'salud', localNum: 'Local PB-03', x: 65, y: 35, intensity: 0.74, visitors: 165, status: 'Media', schedule: '10:00 - 21:00', description: 'Perfumes originales de diseñador y cosmética exclusiva.' },
+      { id: 'pb-5', name: 'Ópticas Pauker', category: 'salud', localNum: 'Local PB-04', x: 78, y: 40, intensity: 0.65, visitors: 110, status: 'Media', schedule: '09:30 - 20:30', description: 'Boutique de lentes de sol y salud visual.' },
+      { id: 'pb-6', name: 'Farmacorp + Amarket', category: 'salud', localNum: 'Local PB-05', x: 82, y: 72, intensity: 0.85, visitors: 230, status: 'Alta', schedule: '08:00 - 22:00', description: 'Farmacia 24/7 y micromercado express.' },
+      { id: 'pb-7', name: 'La Galería Cultural', category: 'entretenimiento', localNum: 'Local PB-Art', x: 50, y: 65, intensity: 0.80, visitors: 195, status: 'Alta', schedule: '09:00 - 22:00', description: 'Muro de arte central y exposiciones culturales.' },
+    ],
+  },
   'piso-1': {
-    name: 'Piso 1 · Nivel Comercial & Café',
-    subtitle: 'Acceso Principal, Joyerías, Tecnología y Plaza Central',
-    totalVisitors: 840,
-    hotspots: [
-      { id: 'h1-1', name: 'Café Aranjuez & Pastelería', category: 'Gastronomía', localNum: 'Local 118', x: 28, y: 35, intensity: 0.92, visitors: 115, status: 'Alta' },
-      { id: 'h1-2', name: 'Plaza Central & Fuentes', category: 'Espacio Cultural', localNum: 'Área Central', x: 50, y: 50, intensity: 0.98, visitors: 260, status: 'Alta' },
-      { id: 'h1-3', name: 'Tech Store Bolivia', category: 'Tecnología', localNum: 'Local 104', x: 75, y: 30, intensity: 0.65, visitors: 78, status: 'Media' },
-      { id: 'h1-4', name: 'Joyería Altamira', category: 'Lujo', localNum: 'Local 112', x: 80, y: 70, intensity: 0.45, visitors: 42, status: 'Baja' },
-      { id: 'h1-5', name: 'Escaleras Mecánicas Norte', category: 'Tránsito', localNum: 'Acceso Elevadores', x: 20, y: 75, intensity: 0.85, visitors: 140, status: 'Alta' },
+    name: 'Primer Piso — Moda Femenina & Sastrería',
+    subtitle: 'EuroStyle, Manhattan, Pinkie, Blush Beauty Station, Textilón',
+    totalVisitors: 1180,
+    defaultHotspots: [
+      { id: 'p1-1', name: 'Pinkie', category: 'moda', localNum: 'Local #103', x: 25, y: 35, intensity: 0.91, visitors: 260, status: 'Alta', schedule: '10:00 - 21:00', description: 'Ropa urbana y juvenil para mujeres.' },
+      { id: 'p1-2', name: 'Manhattan', category: 'moda', localNum: 'Local #114', x: 42, y: 30, intensity: 0.82, visitors: 190, status: 'Alta', schedule: '10:00 - 20:30', description: 'Camisas finas y ropa de vestir formal masculina.' },
+      { id: 'p1-3', name: 'EuroStyle (Springfield / Women secret)', category: 'moda', localNum: 'Local 110', x: 72, y: 35, intensity: 0.94, visitors: 310, status: 'Alta', schedule: '10:00 - 21:00', description: 'Gran local renovado con marcas europeas.' },
+      { id: 'p1-4', name: 'Ohanna Accesorios', category: 'accesorios', localNum: 'Local BELU', x: 20, y: 70, intensity: 0.70, visitors: 145, status: 'Media', schedule: '10:00 - 21:00', description: 'Joyas de acero inoxidable lado ascensor sud.' },
+      { id: 'p1-5', name: 'Blush Beauty Station', category: 'salud', localNum: 'Local 107', x: 58, y: 65, intensity: 0.78, visitors: 175, status: 'Media', schedule: '10:00 - 20:30', description: 'Estación de maquillaje profesional y skincare.' },
+      { id: 'p1-6', name: 'Hermassi Sastrería', category: 'moda', localNum: 'Local 122', x: 80, y: 70, intensity: 0.60, visitors: 95, status: 'Baja', schedule: '09:30 - 20:00', description: 'Trajes de alta sastrería a medida.' },
     ],
   },
   'piso-2': {
-    name: 'Piso 2 · Moda, Estética & Arte',
-    subtitle: 'Boutiques de Autor, Galería Cultural y Servicios',
-    totalVisitors: 620,
-    hotspots: [
-      { id: 'h2-1', name: 'Moda Élite & Accesorios', category: 'Moda', localNum: 'Local 204', x: 30, y: 30, intensity: 0.88, visitors: 110, status: 'Alta' },
-      { id: 'h2-2', name: 'Galería de Arte Contemporáneo', category: 'Cultura', localNum: 'Mezzanina 2', x: 52, y: 45, intensity: 0.70, visitors: 85, status: 'Media' },
-      { id: 'h2-3', name: 'Mundo Regalo & Souvenirs', category: 'Regalos', localNum: 'Local 211', x: 70, y: 65, intensity: 0.62, visitors: 70, status: 'Media' },
-      { id: 'h2-4', name: 'Barbería Real & Spa', category: 'Estética', localNum: 'Local 216', x: 25, y: 70, intensity: 0.55, visitors: 50, status: 'Media' },
-      { id: 'h2-5', name: 'Corredor Escultórico', category: 'Tránsito', localNum: 'Ala Sur', x: 82, y: 30, intensity: 0.38, visitors: 35, status: 'Baja' },
+    name: 'Segundo Piso — Deportes, Niños y Hogar',
+    subtitle: 'Totto, Top Collection, Gool Store, Cat Lifestyle, Hauscenter',
+    totalVisitors: 940,
+    defaultHotspots: [
+      { id: 'p2-1', name: 'Totto', category: 'accesorios', localNum: 'Local #203', x: 28, y: 35, intensity: 0.89, visitors: 240, status: 'Alta', schedule: '10:00 - 21:00', description: 'Mochilas universitarias y maletas de viaje.' },
+      { id: 'p2-2', name: 'Top Collection', category: 'moda', localNum: 'Local #212', x: 48, y: 30, intensity: 0.72, visitors: 160, status: 'Media', schedule: '10:00 - 20:30', description: 'Chamarras pesadas y moda de temporada.' },
+      { id: 'p2-3', name: 'Gool Store', category: 'moda', localNum: 'Local 208', x: 75, y: 35, intensity: 0.85, visitors: 220, status: 'Alta', schedule: '10:00 - 21:00', description: 'Zapatillas deportivas y fútbol multimarca.' },
+      { id: 'p2-4', name: 'Cat Lifestyle Bolivia', category: 'moda', localNum: 'Local 215', x: 30, y: 70, intensity: 0.76, visitors: 170, status: 'Media', schedule: '10:00 - 20:30', description: 'Botas Caterpillar y calzado outdoor.' },
+      { id: 'p2-5', name: 'Hauscenter / Home Select', category: 'hogar', localNum: 'Local 220', x: 70, y: 65, intensity: 0.65, visitors: 130, status: 'Media', schedule: '10:00 - 21:00', description: 'Decoración y artículos de diseño para el hogar.' },
     ],
   },
   'piso-3': {
-    name: 'Piso 3 · Terraza Gastronómica',
-    subtitle: 'Alta Cocina, Parrillas a la Leña y Vista Panorámica',
-    totalVisitors: 980,
-    hotspots: [
-      { id: 'h3-1', name: 'Terraza Grill & Beer', category: 'Parrilla', localNum: 'Local 302', x: 35, y: 40, intensity: 0.99, visitors: 310, status: 'Alta' },
-      { id: 'h3-2', name: 'Mirador Panorámico Aranjuez', category: 'Turismo', localNum: 'Balcón Este', x: 75, y: 25, intensity: 0.94, visitors: 220, status: 'Alta' },
-      { id: 'h3-3', name: 'Bar Huari Cenas de Origen', category: 'Coctelería', localNum: 'Local 308', x: 65, y: 70, intensity: 0.82, visitors: 165, status: 'Alta' },
-      { id: 'h3-4', name: 'Pastelería & Helados Artesanales', category: 'Postres', localNum: 'Isla 3', x: 22, y: 70, intensity: 0.60, visitors: 90, status: 'Media' },
+    name: 'Tercer Piso — Mercado Gastronómico & Juegos',
+    subtitle: 'Plaza de comidas, DeliStanbul, Brocheta King, Sky Games Arcade',
+    totalVisitors: 1680,
+    defaultHotspots: [
+      { id: 'p3-1', name: 'DeliStanbul', category: 'gastronomia', localNum: 'Local 301', x: 22, y: 35, intensity: 0.98, visitors: 380, status: 'Alta', schedule: '11:30 - 22:30', description: 'Shawarmas gigantes y auténtica comida turca.' },
+      { id: 'p3-2', name: 'La Sanguchería (Patio)', category: 'gastronomia', localNum: 'Local 302', x: 45, y: 30, intensity: 0.92, visitors: 310, status: 'Alta', schedule: '11:30 - 22:30', description: 'Hamburguesas artesanales y sándwiches rápidos.' },
+      { id: 'p3-3', name: 'El Guajojo Rellenos', category: 'gastronomia', localNum: 'Local 303', x: 68, y: 32, intensity: 0.88, visitors: 270, status: 'Alta', schedule: '11:00 - 21:30', description: 'Rellenos tradicionales crujientes con ají.' },
+      { id: 'p3-4', name: 'Sky Games (Arcade)', category: 'entretenimiento', localNum: 'Local 306', x: 80, y: 68, intensity: 0.96, visitors: 390, status: 'Alta', schedule: '11:00 - 22:00', description: 'Simuladores de carreras y mesas de hockey.' },
+      { id: 'p3-5', name: 'Cowork Estudiantil', category: 'servicios', localNum: 'Local 307', x: 28, y: 72, intensity: 0.78, visitors: 180, status: 'Media', schedule: '08:30 - 22:00', description: 'Conexiones eléctricas y wifi para estudio.' },
     ],
   },
-  'subsuelo': {
-    name: 'Subsuelo 1 & 2 · Parqueos & Pick-up',
-    subtitle: 'Estacionamiento Inteligente, Zona de Carga y Click & Collect',
-    totalVisitors: 450,
-    hotspots: [
-      { id: 'hs-1', name: 'Zona Click & Collect PaseoYa', category: 'Retiro Exprés', localNum: 'Bahía A-1', x: 45, y: 40, intensity: 0.88, visitors: 95, status: 'Alta' },
-      { id: 'hs-2', name: 'Estacionamiento Nivel VIP Plata/Oro', category: 'Parqueo', localNum: 'Sector S1-C', x: 70, y: 60, intensity: 0.75, visitors: 140, status: 'Media' },
-      { id: 'hs-3', name: 'Boletería & Cajas Automáticas', category: 'Servicio', localNum: 'Lobby Elevador', x: 25, y: 45, intensity: 0.65, visitors: 70, status: 'Media' },
-      { id: 'hs-4', name: 'Estación de Carga Vehículos', category: 'Eco', localNum: 'Sector Verde', x: 80, y: 25, intensity: 0.40, visitors: 25, status: 'Baja' },
+  'piso-4': {
+    name: 'Cuarto Piso — Terrazas Gourmet & Coctelería',
+    subtitle: 'El Cuarto (8 Barras), Patanegra, Brocheta King, Botánica Infusiones',
+    totalVisitors: 1530,
+    defaultHotspots: [
+      { id: 'p4-1', name: 'El Cuarto (Terraza)', category: 'gastronomia', localNum: 'Local 401', x: 30, y: 35, intensity: 0.99, visitors: 420, status: 'Alta', schedule: '17:00 - 02:00', description: '8 barras gourmet, coctelería y vista nocturna.' },
+      { id: 'p4-2', name: 'Patanegra Taberna Española', category: 'gastronomia', localNum: 'Local 402', x: 62, y: 30, intensity: 0.93, visitors: 310, status: 'Alta', schedule: '12:00 - 00:00', description: 'Jamón ibérico, tapas y cañas frías.' },
+      { id: 'p4-3', name: 'Brocheta King', category: 'gastronomia', localNum: 'Local 403', x: 78, y: 55, intensity: 0.91, visitors: 290, status: 'Alta', schedule: '17:30 - 01:00', description: 'Anticuchos tiernos al carbón y chorizos parrilleros.' },
+      { id: 'p4-4', name: 'Botánica Infusiones & Café', category: 'gastronomia', localNum: 'Local 405', x: 25, y: 70, intensity: 0.85, visitors: 250, status: 'Alta', schedule: '10:00 - 22:00', description: 'Café de especialidad y tés finos en pérgola.' },
+      { id: 'p4-5', name: 'Sky Games (Mecánicos)', category: 'entretenimiento', localNum: 'Local 406', x: 60, y: 75, intensity: 0.82, visitors: 230, status: 'Alta', schedule: '12:00 - 22:00', description: 'Atracciones mecánicas infantiles y tren panorámico.' },
+    ],
+  },
+  'torres': {
+    name: 'Torres Corporativas — Pisos 5 al 11',
+    subtitle: 'Consultorios Médicos, Despachos Jurídicos, Agencias de Software & Marketing',
+    totalVisitors: 720,
+    defaultHotspots: [
+      { id: 'tor-1', name: 'Consultorios Médicos & Odontología', category: 'salud', localNum: 'Oficina 504', x: 35, y: 40, intensity: 0.75, visitors: 160, status: 'Media', schedule: '08:30 - 19:30', description: 'Torre A Piso 5: Odontología y consultas especializadas.' },
+      { id: 'tor-2', name: 'Despachos Jurídicos & Notaría', category: 'servicios', localNum: 'Oficina 702', x: 65, y: 45, intensity: 0.68, visitors: 140, status: 'Media', schedule: '09:00 - 18:30', description: 'Torre B Piso 7: Asesoría corporativa y notaría pública.' },
+      { id: 'tor-3', name: 'Hub de Innovación & Software', category: 'tecnologia', localNum: 'Oficina 901', x: 50, y: 70, intensity: 0.82, visitors: 210, status: 'Alta', schedule: '08:30 - 20:00', description: 'Torre A Piso 9: Desarrollo tecnológico y marketing multinacional.' },
     ],
   },
 };
@@ -73,13 +106,37 @@ const FLOOR_DATA: Record<FloorId, { name: string; subtitle: string; totalVisitor
 export function PaseoHeatmap() {
   const [activeFloor, setActiveFloor] = useState<FloorId>('piso-3');
   const [viewMode, setViewMode] = useState<'heatmap' | 'directory'>('heatmap');
-  const [timeOfDay, setTimeOfDay] = useState<'mediodia' | 'tarde' | 'noche'>('noche');
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+  const [liveStores, setLiveStores] = useState<any[]>([]);
 
-  const currentData = FLOOR_DATA[activeFloor];
+  // Cargar tiendas reales del backend si están disponibles
+  useEffect(() => {
+    fetch('/api/paseo/catalogo')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && Array.isArray(data.stores) && data.stores.length > 0) {
+          setLiveStores(data.stores);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const floorInfo = INITIAL_FLOORS[activeFloor];
+
+  // Integrar tiendas del catálogo dinámicamente según el piso
+  const floorStores = liveStores.filter((s) => {
+    const fl = (s.floor || '').toLowerCase();
+    if (activeFloor === 'pb') return fl.includes('baja') || fl.includes('pb');
+    if (activeFloor === 'piso-1') return fl.includes('1') || fl.includes('primer');
+    if (activeFloor === 'piso-2') return fl.includes('2') || fl.includes('segundo');
+    if (activeFloor === 'piso-3') return fl.includes('3') || fl.includes('tercer');
+    if (activeFloor === 'piso-4') return fl.includes('4') || fl.includes('cuarto');
+    if (activeFloor === 'torres') return fl.includes('torre') || fl.includes('5') || fl.includes('7') || fl.includes('9');
+    return false;
+  });
 
   return (
-    <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#030B1A] relative overflow-hidden border-t border-white/10">
+    <section id="mapa" className="py-20 px-4 sm:px-6 lg:px-8 bg-[#030B1A] relative overflow-hidden border-t border-white/10">
       {/* Resplandor térmico de fondo */}
       <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-[#FF6B1A]/10 rounded-full blur-[140px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-[#D4A24C]/10 rounded-full blur-[140px] pointer-events-none" />
@@ -92,13 +149,13 @@ export function PaseoHeatmap() {
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#B84D0B]/20 to-[#D4A24C]/20 border border-[#FF6B1A]/40 text-xs font-bold uppercase tracking-wider text-[#FF6B1A] mb-3">
                 <Flame className="w-4 h-4 text-[#FF6B1A]" />
-                <span>Analítica Espacial & Tránsito en Vivo</span>
+                <span>Analítica Espacial, Locales & Afluencia en Vivo</span>
               </div>
-              <h2 className="text-3xl sm:text-5xl font-black text-white font-display tracking-tight">
+              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
                 MAPA INTERACTIVO & <span className="text-[#FF6B1A]">AFLUENCIA</span>
               </h2>
-              <p className="text-white/60 text-base max-w-xl mt-2 font-sans">
-                Monitoreo en tiempo real de concurrencia y flujo peatonal por niveles en Paseo Aranjuez. Ubica locales, zonas de alta demanda y accesos rápidos.
+              <p className="text-white/60 text-base max-w-xl mt-2">
+                Monitoreo en tiempo real del Paseo Aranjuez por niveles. Ubicación automática del número de local en cada recogida de pedido y escaneo QR.
               </p>
             </div>
 
@@ -124,24 +181,30 @@ export function PaseoHeatmap() {
                 }`}
               >
                 <Store className="w-4 h-4" />
-                <span>Directorio de Locales</span>
+                <span>Directorio ({liveStores.length || 47} Locales)</span>
               </button>
             </div>
           </div>
         </ScrollReveal>
 
-        {/* Barra de Filtros: Selección de Nivel y Horario */}
+        {/* Barra de Filtros: Selección de Nivel */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#061734]/80 border border-white/10 mb-8 backdrop-blur-md">
           {/* Tabs de Pisos */}
           <div className="flex flex-wrap items-center gap-2">
-            {(['subsuelo', 'piso-1', 'piso-2', 'piso-3'] as FloorId[]).map((fId) => {
-              const fInfo = FLOOR_DATA[fId];
-              const isActive = activeFloor === fId;
+            {([
+              { id: 'pb', label: 'Planta Baja' },
+              { id: 'piso-1', label: 'Piso 1 (Moda)' },
+              { id: 'piso-2', label: 'Piso 2 (Hogar/Deportes)' },
+              { id: 'piso-3', label: 'Piso 3 (Comidas)' },
+              { id: 'piso-4', label: 'Piso 4 (Terrazas)' },
+              { id: 'torres', label: 'Torres (5-11)' }
+            ] as { id: FloorId; label: string }[]).map((tab) => {
+              const isActive = activeFloor === tab.id;
               return (
                 <button
-                  key={fId}
+                  key={tab.id}
                   onClick={() => {
-                    setActiveFloor(fId);
+                    setActiveFloor(tab.id);
                     setSelectedHotspot(null);
                   }}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -151,269 +214,232 @@ export function PaseoHeatmap() {
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>{fId === 'subsuelo' ? 'Subsuelo' : fId.toUpperCase().replace('-', ' ')}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${isActive ? 'bg-[#030B1A]/20 text-[#030B1A]' : 'bg-white/10 text-white/50'}`}>
-                    {fInfo.hotspots.length}
-                  </span>
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Selector de Horario */}
-          <div className="flex items-center gap-2 text-xs text-white/70">
-            <Clock className="w-3.5 h-3.5 text-[#D4A24C]" />
-            <span className="hidden sm:inline font-medium">Horario simulado:</span>
-            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
-              <button
-                onClick={() => setTimeOfDay('mediodia')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-                  timeOfDay === 'mediodia' ? 'bg-[#FF6B1A] text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                13:00
-              </button>
-              <button
-                onClick={() => setTimeOfDay('tarde')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-                  timeOfDay === 'tarde' ? 'bg-[#FF6B1A] text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                17:30
-              </button>
-              <button
-                onClick={() => setTimeOfDay('noche')}
-                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors ${
-                  timeOfDay === 'noche' ? 'bg-[#FF6B1A] text-white' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                20:30 (Pico)
-              </button>
-            </div>
+          {/* Indicador de Total de Visitantes */}
+          <div className="flex items-center gap-3 text-xs font-bold text-white/80">
+            <span className="flex items-center gap-1.5 text-[#34D399]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#34D399] animate-pulse" />
+              Sensor Inteligente Activo
+            </span>
+            <span className="px-3 py-1 rounded-lg bg-white/10 text-white font-mono">
+              {floorInfo.totalVisitors} visitas registradas hoy
+            </span>
           </div>
         </div>
 
-        {/* Contenedor Principal: Visualización del Plano y Tarjeta de Detalle */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* Área del Plano Arquitectónico / Mapa */}
-          <div className="lg:col-span-8 bg-[#061734] border border-white/15 rounded-[2rem] p-6 relative overflow-hidden shadow-2xl">
-            
-            {/* Cabecera del Nivel Actual */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-white font-display flex items-center gap-2">
-                  <span>{currentData.name}</span>
-                </h3>
-                <p className="text-xs text-white/50 mt-0.5">{currentData.subtitle}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-[#FF8F4D] tracking-widest block">
-                  Afluencia Estimada
-                </span>
-                <span className="text-lg font-mono font-black text-white tabular-nums">
-                  {timeOfDay === 'noche' 
-                    ? currentData.totalVisitors 
-                    : timeOfDay === 'tarde' 
-                    ? Math.round(currentData.totalVisitors * 0.75) 
-                    : Math.round(currentData.totalVisitors * 0.55)} personas
-                </span>
-              </div>
-            </div>
-
-            {/* Canvas / Plano SVG Interactivo */}
-            <div className="relative w-full aspect-[16/10] bg-[#030B1A] rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center">
+        {/* CONTENIDO PRINCIPAL: MAPA vs DIRECTORIO */}
+        {viewMode === 'heatmap' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Lienzo Visual del Plano Térmico */}
+            <div className="lg:col-span-2 relative min-h-[460px] rounded-3xl bg-[#061734] border border-white/15 p-6 overflow-hidden flex flex-col justify-between">
               
-              {/* Trazado arquitectónico de fondo simulado */}
-              <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="grid-pattern" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#grid-pattern)" />
-                {/* Geometría de pasillos y muros del mall */}
-                <rect x="15%" y="15%" width="70%" height="70%" fill="none" stroke="#D4A24C" strokeWidth="2" strokeDasharray="6 4" />
-                <circle cx="50%" cy="50%" r="18%" fill="none" stroke="#FF6B1A" strokeWidth="1.5" />
-                <line x1="15%" y1="50%" x2="85%" y2="50%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                <line x1="50%" y1="15%" x2="50%" y2="85%" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-              </svg>
-
-              {/* Indicador de Orientación */}
-              <div className="absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/60 border border-white/10 text-[10px] font-mono text-white/60">
-                <Compass className="w-3.5 h-3.5 text-[#D4A24C]" />
-                <span>NORTE: AV. AMÉRICA</span>
+              {/* Título de Nivel */}
+              <div className="relative z-10 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Compass className="w-5 h-5 text-[#FF6B1A]" />
+                    {floorInfo.name}
+                  </h3>
+                  <p className="text-xs text-white/60 mt-0.5">{floorInfo.subtitle}</p>
+                </div>
               </div>
 
-              {/* Hotspots térmicos interactivos */}
-              {currentData.hotspots.map((spot) => {
-                const isSelected = selectedHotspot?.id === spot.id;
-                const multiplier = timeOfDay === 'noche' ? 1 : timeOfDay === 'tarde' ? 0.75 : 0.55;
-                const dynamicVisitors = Math.round(spot.visitors * multiplier);
+              {/* Grid Isométrico & Hotspots Térmicos */}
+              <div className="relative my-auto w-full h-[320px] rounded-2xl bg-[#030B1A]/80 border border-white/10 overflow-hidden shadow-inner flex items-center justify-center">
+                {/* Cuadrícula técnica del plano */}
+                <div 
+                  className="absolute inset-0 opacity-20"
+                  style={{
+                    backgroundImage: 'linear-gradient(#FF6B1A 1px, transparent 1px), linear-gradient(90deg, #FF6B1A 1px, transparent 1px)',
+                    backgroundSize: '40px 40px'
+                  }}
+                />
 
-                return (
-                  <div
-                    key={spot.id}
-                    onClick={() => setSelectedHotspot(spot)}
-                    style={{ left: `${spot.x}%`, top: `${spot.y}%` }}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-20"
-                  >
-                    {/* Resplandor térmico (Modo Heatmap) */}
-                    {viewMode === 'heatmap' && (
-                      <div
-                        style={{
-                          width: `${Math.max(60, spot.intensity * 120)}px`,
-                          height: `${Math.max(60, spot.intensity * 120)}px`,
-                          background: spot.intensity > 0.8 
-                            ? 'radial-gradient(circle, rgba(239,68,68,0.7) 0%, rgba(255,107,26,0.4) 40%, rgba(212,162,76,0.15) 70%, transparent 100%)' 
-                            : spot.intensity > 0.6 
-                            ? 'radial-gradient(circle, rgba(245,158,11,0.6) 0%, rgba(212,162,76,0.35) 45%, transparent 100%)'
-                            : 'radial-gradient(circle, rgba(16,185,129,0.5) 0%, rgba(72,169,166,0.3) 50%, transparent 100%)',
-                        }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2 rounded-full pointer-events-none transition-all duration-500 blur-md group-hover:scale-125"
-                      />
-                    )}
-
-                    {/* Pin / Botón del Marcador */}
+                {/* Hotspots interactivos en el plano */}
+                {floorInfo.defaultHotspots.map((h) => {
+                  const isSelected = selectedHotspot?.id === h.id;
+                  return (
                     <div
-                      className={`relative z-10 flex items-center justify-center transition-transform duration-200 group-hover:scale-125 ${
-                        isSelected ? 'scale-125' : ''
-                      }`}
+                      key={h.id}
+                      onClick={() => setSelectedHotspot(h)}
+                      style={{ left: `${h.x}%`, top: `${h.y}%` }}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
                     >
+                      {/* Aura térmica animada */}
                       <div
-                        className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] text-white shadow-lg border-2 ${
+                        className={`absolute -inset-4 rounded-full blur-md transition-all duration-500 ${
+                          h.intensity > 0.85
+                            ? 'bg-[#EF4444]/40 animate-pulse'
+                            : h.intensity > 0.65
+                            ? 'bg-[#FF6B1A]/40'
+                            : 'bg-[#D4A24C]/30'
+                        }`}
+                      />
+
+                      {/* Pin Central */}
+                      <div
+                        className={`relative flex items-center justify-center w-8 h-8 rounded-full border-2 text-white font-bold text-[10px] transition-transform duration-300 group-hover:scale-125 shadow-xl ${
                           isSelected
-                            ? 'bg-[#FF6B1A] border-white ring-4 ring-[#FF6B1A]/40'
-                            : spot.intensity > 0.8
-                            ? 'bg-red-500 border-white/80'
-                            : spot.intensity > 0.6
-                            ? 'bg-amber-500 border-white/80'
-                            : 'bg-emerald-500 border-white/80'
+                            ? 'bg-white text-[#030B1A] border-[#FF6B1A] scale-125 ring-4 ring-[#FF6B1A]/50'
+                            : h.intensity > 0.85
+                            ? 'bg-[#EF4444] border-white'
+                            : h.intensity > 0.65
+                            ? 'bg-[#FF6B1A] border-white'
+                            : 'bg-[#D4A24C] border-white'
                         }`}
                       >
-                        {spot.localNum.replace('Local ', '').slice(0, 3)}
+                        <MapPin className="w-4 h-4" />
                       </div>
 
-                      {/* Tooltip con nombre y afluencia al hacer hover */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none whitespace-nowrap z-30">
-                        <div className="bg-[#061734] border border-[#FF6B1A]/50 px-3 py-1.5 rounded-xl shadow-2xl text-center">
-                          <p className="text-xs font-bold text-white">{spot.name}</p>
-                          <p className="text-[10px] text-[#FF8F4D] font-mono">{spot.localNum} · {dynamicVisitors} personas</p>
+                      {/* Tooltip Hover con Número de Local */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-20 whitespace-nowrap">
+                        <div className="bg-[#030B1A]/95 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg border border-white/20 shadow-2xl flex items-center gap-1.5">
+                          <span className="text-[#FF8F4D]">{h.localNum}:</span>
+                          <span>{h.name}</span>
+                          <span className="px-1.5 py-0.2 rounded bg-red-500/20 text-red-300 text-[9px] font-mono">
+                            {h.visitors} pers
+                          </span>
                         </div>
-                        <div className="w-2 h-2 bg-[#061734] border-r border-b border-[#FF6B1A]/50 rotate-45 -mt-1" />
+                        <div className="w-1.5 h-1.5 bg-[#030B1A] rotate-45 border-r border-b border-white/20 -mt-1" />
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Leyenda Térmica */}
-            <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between text-xs text-white/60 gap-4">
-              <span className="font-semibold text-white/80">Escala de Afluencia:</span>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className="text-[11px]">Muy Concurrida (&gt;80%)</span>
+              {/* Leyenda Térmica */}
+              <div className="relative z-10 flex items-center justify-between text-xs text-white/60 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" /> Alta Afluencia (&gt;85%)
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B1A]" /> Tránsito Frecuente
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#D4A24C]" /> Concurrencia Moderada
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#FF6B1A]" />
-                  <span className="text-[11px]">Moderada (50-80%)</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[#D4A24C]" />
-                  <span className="text-[11px]">Tranquila (&lt;50%)</span>
-                </div>
+                <span className="text-[11px] text-[#FF8F4D] font-mono">Actualizado hace 2 min</span>
               </div>
             </div>
-          </div>
 
-          {/* Panel Lateral: Detalle del Local Seleccionado & Métricas */}
-          <div className="lg:col-span-4 space-y-4">
-            
-            {/* Card del Local Seleccionado */}
-            <div className="p-6 rounded-[2rem] bg-[#061734] border border-white/15 text-white shadow-xl">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#D4A24C] block mb-2">
-                Punto de Afluencia
-              </span>
-
+            {/* Panel Lateral: Detalle del Local Seleccionado */}
+            <div className="rounded-3xl bg-[#061734] border border-white/15 p-6 flex flex-col justify-between">
               {selectedHotspot ? (
                 <div>
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="text-xl font-black font-display text-white">{selectedHotspot.name}</h4>
-                      <p className="text-xs text-[#FF8F4D] font-bold">{selectedHotspot.localNum} · {selectedHotspot.category}</p>
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      selectedHotspot.status === 'Alta' 
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : selectedHotspot.status === 'Media'
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    }`}>
-                      {selectedHotspot.status} Afluencia
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-2.5 py-1 rounded-full bg-[#FF6B1A]/20 border border-[#FF6B1A]/40 text-[#FF8F4D] text-xs font-bold">
+                      {selectedHotspot.localNum}
                     </span>
+                    <button
+                      onClick={() => setSelectedHotspot(null)}
+                      className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 my-4 text-xs">
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/10">
-                      <span className="text-white/50 block text-[10px] uppercase font-semibold">Visitantes en zona</span>
-                      <span className="text-xl font-mono font-black text-white tabular-nums">
-                        {selectedHotspot.visitors}
-                      </span>
-                    </div>
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/10">
-                      <span className="text-white/50 block text-[10px] uppercase font-semibold">Densidad estimada</span>
-                      <span className="text-xl font-mono font-black text-[#FF6B1A] tabular-nums">
-                        {Math.round(selectedHotspot.intensity * 100)}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white/80 space-y-1 mb-4">
-                    <p className="flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Retiro PaseoYa Click & Collect disponible.</span>
+                  <h4 className="text-xl font-black text-white">{selectedHotspot.name}</h4>
+                  <p className="text-xs text-white/60 mt-1 capitalize">Categoría: {selectedHotspot.category}</p>
+                  
+                  {selectedHotspot.description && (
+                    <p className="text-xs text-white/80 mt-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                      {selectedHotspot.description}
                     </p>
-                    <p className="flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Suma 1x punto por cada 1 Bs consumido.</span>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 mt-4">
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-1.5 text-xs text-white/60">
+                        <Users className="w-3.5 h-3.5 text-[#FF6B1A]" /> Afluencia
+                      </div>
+                      <p className="text-lg font-bold text-white mt-1">{selectedHotspot.visitors} pers</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-1.5 text-xs text-white/60">
+                        <Clock className="w-3.5 h-3.5 text-[#D4A24C]" /> Horario
+                      </div>
+                      <p className="text-xs font-semibold text-white mt-1">{selectedHotspot.schedule || '10:00 - 21:00'}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 p-3.5 rounded-2xl bg-gradient-to-r from-[#B84D0B]/20 to-[#FF6B1A]/20 border border-[#FF6B1A]/30">
+                    <p className="text-xs font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#D4A24C]" />
+                      Recogida Automática PaseoYa
+                    </p>
+                    <p className="text-[11px] text-white/70 mt-1">
+                      Al recoger un pedido en este local, el código QR valida la posición de <strong>{selectedHotspot.localNum}</strong> en el mapa de calor de Paseo Aranjuez.
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="py-8 text-center text-white/50">
-                  <Compass className="w-10 h-10 mx-auto stroke-[1.5] mb-2 text-white/30 animate-pulse" />
-                  <p className="text-sm font-bold text-white/70">Selecciona un punto en el mapa</p>
-                  <p className="text-xs mt-1">Haz clic en los marcadores del plano para ver afluencia, personas y horarios.</p>
+                <div className="flex flex-col items-center justify-center text-center my-auto py-12">
+                  <MapPin className="w-12 h-12 text-white/20 mb-3 animate-bounce" />
+                  <h4 className="text-base font-bold text-white">Selecciona un Local</h4>
+                  <p className="text-xs text-white/50 max-w-xs mt-1">
+                    Haz clic en los puntos del plano para ver el número de local, flujo de clientes y pedir con Click & Collect.
+                  </p>
                 </div>
               )}
-            </div>
 
-            {/* Métricas Globales del Piso */}
-            <div className="p-6 rounded-[2rem] bg-gradient-to-br from-[#061734] to-[#030B1A] border border-[#D4A24C]/30 text-white shadow-xl">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#D4A24C] block mb-3">
-                Resumen de Tráfico Peatonal
-              </span>
-              <div className="space-y-3 text-xs">
-                <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <span className="text-white/60">Flujo General en Nivel:</span>
-                  <span className="font-bold text-emerald-400">Fluido & Óptimo</span>
-                </div>
-                <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                  <span className="text-white/60">Tiempo promedio de estadía:</span>
-                  <span className="font-mono font-bold">42 minutos</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60">Puntos de carga / Ascensores:</span>
-                  <span className="font-bold text-[#FF8F4D]">Operativos 100%</span>
-                </div>
-              </div>
+              <Link
+                href="/cliente"
+                className="mt-6 w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-xs flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>Ver Tiendas & Pedir en PaseoYa</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
-
           </div>
+        ) : (
+          /* Directorio Completo de Locales */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(floorStores.length > 0 ? floorStores : floorInfo.defaultHotspots).map((store: any, idx: number) => {
+              const storeName = store.name;
+              const storeLocal = store.local_num || store.localNum || `Local ${idx + 101}`;
+              const storeCat = store.category || 'Comercial';
+              const storeDesc = store.description || 'Establecimiento oficial en Paseo Aranjuez.';
+              return (
+                <div
+                  key={store.id || idx}
+                  className="p-5 rounded-2xl bg-[#061734] border border-white/10 hover:border-[#FF6B1A]/40 transition-all flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="px-2 py-0.5 rounded-lg bg-[#FF6B1A]/20 text-[#FF8F4D] text-[11px] font-bold">
+                        {storeLocal}
+                      </span>
+                      <span className="text-[11px] text-white/40 uppercase tracking-wider">{storeCat}</span>
+                    </div>
+                    <h4 className="text-base font-bold text-white group-hover:text-[#FF8F4D] transition-colors">
+                      {storeName}
+                    </h4>
+                    <p className="text-xs text-white/60 mt-1 line-clamp-2">{storeDesc}</p>
+                  </div>
 
-        </div>
+                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs">
+                    <span className="text-white/40">{store.schedule || '10:00 - 21:00'}</span>
+                    <Link
+                      href={store.id ? `/cliente/tiendas/${store.id}` : '/cliente'}
+                      className="text-[#FF8F4D] font-bold hover:underline flex items-center gap-1"
+                    >
+                      <span>Ir a tienda</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
     </section>
