@@ -31,11 +31,11 @@ jobs:
 
       - name: Compilar APK Android Nativo
         run: |
-          echo "Generando APK para Paseo Aranjuez..."
+          echo "Iniciando compilacion de APK para Paseo Aranjuez..."
           mkdir -p output
           mkdir -p ~/.bubblewrap
 
-          # Escribir la configuracion exacta de Bubblewrap para que NUNCA pregunte por el JDK ni Android SDK
+          # 1. Pre-configurar JDK y Android SDK en Bubblewrap
           cat <<EOF > ~/.bubblewrap/config.json
           {
             "jdkPath": "$JAVA_HOME",
@@ -43,29 +43,46 @@ jobs:
           }
           EOF
 
-          # Esperar a que Vercel sirva el manifest actualizado con PsjAranjuez
+          # 2. Pre-generar Keystore de firma Android para que no requiera inputs interactivos
+          echo "Pre-generando Android Keystore..."
+          keytool -genkeypair -v \
+            -keystore ./android.keystore \
+            -alias android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=Paseo Aranjuez, OU=Mobile, O=Paseo, L=Cochabamba, ST=Cochabamba, C=BO"
+
+          export BUBBLEWRAP_KEYSTORE_PASSWORD=android
+          export BUBBLEWRAP_KEY_PASSWORD=android
+
+          # 3. Esperar a que el manifest en Vercel tenga PsjAranjuez (max 45s)
           echo "Verificando sincronizacion del manifest en Vercel..."
-          for i in {1..30}; do
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
             if curl -sL https://aranjeuez-xi.vercel.app/manifest.json | grep -q "PsjAranjuez"; then
-              echo "Manifest actualizado con PsjAranjuez detectado con exito!"
+              echo "Manifest actualizado en Vercel detectado con exito!"
               break
             fi
             echo "Esperando sincronizacion de Vercel..."
             sleep 3
           done
 
-          # Generar proyecto respondiendo por defecto a cualquier prompt interactivo
-          yes "" | npx --yes @bubblewrap/cli init \
+          # 4. Enviar respuestas automaticas exactas para TODAS las preguntas posibles
+          echo "Inicializando proyecto Bubblewrap..."
+          printf "\n\n\n\n\n\n\n\n\n\n\n\n./android.keystore\nandroid\nandroid\nandroid\nPaseo Aranjuez\nMobile\nPaseo Aranjuez\nCochabamba\nCochabamba\nBO\nyes\n" | npx --yes @bubblewrap/cli init \
             --manifest=https://aranjeuez-xi.vercel.app/manifest.json \
             --directory=./twa-app \
             --skipPwaValidation || true
 
-          # Si se genero el proyecto, compilar APK con Gradle
+          # 5. Compilar APK con Gradle
           if [ -d "./twa-app" ]; then
+            echo "Compilando APK con Gradle assembleDebug..."
             cd twa-app
             ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
-            echo "APK generado exitosamente."
+            echo "APK generado con exito en output/PaseoAranjuez-debug.apk"
           else
             echo "Error: twa-app no se pudo generar."
             exit 1
