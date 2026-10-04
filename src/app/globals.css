@@ -4330,3 +4330,490 @@ textarea::placeholder {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ============================================================
+   JARVIS ORB — Real animations via vanilla CSS
+   ============================================================ */
+.jarvis-orb-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.jarvis-orb-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.jarvis-ambient-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.5;
+  transition: all 400ms ease;
+  pointer-events: none;
+}
+.jarvis-orb {
+  position: relative;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 400ms ease;
+  z-index: 2;
+}
+.jarvis-orb:focus-visible {
+  outline: 2px solid #D4A24C;
+  outline-offset: 4px;
+}
+.jarvis-orb-idle { animation: orb-float 3.5s ease-in-out infinite; }
+.jarvis-orb-listening { animation: orb-breathe 1s ease-in-out infinite; }
+.jarvis-orb-thinking { animation: orb-pulse-gold 1.5s ease-in-out infinite; }
+.jarvis-orb-speaking { animation: orb-speak-pulse 2s ease-in-out infinite; }
+
+@keyframes orb-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-8px) scale(1.03); }
+}
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes orb-pulse-gold {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.04); filter: brightness(1.2); }
+}
+@keyframes orb-speak-pulse {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.03); }
+  75% { transform: scale(0.98); }
+}
+
+/* Concentric rings */
+.jarvis-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.jarvis-ring-outer {
+  inset: 8px;
+  border: 1px dashed rgba(255,255,255,0.2);
+  animation: spin linear infinite;
+}
+.jarvis-ring-middle {
+  inset: 20px;
+  border: 1px dotted rgba(212,162,76,0.4);
+  animation: spin linear infinite;
+}
+.jarvis-ring-inner {
+  inset: 36px;
+  border: 1px solid rgba(255,255,255,0.3);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* Center icon + label */
+.jarvis-orb-core {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  gap: 4px;
+}
+.jarvis-orb-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.9);
+}
+.jarvis-icon-pulse { animation: pulse 2s ease-in-out infinite; }
+.jarvis-icon-bounce { animation: icon-bounce 0.8s ease-in-out infinite; }
+.jarvis-icon-spin { animation: spin 2s linear infinite; }
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Ripple waves */
+.jarvis-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+.jarvis-ripple-1 {
+  border: 2px solid rgba(255,107,26,0.6);
+  animation: ripple-out 1.5s ease-out infinite;
+}
+.jarvis-ripple-2 {
+  border: 1px solid rgba(212,162,76,0.4);
+  animation: ripple-out 1.5s ease-out 0.5s infinite;
+}
+.jarvis-ripple-speak-1 {
+  border: 1px solid rgba(255,255,255,0.4);
+  animation: ripple-out 2s ease-out infinite;
+}
+.jarvis-ripple-speak-2 {
+  border: 1px solid rgba(255,143,77,0.3);
+  animation: ripple-out 2s ease-out 0.7s infinite;
+}
+@keyframes ripple-out {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Status indicator dots */
+.jarvis-status-bar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(6,23,52,0.9);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.jarvis-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 300ms ease;
+}
+.jarvis-status-active {
+  box-shadow: 0 0 8px currentColor;
+  transform: scale(1.3);
+}
+
+/* Jarvis voice controls */
+.jarvis-voice-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* Jarvis user card (vanilla CSS replacement for Tailwind classes) */
+.jarvis-user-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  margin: 16px 0;
+  font-size: 14px;
+}
+.jarvis-user-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #D4A24C;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.jarvis-user-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+}
+.jarvis-user-meta svg { color: #FF6B1A; }
+
+/* ============================================================
+   MOBILE MENU — Premium slide-in drawer
+   ============================================================ */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 44;
+}
+.paseo-mobile-menu {
+  position: fixed;
+  right: -100%;
+  top: 0;
+  bottom: 0;
+  width: min(340px, 85vw);
+  z-index: 45;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #081B3D 0%, #030B1A 100%);
+  overflow-y: auto;
+  box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+  transition: right 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-menu-open {
+  right: 0;
+}
+
+/* Mobile user section */
+.mobile-user-section {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mobile-user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #B84D0B, #FF6B1A);
+  color: #fff;
+  font-weight: 800;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mobile-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.mobile-user-info strong {
+  font-size: 15px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mobile-user-info small {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile nav links */
+.mobile-nav-links {
+  flex: 1;
+  padding: 12px 0;
+}
+.mobile-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  color: rgba(255,255,255,0.85);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.mobile-nav-link:hover,
+.mobile-nav-link:active {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+.mobile-nav-link svg {
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+/* Mobile menu footer */
+.mobile-menu-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   FLOATING CART — Mobile fab button
+   ============================================================ */
+.floating-cart {
+  display: none;
+  position: fixed;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  right: 16px;
+  z-index: 39;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #B84D0B, #FF6B1A);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 28px rgba(184,77,11,0.5), 0 0 0 4px rgba(255,107,26,0.15);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: cart-bounce-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.floating-cart:hover {
+  transform: scale(1.1);
+  box-shadow: 0 12px 36px rgba(184,77,11,0.6), 0 0 0 6px rgba(255,107,26,0.2);
+}
+.floating-cart:active {
+  transform: scale(0.95);
+}
+.floating-cart-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: #D4A24C;
+  color: #030B1A;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 2px solid #030B1A;
+}
+@keyframes cart-bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Cart badge in navbar */
+.nav-cart-button {
+  position: relative;
+}
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #FF6B1A;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* ============================================================
+   RESPONSIVE OVERRIDES — Clean mobile experience
+   ============================================================ */
+@media (max-width: 1199px) {
+  .paseo-desktop-links { display: none; }
+  .paseo-menu-button { display: flex; }
+  .paseo-header-inner { gap: 12px; }
+  .mobile-menu-overlay { display: block; }
+}
+
+@media (max-width: 767px) {
+  .paseo-header-inner {
+    padding: 10px 14px;
+  }
+  .paseo-desktop-session { display: none; }
+  .paseo-menu-button { margin-left: auto; }
+  .paseo-brand strong { font-size: 15px; }
+  .paseo-header .paseo-brand img { max-width: 44px; }
+  .paseo-header .paseo-brand { gap: 6px; }
+  .paseo-header-inner { gap: 8px; }
+
+  /* Floating cart visible on mobile */
+  .floating-cart { display: flex; }
+
+  /* Bottom dock */
+  .mobile-bottom-dock {
+    position: fixed;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    left: 10px;
+    right: 10px;
+    z-index: 40;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 4px;
+    border: 1px solid rgba(212,162,76,0.3);
+    border-radius: 20px;
+    background: rgba(6,23,52,0.95);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  }
+  .mobile-bottom-dock a,
+  .mobile-bottom-dock button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    background: none;
+    border: 0;
+    padding: 4px 8px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .mobile-bottom-dock a:hover,
+  .mobile-bottom-dock button:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+  }
+  .mobile-bottom-dock button {
+    color: #D4A24C;
+  }
+  .mobile-bottom-dock svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* Panel layout */
+  .panel-layout { display: block; }
+  .panel-nav { max-width: 100%; }
+  .panel-content { min-width: 0; padding: 14px; }
+  .management-row { flex-wrap: wrap; }
+  .form-actions { flex-wrap: wrap; }
+  .jarvis-intro { min-width: 0; }
+
+  /* Jarvis page mobile */
+  .jarvis-page {
+    flex-direction: column !important;
+    padding: 16px !important;
+  }
+  .jarvis-intro {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  .chat-panel {
+    max-height: none !important;
+  }
+
+  /* Product grid mobile */
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 400px) {
+  .product-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .paseo-brand strong { font-size: 13px; }
+  .paseo-brand small { display: none; }
+}

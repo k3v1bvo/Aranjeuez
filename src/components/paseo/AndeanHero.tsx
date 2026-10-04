@@ -103,7 +103,7 @@ export function AndeanHero({
               </p>
 
               {/* Orbe Interactivo con Partículas */}
-              <JarvisOrb size="md" showControls={true} onClick={onOpenJarvis} />
+              <JarvisOrb size="md" onClick={onOpenJarvis} />
 
               <button
                 onClick={onOpenJarvis}

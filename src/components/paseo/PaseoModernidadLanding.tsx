@@ -259,7 +259,7 @@ export function PaseoModernidadLanding() {
           <div className="fixed bottom-6 right-6 z-50 w-full max-w-md rounded-3xl glass-andino border border-white/20 shadow-2xl p-5 backdrop-blur-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
               <div className="flex items-center gap-3">
-                <JarvisOrb size="sm" initialState={isJarvisBusy ? 'thinking' : 'idle'} />
+                <JarvisOrb size="sm" state={isJarvisBusy ? "thinking" : "idle"} />
                 <div>
                   <h4 className="font-bold text-sm text-white">Jarvis Concierge</h4>
                   <span className="text-[10px] text-[#D4A24C] font-semibold">
