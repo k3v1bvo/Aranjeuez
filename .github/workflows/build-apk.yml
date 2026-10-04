@@ -43,26 +43,37 @@ jobs:
           }
           EOF
 
-          # Generar proyecto respondiendo por defecto 'yes' a cualquier prompt interactivo
+          # Esperar a que Vercel sirva el manifest actualizado con PsjAranjuez
+          echo "Verificando sincronizacion del manifest en Vercel..."
+          for i in {1..30}; do
+            if curl -sL https://aranjeuez-xi.vercel.app/manifest.json | grep -q "PsjAranjuez"; then
+              echo "Manifest actualizado con PsjAranjuez detectado con exito!"
+              break
+            fi
+            echo "Esperando sincronizacion de Vercel..."
+            sleep 3
+          done
+
+          # Generar proyecto respondiendo por defecto a cualquier prompt interactivo
           yes "" | npx --yes @bubblewrap/cli init \
             --manifest=https://aranjeuez-xi.vercel.app/manifest.json \
             --directory=./twa-app \
             --skipPwaValidation || true
 
-          # Si por alguna razon bubblewrap falla, compilar directamente con gradlew
+          # Si se genero el proyecto, compilar APK con Gradle
           if [ -d "./twa-app" ]; then
             cd twa-app
             ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
+            echo "APK generado exitosamente."
           else
-            echo "Directorio twa-app no encontrado, verificando build alternativo..."
+            echo "Error: twa-app no se pudo generar."
+            exit 1
           fi
-
-          echo "Compilacion finalizada."
 
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
           name: PaseoAranjuez-Android-APK
           path: output/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
