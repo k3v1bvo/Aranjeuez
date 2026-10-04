@@ -29,13 +29,13 @@ export function JarvisOrb({ onClick, state = 'idle', size = 'md' }: JarvisOrbPro
 
   const labels: Record<JarvisOrbState, string> = {
     idle: 'JARVIS',
-    listening: 'OYENDO…',
+    listening: 'OYENDOÂ…',
     thinking: 'PENSANDO',
     speaking: 'HABLANDO',
   };
 
   const ariaLabels: Record<JarvisOrbState, string> = {
-    idle: 'Activar micrófono de Jarvis',
+    idle: 'Activar micrÃ³fono de Jarvis',
     listening: 'Enviar lo que dije',
     thinking: 'Procesando consulta',
     speaking: 'Silenciar a Jarvis',

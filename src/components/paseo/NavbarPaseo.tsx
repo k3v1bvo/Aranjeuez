@@ -31,14 +31,14 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
   const home = admin ? '/admin/overview' : staff ? '/comercio' : '/';
   const links = admin
     ? [
-        ['/admin/overview', 'Administración'],
+        ['/admin/overview', 'AdministraciÃ³n'],
         ['/admin/stores', 'Establecimientos'],
         ['/admin/users', 'Usuarios'],
       ]
     : staff
       ? [
           ['/comercio', 'Pedidos'],
-          ['/comercio/scanner', 'Caja y validación'],
+          ['/comercio/scanner', 'Caja y validaciÃ³n'],
           ...(user?.role === 'comercio' ? [['/comercio/empleados', 'Mi equipo']] : []),
         ]
       : [
@@ -71,12 +71,12 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
           <small>{user.email}</small>
           <span className="role-badge">
             {user.role}
-            {user.role === 'cliente' && ' · ' + user.points + ' pts · ' + user.level}
+            {user.role === 'cliente' && ' Â· ' + user.points + ' pts Â· ' + user.level}
           </span>
         </div>
       )}
       {user ? (
-        <button className="button secondary small" onClick={onLogout} aria-label="Cerrar sesión">
+        <button className="button secondary small" onClick={onLogout} aria-label="Cerrar sesiÃ³n">
           <LogOut size={16} />
           <span>Salir</span>
         </button>
@@ -92,10 +92,10 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
     <>
       <header className="paseo-header">
         <div className="paseo-header-inner">
-          <Link href={home} aria-label="Paseo Aranjuez — Inicio">
+          <Link href={home} aria-label="Paseo Aranjuez Â— Inicio">
             <PaseoAranjuezLogo />
           </Link>
-          <nav className="paseo-desktop-links" aria-label="Navegación principal">
+          <nav className="paseo-desktop-links" aria-label="NavegaciÃ³n principal">
             {links.map(([href, label]) => (
               <Link key={href} href={href}>
                 {label}
@@ -115,7 +115,7 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
           )}
           <button
             className="paseo-menu-button icon-button"
-            aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
+            aria-label={open ? 'Cerrar menÃº' : 'Abrir menÃº'}
             aria-expanded={open}
             aria-controls="paseo-mobile-menu"
             onClick={() => setOpen(!open)}
@@ -134,7 +134,7 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
       <nav
         id="paseo-mobile-menu"
         className={`paseo-mobile-menu ${open ? 'mobile-menu-open' : ''}`}
-        aria-label="Menú móvil"
+        aria-label="MenÃº mÃ³vil"
       >
         {/* User profile section at top */}
         {user ? (
@@ -147,7 +147,7 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
               <small>{user.email}</small>
               <span className="role-badge">
                 {user.role}
-                {user.role === 'cliente' && ` · ${user.points} pts · ${user.level}`}
+                {user.role === 'cliente' && ` Â· ${user.points} pts Â· ${user.level}`}
               </span>
             </div>
           </div>
@@ -178,7 +178,7 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
                 <ChevronRight size={16} />
               </Link>
               <button className="mobile-nav-link" onClick={() => { setQr(true); setOpen(false); }}>
-                <span>Mi código QR</span>
+                <span>Mi cÃ³digo QR</span>
                 <QrCode size={16} />
               </button>
             </>
@@ -190,7 +190,7 @@ export function NavbarPaseo({ user, onLogout, cartCount = 0 }: NavbarPaseoProps)
           <div className="mobile-menu-footer">
             <button className="button secondary small" onClick={() => { onLogout?.(); setOpen(false); }} style={{ width: '100%' }}>
               <LogOut size={16} />
-              Cerrar sesión
+              Cerrar sesiÃ³n
             </button>
           </div>
         )}

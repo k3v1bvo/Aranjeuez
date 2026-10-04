@@ -16,12 +16,12 @@ interface Message {
 }
 
 const suggestions = [
-  '¿Dónde retiro mi pedido y cuál es mi código?',
-  '¿Cuántos puntos tengo y qué nivel soy?',
-  '¿Qué opciones para comer hay en Piso 3?',
-  '¿Dónde queda Samsung Store y qué horarios tienen?',
-  '¿Cómo funciona el estacionamiento?',
-  '¿Qué opciones de entretenimiento hay?',
+  'Â¿DÃ³nde retiro mi pedido y cuÃ¡l es mi cÃ³digo?',
+  'Â¿CuÃ¡ntos puntos tengo y quÃ© nivel soy?',
+  'Â¿QuÃ© opciones para comer hay en Piso 3?',
+  'Â¿DÃ³nde queda Samsung Store y quÃ© horarios tienen?',
+  'Â¿CÃ³mo funciona el estacionamiento?',
+  'Â¿QuÃ© opciones de entretenimiento hay?',
 ];
 
 export function Jarvis() {
@@ -73,7 +73,7 @@ export function Jarvis() {
         },
       ]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Jarvis no está disponible.');
+      setError(e instanceof Error ? e.message : 'Jarvis no estÃ¡ disponible.');
     } finally {
       setBusy(false);
     }
@@ -149,7 +149,7 @@ export function Jarvis() {
         <p className="eyebrow">Concierge VIP de Paseo Aranjuez</p>
         <h1>Un gran plan empieza con una pregunta.</h1>
         <p>
-          Te ayudo a ubicar tiendas, verificar tus pedidos y códigos de retiro, consultar puntos y
+          Te ayudo a ubicar tiendas, verificar tus pedidos y cÃ³digos de retiro, consultar puntos y
           organizar tu visita.
         </p>
 
@@ -166,17 +166,17 @@ export function Jarvis() {
           </div>
         ) : (
           <div className="notice" style={{ margin: '16px 0' }}>
-            Inicia sesión para que Jarvis pueda darte el estado exacto de tus pedidos, códigos de
+            Inicia sesiÃ³n para que Jarvis pueda darte el estado exacto de tus pedidos, cÃ³digos de
             recogida y saldo de puntos.
           </div>
         )}
 
         <Link href="/cliente" className="text-button">
-          Explorar catálogo y tiendas <MapPin size={16} />
+          Explorar catÃ¡logo y tiendas <MapPin size={16} />
         </Link>
       </aside>
 
-      <section className="chat-panel" aria-label="Conversación con Jarvis">
+      <section className="chat-panel" aria-label="ConversaciÃ³n con Jarvis">
         <div className="chat-head">
           <div>
             <Sparkles size={20} />
@@ -185,7 +185,7 @@ export function Jarvis() {
           </div>
           <button
             className="icon-button"
-            aria-label="Nueva conversación"
+            aria-label="Nueva conversaciÃ³n"
             disabled={busy}
             onClick={() => {
               setMessages([]);
@@ -202,12 +202,12 @@ export function Jarvis() {
               <Sparkles size={34} />
               <h2>
                 {currentUser
-                  ? `Hola ${currentUser.name}, ¿en qué te puedo ayudar hoy?`
-                  : 'Hola, ¿qué te gustaría hacer hoy?'}
+                  ? `Hola ${currentUser.name}, Â¿en quÃ© te puedo ayudar hoy?`
+                  : 'Hola, Â¿quÃ© te gustarÃ­a hacer hoy?'}
               </h2>
               <p>
                 Puedes preguntarme por tus pedidos, tus puntos de fidelidad, recomendaciones de
-                comida o cómo llegar a cualquier tienda.
+                comida o cÃ³mo llegar a cualquier tienda.
               </p>
               <div className="suggestions">
                 {suggestions.map((s) => (
@@ -222,7 +222,7 @@ export function Jarvis() {
 
           {messages.map((m, i) => (
             <article className={`message message-${m.role}`} key={i}>
-              <small>{m.role === 'user' ? 'Tú' : 'Jarvis'}</small>
+              <small>{m.role === 'user' ? 'TÃº' : 'Jarvis'}</small>
               <div className="message-content">
                 {m.content
                   .split(/(\*\*[^*]+\*\*)/g)
@@ -252,7 +252,7 @@ export function Jarvis() {
                         <strong>{s.name}</strong>
                         <small>
                           {s.floor
-                            ? `${s.floor} · ${s.local_num || ''}`
+                            ? `${s.floor} Â· ${s.local_num || ''}`
                             : s.schedule || 'Horario por confirmar'}
                         </small>
                       </span>
@@ -265,7 +265,7 @@ export function Jarvis() {
 
           {busy && (
             <p className="chat-thinking" role="status">
-              <Sparkles size={17} /> Consultando información oficial del Paseo…
+              <Sparkles size={17} /> Consultando informaciÃ³n oficial del PaseoÂ…
             </p>
           )}
 
@@ -300,7 +300,7 @@ export function Jarvis() {
             id="jarvis-input"
             value={input}
             maxLength={2000}
-            placeholder="Pregúntale a Jarvis sobre tiendas, compras, puntos, comidas..."
+            placeholder="PregÃºntale a Jarvis sobre tiendas, compras, puntos, comidas..."
             rows={2}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -320,8 +320,8 @@ export function Jarvis() {
         </form>
 
         <small className="chat-disclaimer">
-          Jarvis cuenta con información en tiempo real de Paseo Aranjuez. Para pedidos y saldo de
-          puntos personales, consulta habiendo iniciado sesión.
+          Jarvis cuenta con informaciÃ³n en tiempo real de Paseo Aranjuez. Para pedidos y saldo de
+          puntos personales, consulta habiendo iniciado sesiÃ³n.
         </small>
       </section>
     </div>

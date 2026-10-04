@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 /* =============================================
-   TIENDA TÁCTICA — Antigravity Design System
-   Glassmorphism · Spatial Depth · Premium Motion
+   TIENDA TÃCTICA â Antigravity Design System
+   Glassmorphism Â· Spatial Depth Â· Premium Motion
    Inspired by: antigravity-design-expert skill
    ============================================= */
 
@@ -63,7 +63,7 @@
   --font-montserrat: var(--font-montserrat), sans-serif;
   --font-inter: var(--font-inter), sans-serif;
 
-  /* MODERNIDAD ANDINA — PASEO ARANJUEZ DESIGN SYSTEM */
+  /* MODERNIDAD ANDINA â PASEO ARANJUEZ DESIGN SYSTEM */
   --color-vesubio: #b84d0b;
   --color-vesubio-glow: #ff6b1a;
   --color-vesubio-light: #ff8f4d;
@@ -156,7 +156,7 @@
   box-shadow: 0 16px 36px -10px rgba(184, 77, 11, 0.4);
 }
 
-/* Micro-interacción: Botón con flecha que se mueve 3px */
+/* Micro-interacciÃ³n: BotÃ³n con flecha que se mueve 3px */
 .btn-arrow-hover:hover .arrow-icon {
   transform: translateX(3px);
 }
@@ -360,7 +360,7 @@
   animation: badge-pulse-3s 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Punto En línea de Jarvis pulsando cada 2s */
+/* Punto En lÃ­nea de Jarvis pulsando cada 2s */
 @keyframes dot-online-2s {
   0%,
   100% {
@@ -376,7 +376,7 @@
   animation: dot-online-2s 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Corazón favorito animación 400ms */
+/* CorazÃ³n favorito animaciÃ³n 400ms */
 @keyframes heart-beat-anim {
   0% {
     transform: scale(1);
@@ -406,7 +406,7 @@
   border-color: #b84d0b;
 }
 
-/* Micro-interacción: Rebote del Carrito */
+/* Micro-interacciÃ³n: Rebote del Carrito */
 @keyframes cart-bounce {
   0% {
     transform: scale(1);
@@ -447,7 +447,7 @@
   animation: shimmer 1.5s infinite linear;
 }
 
-/* Pulso de éxito para números */
+/* Pulso de Ã©xito para nÃºmeros */
 @keyframes number-pulse {
   0%,
   100% {
@@ -462,7 +462,7 @@
   animation: number-pulse 350ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* REGLA 20: Scroll Suave Global con compensación de 80px */
+/* REGLA 20: Scroll Suave Global con compensaciÃ³n de 80px */
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
@@ -3688,8 +3688,8 @@ strong {
 }
 
 /* ============================================================
-   PASEO ARANJUEZ — LUXURY DARK GLASSMORHPISM DESIGN SYSTEM
-   Modernidad Andina UI/UX · Chakana Tokens & Deep Obsidian Navy
+   PASEO ARANJUEZ â LUXURY DARK GLASSMORHPISM DESIGN SYSTEM
+   Modernidad Andina UI/UX Â· Chakana Tokens & Deep Obsidian Navy
    ============================================================ */
 
 body {
@@ -3905,7 +3905,7 @@ table tr:hover td {
 }
 
 /* ============================================================
-   HIGH-CONTRAST DARK THEME FIXES — NO WHITE-ON-WHITE
+   HIGH-CONTRAST DARK THEME FIXES â NO WHITE-ON-WHITE
    ============================================================ */
 
 .metric-card,
@@ -4013,7 +4013,7 @@ select {
   color: #ffffff !important;
 }
 
-/* Auditoría 2026-10: identidad, navegación por rol y superficies legibles. */
+/* AuditorÃ­a 2026-10: identidad, navegaciÃ³n por rol y superficies legibles. */
 .paseo-header {
   position: sticky;
   top: 0;
@@ -4332,7 +4332,7 @@ textarea::placeholder {
 }
 
 /* ============================================================
-   JARVIS ORB � Real animations via vanilla CSS
+   JARVIS ORB  Real animations via vanilla CSS
    ============================================================ */
 .jarvis-orb-wrapper {
   display: flex;
@@ -4534,7 +4534,7 @@ textarea::placeholder {
 .jarvis-user-meta svg { color: #FF6B1A; }
 
 /* ============================================================
-   MOBILE MENU � Premium slide-in drawer
+   MOBILE MENU  Premium slide-in drawer
    ============================================================ */
 .mobile-menu-overlay {
   display: none;
@@ -4642,7 +4642,7 @@ textarea::placeholder {
 }
 
 /* ============================================================
-   FLOATING CART � Mobile fab button
+   FLOATING CART  Mobile fab button
    ============================================================ */
 .floating-cart {
   display: none;
@@ -4713,7 +4713,7 @@ textarea::placeholder {
 }
 
 /* ============================================================
-   RESPONSIVE OVERRIDES � Clean mobile experience
+   RESPONSIVE OVERRIDES  Clean mobile experience
    ============================================================ */
 @media (max-width: 1199px) {
   .paseo-desktop-links { display: none; }
