@@ -1,5 +1,6 @@
 ﻿'use client';
 import { PaseoHeatmap } from './PaseoHeatmap';
+import { PaseoCorporateAnalytics } from './PaseoCorporateAnalytics';
 import { QrStationManager } from './QrStationManager';
 import { QrCode, Flame } from 'lucide-react';
 import Link from 'next/link';
@@ -151,6 +152,7 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
                     <ArrowUpRight size={18} />
                   </Link>
                 </div>
+                <PaseoCorporateAnalytics data={data} mode="compact" />
                 <Analytics data={data} />
               </>
             )}
@@ -764,6 +766,7 @@ function Reports({ section }: { section: string }) {
           <div className="my-8 rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
             <PaseoHeatmap />
           </div>
+          <PaseoCorporateAnalytics data={data} mode="full" />
           <Analytics data={data} />
         </>
       )}
