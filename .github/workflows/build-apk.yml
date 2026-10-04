@@ -24,41 +24,23 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            cmdline-tools;latest
-
       - name: Configurar Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Instalar Bubblewrap CLI de Google
+      - name: Generar APK Nativo con PWABuilder CLI
         run: |
-          npm install -g @bubblewrap/cli
-
-      - name: Inicializar y Compilar Proyecto TWA Nativo
-        run: |
-          echo "Generando aplicacion nativa TWA para Paseo Aranjuez..."
-          mkdir -p twa-project
-          cd twa-project
-
-          # Inicializar proyecto TWA con el manifest de produccion
-          bubblewrap init --manifest="https://aranjeuez-xi.vercel.app/manifest.json" --directory="./app"
-
-          cd app
-          # Compilar el APK usando Gradle nativo
-          ./gradlew assembleRelease || ./gradlew assembleDebug
-
-          echo "APK generado exitosamente."
+          echo "Compilando APK de Paseo Aranjuez..."
+          mkdir -p output
+          # El runner de GitHub Actions ya tiene Android SDK y Gradle preinstalados de fabrica
+          # PWABuilder genera directamente el APK firmado para distribucion
+          npx --yes @pwabuilder/cli https://aranjeuez-xi.vercel.app -d ./output -p android
+          echo "Compilacion finalizada."
 
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
           name: PaseoAranjuez-Android-APK
-          path: twa-project/app/app/build/outputs/apk/**/*.apk
+          path: output/**/*.apk
           if-no-files-found: warn
