@@ -93,9 +93,9 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
   return (
     <section>
       <PageTitle
-        eyebrow={compact ? 'Tu dÃ­a en el Paseo' : 'Paseo Aranjuez Â· AdministraciÃ³n'}
-        title={compact ? 'Todo listo para recibirlos.' : 'AsÃ­ se mueve el Paseo.'}
-        description="Actividad registrada en el sistema. ActualizaciÃ³n cada 30 segundos."
+        eyebrow={compact ? 'Tu día en el Paseo' : 'Paseo Aranjuez · Administración'}
+        title={compact ? 'Todo listo para recibirlos.' : 'Así se mueve el Paseo.'}
+        description="Actividad registrada en el sistema. Actualización cada 30 segundos."
       />
       {error && <ErrorState message={error} retry={reload} />}
       {loading ? (
@@ -107,14 +107,14 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
             {compact && (
               <section className="surface section">
                 <h2>Movimientos de mis establecimientos</h2>
-                <p className="muted">Ãšltimos 200 movimientos de puntos vinculados a tus locales.</p>
+                <p className="muted">Últimos 200 movimientos de puntos vinculados a tus locales.</p>
                 <ul className="activity-list">
                   {data.movements.map((movement) => (
                     <li key={movement.id}>
                       <div>
                         <strong>{movement.reason}</strong>
                         <small>
-                          {movement.user?.name} Â· {movement.store?.name} Â·{' '}
+                          {movement.user?.name} · {movement.store?.name} ·{' '}
                           {dateTime(movement.created_at)}
                         </small>
                       </div>
@@ -126,7 +126,7 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
                   ))}
                 </ul>
                 {!data.movements.length && (
-                  <p className="muted">Las compras y canjes de tus locales aparecerÃ¡n aquÃ­.</p>
+                  <p className="muted">Las compras y canjes de tus locales aparecerán aquí.</p>
                 )}
               </section>
             )}
@@ -237,11 +237,11 @@ function Analytics({ data }: { data: Summary }) {
             className={'tab-btn ' + (activeTab === 'clientes' ? 'active' : '')}
             onClick={() => setActiveTab('clientes')}
           >
-            <Users size={16} /> Fidelizaci?n de Clientes
+            <Users size={16} /> Fidelización de Clientes
           </button>
         </div>
         <div className="data-badge-live">
-          <span className="live-dot"></span> M?tricas en Vivo
+          <span className="live-dot"></span> Métricas en Vivo
         </div>
       </div>
 
@@ -250,7 +250,7 @@ function Analytics({ data }: { data: Summary }) {
           <section className="surface chart-card">
             <div className="card-header-flex">
               <div>
-                <h3>?? Distribuci?n de Ventas por Establecimiento</h3>
+                <h3>📊 Distribución de Ventas por Establecimiento</h3>
                 <p className="muted">Comparativa de ingresos confirmados y volumen de compras</p>
               </div>
               <div className="metric-pill">
@@ -293,15 +293,15 @@ function Analytics({ data }: { data: Summary }) {
                 })}
               </div>
             ) : (
-              <div className="empty-chart-notice">A?n no hay ventas registradas en los comercios.</div>
+              <div className="empty-chart-notice">Aún no hay ventas registradas en los comercios.</div>
             )}
           </section>
 
           <section className="surface chart-card donut-section">
             <div className="card-header-flex">
               <div>
-                <h3>?? Participaci?n de Mercado</h3>
-                <p className="muted">Aporte de cada comercio a la facturaci?n</p>
+                <h3>🥧 Participación de Mercado</h3>
+                <p className="muted">Aporte de cada comercio a la facturación</p>
               </div>
             </div>
 
@@ -334,8 +334,8 @@ function Analytics({ data }: { data: Summary }) {
           <section className="surface chart-card">
             <div className="card-header-flex">
               <div>
-                <h3>? Consultas y Tendencias de B?squeda</h3>
-                <p className="muted">Temas m?s recurrentes procesados por el motor de IA en el Paseo</p>
+                <h3>🔍 Consultas y Tendencias de Búsqueda</h3>
+                <p className="muted">Temas más recurrentes procesados por el motor de IA en el Paseo</p>
               </div>
               <div className="metric-pill purple">{totalQuestions} consultas</div>
             </div>
@@ -348,7 +348,7 @@ function Analytics({ data }: { data: Summary }) {
                     <div className="visual-bar-item" key={topic}>
                       <div className="visual-bar-label">
                         <div className="bar-title-wrap">
-                          <span className="topic-tag">? {topic}</span>
+                          <span className="topic-tag">🔍 {topic}</span>
                         </div>
                         <span className="amount">{count} consultas</span>
                       </div>
@@ -363,16 +363,16 @@ function Analytics({ data }: { data: Summary }) {
                 })}
               </div>
             ) : (
-              <div className="empty-chart-notice">A?n no se han registrado conversaciones con Jarvis.</div>
+              <div className="empty-chart-notice">Aún no se han registrado conversaciones con Jarvis.</div>
             )}
           </section>
 
           <section className="surface chart-card">
-            <h3>?? Resumen Operativo</h3>
+            <h3>⚡ Resumen Operativo</h3>
             <p className="muted">Datos en tiempo real</p>
             <div className="insights-grid">
               <div className="insight-stat-box">
-                <span>Top Categor?a</span>
+                <span>Top Categoría</span>
                 <strong>{topics[0]?.[0] || 'En espera'}</strong>
               </div>
               <div className="insight-stat-box">
@@ -380,7 +380,7 @@ function Analytics({ data }: { data: Summary }) {
                 <strong>{data.stores.filter((s) => s.is_active).length} activos</strong>
               </div>
               <div className="insight-stat-box">
-                <span>Cat?logo Total</span>
+                <span>Catálogo Total</span>
                 <strong>{data.products.length} productos</strong>
               </div>
             </div>
@@ -393,7 +393,7 @@ function Analytics({ data }: { data: Summary }) {
           <section className="surface chart-card span-2">
             <div className="card-header-flex">
               <div>
-                <h3>?? Clientes con Mayor Frecuencia y Puntos Club</h3>
+                <h3>🏆 Clientes con Mayor Frecuencia y Puntos Club</h3>
                 <p className="muted">Ranking de usuarios con mayor fidelizaci?n en el Paseo</p>
               </div>
             </div>
@@ -403,7 +403,7 @@ function Analytics({ data }: { data: Summary }) {
                 <table className="modern-ranking-table">
                   <thead>
                     <tr>
-                      <th>Posici?n</th>
+                      <th>Posición</th>
                       <th>Cliente</th>
                       <th>Pedidos / Compras</th>
                       <th>Puntos Acumulados</th>
@@ -415,7 +415,7 @@ function Analytics({ data }: { data: Summary }) {
                       <tr key={c.id}>
                         <td>
                           <span className={'rank-badge rank-' + (i + 1)}>
-                            {i === 0 ? '??' : i === 1 ? '??' : i === 2 ? '??' : '#' + (i + 1)}
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1)}
                           </span>
                         </td>
                         <td>
@@ -425,7 +425,7 @@ function Analytics({ data }: { data: Summary }) {
                           <span className="purchases-badge">{c.count} compras</span>
                         </td>
                         <td>
-                          <strong className="points-highlight">? {c.points} pts</strong>
+                          <strong className="points-highlight">🪙 {c.points} pts</strong>
                         </td>
                         <td>
                           <span className="status-pill active">Activo</span>
@@ -436,7 +436,7 @@ function Analytics({ data }: { data: Summary }) {
                 </table>
               </div>
             ) : (
-              <div className="empty-chart-notice">A?n no hay clientes con actividad confirmada.</div>
+              <div className="empty-chart-notice">Aún no hay clientes con actividad confirmada.</div>
             )}
           </section>
         </div>
@@ -467,7 +467,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
     setError('');
     try {
       await api('configuracion', { method: 'PATCH', body: JSON.stringify(values) });
-      toast.success('ConfiguraciÃ³n guardada correctamente');
+      toast.success('Configuración guardada correctamente');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No pudimos guardar.');
     } finally {
@@ -477,7 +477,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
 
   function testDeviceGps() {
     if (!navigator.geolocation) {
-      setGpsStatus('La geolocalizaciÃ³n no estÃ¡ soportada en este navegador.');
+      setGpsStatus('La geolocalización no está soportada en este navegador.');
       return;
     }
     setTestingGps(true);
@@ -499,8 +499,8 @@ function SettingsForm({ settings }: { settings: Settings }) {
         const inside = dist <= radius;
         setGpsStatus(
           inside
-            ? `ðŸŸ¢ Â¡EstÃ¡s dentro del perÃ­metro! Distancia actual: ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
-            : `âš ï¸ Fuera del perÃ­metro: Tu dispositivo estÃ¡ a ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+            ? `🟢 ¡Estás dentro del perímetro! Distancia actual: ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+            : `⚠️ Fuera del perímetro: Tu dispositivo está a ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
         );
       },
       (err) => {
@@ -530,7 +530,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
         />
       </label>
       <label>
-        UbicaciÃ³n y referencia fÃ­sica
+        Ubicación y referencia física
         <textarea
           required
           minLength={2}
@@ -567,15 +567,15 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </label>
       </div>
 
-      {/* SecciÃ³n Geocerca y TelemetrÃ­a */}
+      {/* Sección Geocerca y Telemetría */}
       <div className="p-5 rounded-2xl bg-white/5 border border-[#FF6B1A]/30 space-y-4">
         <div className="flex items-center gap-2 text-white font-bold text-base">
           <MapPin size={18} className="text-[#FF6B1A]" />
-          <span>PerÃ­metro de Geocerca & TelemetrÃ­a Espacial</span>
+          <span>Perímetro de Geocerca & Telemetría Espacial</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Define el radio de proximidad fÃ­sica alrededor del edificio Paseo Aranjuez para validar
-          la presencia del cliente, activar la telemetrÃ­a del mapa de calor y permitir la suma de puntos en los tÃ³tems de entrada.
+          Define el radio de proximidad física alrededor del edificio Paseo Aranjuez para validar
+          la presencia del cliente, activar la telemetría del mapa de calor y permitir la suma de puntos en los tótems de entrada.
         </p>
 
         <div className="form-grid">
@@ -591,12 +591,12 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, geofence_radius: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              Recomendado: 200 metros (cubre accesos AmÃ©rica, Pando y parqueos).
+              Recomendado: 200 metros (cubre accesos América, Pando y parqueos).
             </small>
           </label>
 
           <label className="flex flex-col justify-center">
-            <span className="text-xs font-semibold text-slate-300 mb-2">ValidaciÃ³n Estricta</span>
+            <span className="text-xs font-semibold text-slate-300 mb-2">Validación Estricta</span>
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -604,7 +604,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
                 onChange={(e) => setValues({ ...values, geofence_strict: e.target.checked })}
               />
               <span className="text-xs">
-                Bloquear escaneo si el cliente estÃ¡ fuera del radio (Desactivado = modo flexible con registro)
+                Bloquear escaneo si el cliente está fuera del radio (Desactivado = modo flexible con registro)
               </span>
             </label>
           </label>
@@ -652,19 +652,19 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </div>
 
-      {/* SecciÃ³n Puntos por TÃ³tems QR y Recorrido de Pisos */}
+      {/* Sección Puntos por Tótems QR y Recorrido de Pisos */}
       <div className="p-5 rounded-2xl bg-white/5 border border-amber-500/30 space-y-4">
         <div className="flex items-center gap-2 text-white font-bold text-base">
           <Award size={18} className="text-amber-400" />
-          <span>Puntos por TÃ³tems QR de Recorrido (Sin Compra Obligatoria)</span>
+          <span>Puntos por Tótems QR de Recorrido (Sin Compra Obligatoria)</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Configura cuÃ¡ntos puntos recibe un visitante al escanear los tÃ³tems fÃ­sicos en las puertas principales, en la entrada de cada piso y al salir tras recorrer el centro comercial.
+          Configura cuántos puntos recibe un visitante al escanear los tótems físicos en las puertas principales, en la entrada de cada piso y al salir tras recorrer el centro comercial.
         </p>
 
         <div className="form-grid">
           <label>
-            Puntos por Bienvenida (Puertas AmÃ©rica / Dalence)
+            Puntos por Bienvenida (Puertas América / Dalence)
             <input
               type="number"
               min="0"
@@ -675,7 +675,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, qr_welcome_points: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              MÃ¡ximo 1 vez al dÃ­a por usuario.
+              Máximo 1 vez al día por usuario.
             </small>
           </label>
 
@@ -691,7 +691,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, qr_entry_points: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              Al llegar al piso por ascensor o gradas (1 vez al dÃ­a por piso).
+              Al llegar al piso por ascensor o gradas (1 vez al día por piso).
             </small>
           </label>
         </div>
@@ -714,7 +714,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
           </label>
 
           <label>
-            Permanencia MÃ­nima en Piso (Minutos)
+            Permanencia Mínima en Piso (Minutos)
             <input
               type="number"
               min="0"
@@ -732,7 +732,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
       </div>
 
       <p className="notice">
-        La equivalencia y la geocerca se aplican inmediatamente. Los tÃ³tems de entrada registrarÃ¡n
+        La equivalencia y la geocerca se aplican inmediatamente. Los tótems de entrada registrarán
         la proximidad del visitante con base en el radio configurado.
       </p>
       {error && (
@@ -741,7 +741,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </p>
       )}
       <button className="button" disabled={busy}>
-        {busy ? 'Guardandoâ€¦' : 'Guardar configuraciÃ³n'}
+        {busy ? 'Guardando...' : 'Guardar configuración'}
       </button>
     </form>
   );
@@ -751,14 +751,14 @@ function Reports({ section }: { section: string }) {
   if (loading) return <Loading />;
   if (!data) return <ErrorState message={error} retry={reload} />;
   const titles: Record<string, string> = {
-    analytics: 'EstadÃ­sticas del Paseo',
-    audit: 'Movimientos y auditorÃ­a',
-    alerts: 'Alertas de operaciÃ³n',
-    settings: 'ConfiguraciÃ³n del Paseo',
+    analytics: 'Estadísticas del Paseo',
+    audit: 'Movimientos y auditoría',
+    alerts: 'Alertas de operación',
+    settings: 'Configuración del Paseo',
   };
   return (
     <>
-      <PageTitle eyebrow="AdministraciÃ³n" title={titles[section]} />
+      <PageTitle eyebrow="Administración" title={titles[section]} />
       {error && <ErrorState message={error} retry={reload} />}
       {section === 'analytics' && (
         <>
@@ -773,7 +773,7 @@ function Reports({ section }: { section: string }) {
       {section === 'settings' && <SettingsForm settings={data.settings} />}
       {section === 'alerts' && (
         <section className="surface">
-          <h2>ReposiciÃ³n de stock</h2>
+          <h2>Reposición de stock</h2>
           <p className="muted">Productos con tres unidades o menos.</p>
           {data.products.filter((p) => p.stock <= 3).length ? (
             <ul className="activity-list">
@@ -792,7 +792,7 @@ function Reports({ section }: { section: string }) {
           ) : (
             <Empty
               title="Stock sin alertas"
-              detail="Todos los productos tienen mÃ¡s de tres unidades."
+              detail="Todos los productos tienen más de tres unidades."
             />
           )}
           <Link className="text-button" href="/admin/products">
@@ -804,14 +804,14 @@ function Reports({ section }: { section: string }) {
         <>
           <section className="surface">
             <h2>Historial de puntos</h2>
-            <p className="muted">Ãšltimos 200 movimientos registrados.</p>
+            <p className="muted">Últimos 200 movimientos registrados.</p>
             <ul className="activity-list">
               {data.movements.map((m) => (
                 <li key={m.id}>
                   <div>
                     <strong>{m.reason}</strong>
                     <small>
-                      {m.user?.name} Â· {m.store?.name || 'Club Paseo'} Â· {dateTime(m.created_at)}
+                      {m.user?.name} · {m.store?.name || 'Club Paseo'} · {dateTime(m.created_at)}
                     </small>
                   </div>
                   <strong className={m.amount > 0 ? 'positive' : ''}>
@@ -823,10 +823,10 @@ function Reports({ section }: { section: string }) {
             </ul>
           </section>
           <section className="surface section">
-            <h2>AuditorÃ­a de operaciones</h2>
+            <h2>Auditoría de operaciones</h2>
             <p className="muted">
-              Ãšltimas 100 operaciones. Las compras y los canjes se registran dentro de la misma
-              transacciÃ³n.
+              Últimas 100 operaciones. Las compras y los canjes se registran dentro de la misma
+              transacción.
             </p>
             <ul className="activity-list">
               {data.audit.map((a) => (
@@ -834,11 +834,11 @@ function Reports({ section }: { section: string }) {
                   <div>
                     <strong>{a.action.replaceAll('_', ' ')}</strong>
                     <small>
-                      {data.users.find((u) => u.id === a.actor_id)?.name || 'Usuario'} Â· {a.entity}{' '}
-                      Â· {dateTime(a.created_at)}
+                      {data.users.find((u) => u.id === a.actor_id)?.name || 'Usuario'} · {a.entity}{' '}
+                      · {dateTime(a.created_at)}
                     </small>
                     <small>
-                      {a.entity_id?.slice(0, 8)} {a.detail.despues ? `â†’ ${a.detail.despues}` : ''}
+                      {a.entity_id?.slice(0, 8)} {a.detail.despues ? `→ ${a.detail.despues}` : ''}
                     </small>
                   </div>
                 </li>
