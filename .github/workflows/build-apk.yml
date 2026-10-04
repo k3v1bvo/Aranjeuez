@@ -8,6 +8,7 @@ on:
     paths:
       - 'public/manifest.json'
       - '.github/workflows/build-apk.yml'
+      - 'scripts/build_apk_interactive.py'
 
 jobs:
   build-apk:
@@ -29,6 +30,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Configurar Python y pexpect
+        run: |
+          pip install pexpect
+
       - name: Compilar APK Android Nativo
         run: |
           echo "Iniciando compilacion de APK para Paseo Aranjuez..."
@@ -43,7 +48,7 @@ jobs:
           }
           EOF
 
-          # 2. Pre-generar Keystore de firma Android para que no requiera inputs interactivos
+          # 2. Pre-generar Keystore de firma Android para que exista
           echo "Pre-generando Android Keystore..."
           keytool -genkeypair -v \
             -keystore ./android.keystore \
@@ -69,22 +74,20 @@ jobs:
             sleep 3
           done
 
-          # 4. Enviar respuestas automaticas exactas para TODAS las preguntas posibles
-          echo "Inicializando proyecto Bubblewrap..."
-          printf "\n\n\n\n\n\n\n\n\n\n\n\n./android.keystore\nandroid\nandroid\nandroid\nPaseo Aranjuez\nMobile\nPaseo Aranjuez\nCochabamba\nCochabamba\nBO\nyes\n" | npx --yes @bubblewrap/cli init \
-            --manifest=https://aranjeuez-xi.vercel.app/manifest.json \
-            --directory=./twa-app \
-            --skipPwaValidation || true
+          # 4. Inicializar Bubblewrap con el asistente inteligente interactivo en Python
+          python3 scripts/build_apk_interactive.py
 
           # 5. Compilar APK con Gradle
-          if [ -d "./twa-app" ]; then
+          if [ -f "./twa-app/gradlew" ]; then
             echo "Compilando APK con Gradle assembleDebug..."
             cd twa-app
+            chmod +x gradlew
             ./gradlew assembleDebug --no-daemon
             cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
             echo "APK generado con exito en output/PaseoAranjuez-debug.apk"
           else
-            echo "Error: twa-app no se pudo generar."
+            echo "Error: gradlew no encontrado en twa-app."
+            ls -la ./twa-app || true
             exit 1
           fi
 
