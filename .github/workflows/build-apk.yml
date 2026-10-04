@@ -29,18 +29,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Generar APK Nativo con PWABuilder CLI
+      - name: Compilar APK Android Nativo
         run: |
-          echo "Compilando APK de Paseo Aranjuez..."
+          echo "Generando APK para Paseo Aranjuez..."
           mkdir -p output
-          # El runner de GitHub Actions ya tiene Android SDK y Gradle preinstalados de fabrica
-          # PWABuilder genera directamente el APK firmado para distribucion
-          npx --yes @pwabuilder/cli https://aranjeuez-xi.vercel.app -d ./output -p android
-          echo "Compilacion finalizada."
+
+          # Generar paquete Android oficial desde el manifest usando Bubblewrap CLI de Google en modo no-interactivo
+          npx --yes @bubblewrap/cli init --manifest=https://aranjeuez-xi.vercel.app/manifest.json --directory=./twa-app
+          cd twa-app
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
+          echo "Compilacion exitosa de APK."
 
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
           name: PaseoAranjuez-Android-APK
-          path: output/**/*.apk
-          if-no-files-found: warn
+          path: output/*.apk
+          if-no-files-found: error
