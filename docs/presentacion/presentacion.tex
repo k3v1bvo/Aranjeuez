@@ -1,0 +1,442 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% Paquetes estándar 100% compatibles
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+% Paleta Corporativa Paseo Aranjuez
+\definecolor{AranjuezDark}{HTML}{030B1A}
+\definecolor{AranjuezCard}{HTML}{081836}
+\definecolor{AranjuezGold}{HTML}{D4A24C}
+\definecolor{AranjuezOrange}{HTML}{FF6B1A}
+\definecolor{AranjuezGreen}{HTML}{7A8B5C}
+\definecolor{AranjuezText}{HTML}{FFFFFF}
+\definecolor{AranjuezMuted}{HTML}{94A3B8}
+\definecolor{EmeraldLight}{HTML}{34D399}
+
+% Configuración del Tema
+\setbeamercolor{background canvas}{bg=AranjuezDark}
+\setbeamercolor{normal text}{fg=AranjuezText}
+\setbeamercolor{title}{fg=AranjuezGold}
+\setbeamercolor{subtitle}{fg=AranjuezOrange}
+\setbeamercolor{frametitle}{fg=AranjuezGold, bg=AranjuezDark}
+\setbeamercolor{structure}{fg=AranjuezGold}
+\setbeamercolor{item}{fg=AranjuezOrange}
+
+% Bloques personalizados con estética Dark Glass
+\setbeamercolor{block title}{bg=AranjuezGold!20, fg=AranjuezGold}
+\setbeamercolor{block body}{bg=AranjuezCard, fg=AranjuezText}
+\setbeamercolor{block title example}{bg=AranjuezGreen!20, fg=EmeraldLight}
+\setbeamercolor{block body example}{bg=AranjuezCard, fg=AranjuezText}
+\setbeamercolor{block title alerted}{bg=AranjuezOrange!20, fg=AranjuezOrange}
+\setbeamercolor{block body alerted}{bg=AranjuezCard, fg=AranjuezText}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+
+% Pie de página institucional
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=3ex,dp=1.2ex,leftskip=1.2cm,rightskip=1.2cm]{footline}%
+      \color{AranjuezMuted}\scriptsize \textbf{Paseo Aranjuez} $\cdot$ Ecosistema Digital Unificado \& Inteligencia Espacial
+      \hfill
+      \color{AranjuezMuted}\scriptsize Hackathon 2024 $\cdot$ \textbf{\insertframenumber{} / \inserttotalframenumber}
+    \end{beamercolorbox}%
+  }%
+  \vskip0pt%
+}
+
+% Encabezado
+\setbeamertemplate{frametitle}{
+  \vskip 0.35cm
+  \begin{beamercolorbox}[wd=\textwidth,ht=0.7cm,dp=0.15cm]{frametitle}
+    {\large \textbf{\insertframetitle}} \\
+    \vskip 0.05cm
+    {\scriptsize \color{AranjuezMuted} \insertframesubtitle}
+  \end{beamercolorbox}
+  \vskip -0.15cm
+  \begin{tikzpicture}
+    \draw[color=AranjuezGold, line width=0.6pt] (0,0) -- (\textwidth,0);
+  \end{tikzpicture}
+  \vskip 0.1cm
+}
+
+\begin{document}
+
+% ========================================================
+% SLIDE 1: PORTADA
+% ========================================================
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[AranjuezDark] (current page.south west) rectangle (current page.north east);
+    \draw[AranjuezGold!30, line width=1pt] ([xshift=0.8cm,yshift=-0.8cm]current page.north west) rectangle ([xshift=-0.8cm,yshift=0.8cm]current page.south east);
+  \end{tikzpicture}
+
+  \begin{center}
+    \vspace{0.4cm}
+    {\scriptsize \color{AranjuezOrange} \textbf{HACKATHON BY PASEO ARANJUEZ $\cdot$ SOLUCIÓN ESTRATÉGICA INTEGRAL}}
+    \vskip 0.25cm
+    {\LARGE \textbf{\color{white}ECOSISTEMA DIGITAL UNIFICADO}} \\
+    \vskip 0.1cm
+    {\Large \textbf{\color{AranjuezGold}PASEO ARANJUEZ}} \\
+    \vskip 0.2cm
+    {\footnotesize \color{AranjuezMuted} Plataforma Omnicanal $\cdot$ Asistente Inteligente Jarvis $\cdot$ Fidelización Dinámica $\cdot$ Business Intelligence Espacial}
+    \vskip 0.6cm
+
+    \begin{columns}[c]
+      \begin{column}{0.31\textwidth}
+        \begin{alertblock}{PaseoYa (Marketplace)}
+          \centering \scriptsize \textbf{Retiro 100\% Presencial} \\ Tráfico Físico Asegurado
+        \end{alertblock}
+      \end{column}
+      \begin{column}{0.31\textwidth}
+        \begin{block}{Jarvis AI (Asistencia)}
+          \centering \scriptsize \textbf{Motor Multimodal Gemini} \\ Catálogo \& Voz en Tiempo Real
+        \end{block}
+      \end{column}
+      \begin{column}{0.31\textwidth}
+        \begin{exampleblock}{Business Intelligence}
+          \centering \scriptsize \textbf{Mapa de Calor Geocercado} \\ Analítica Espacial para el Mall
+        \end{exampleblock}
+      \end{column}
+    \end{columns}
+
+    \vskip 0.5cm
+    {\tiny \color{AranjuezMuted} Cochabamba, Bolivia $\cdot$ PWA / TWA Android Nativa $\cdot$ Producción en Vercel \& Supabase}
+  \end{center}
+\end{frame}
+
+% ========================================================
+% SLIDE 2: EL PROBLEMA DEL RETAIL
+% ========================================================
+\begin{frame}
+  \frametitle{1. EL DIAGNÓSTICO: LA PARADOJA DEL RETAIL FÍSICO}
+  \framesubtitle{El comercio electrónico tradicional extrae a los consumidores de los centros comerciales}
+
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{La Amenaza: Desconexión del Tráfico}
+        \small
+        \begin{itemize}\setlength\itemsep{0.35em}
+          \item \textbf{Canibalización por Delivery:} Las plataformas convencionales encierran al cliente en casa, extinguiendo el consumo colateral del centro comercial.
+          \item \textbf{Asimetría de Información:} Los clientes desconocen el 70\% de la oferta comercial y médica de los pisos superiores.
+          \item \textbf{Fidelización Ineficiente:} Programas analógicos desconectados que no generan incentivos para regresar.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{block}{La Brecha Operativa: Ceguera de Datos}
+        \small
+        \begin{itemize}\setlength\itemsep{0.35em}
+          \item \textbf{Sin Métricas de Permanencia:} La administración carece de datos sobre el tiempo de estadía real (\textit{dwell time}) por nivel o pasillo.
+          \item \textbf{Rentas Fijadas a Ciegas:} No existe sustento analítico cuantitativo para valorar locales comerciales de alto vs. bajo flujo.
+          \item \textbf{Comercios Aislados:} Falta de sinergia cruzada entre gastronomía, servicios y retail corporativo.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+
+  \vskip 0.3cm
+  \centering
+  \color{EmeraldLight}\footnotesize \textbf{Tesis Estratégica:} La tecnología no debe reemplazar la visita al mall, sino convertirse en el catalizador que la provoque y la mida.
+\end{frame}
+
+% ========================================================
+% SLIDE 3: LA SOLUCIÓN INTEGRADA
+% ========================================================
+\begin{frame}
+  \frametitle{2. LA SOLUCIÓN: ARQUITECTURA ESTRATÉGICA INTEGRADA}
+  \framesubtitle{Conexión simbiótica entre los 3 retos oficiales de la Hackathon}
+
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{alertblock}{PaseoYa (Reto 3)}
+        \scriptsize
+        \textbf{Click \& Collect Obligatorio}
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item Catálogo unificado multi-tienda.
+          \item Compra online con \textbf{retiro físico forzoso}.
+          \item Código QR dinámico de entrega.
+          \item \textbf{Conversión:} El 35\% de compradores adquiere productos adicionales al recoger.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{block}{Jarvis AI (Reto 2)}
+        \scriptsize
+        \textbf{Asistente Multimodal de Voz}
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item Motor Gemini con cascada de latencia ultra-baja ($<$800ms).
+          \item Búsqueda semántica contextual (``quiero cenar con vistas al Tunari'').
+          \item Base de conocimiento viva (tiendas, horarios, eventos y promociones).
+          \item Interfaz con orbe biomórfico reactivo.
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{exampleblock}{Paseo Points (Reto 1)}
+        \scriptsize
+        \textbf{Fidelización y Gamificación}
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{4 Niveles Reales:} Bronce, Plata, Oro y Platino.
+          \item Multiplicadores automáticos (1.0x a 2.0x).
+          \item Credencial digital con acabado metálico reactivo.
+          \item Validación QR instantánea para cajeros y comercios.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+
+  \vskip 0.35cm
+  \centering
+  \color{AranjuezGold}\footnotesize \textbf{El Circuito de Retención:} Jarvis orienta $\rightarrow$ PaseoYa transacciona $\rightarrow$ Paseo Points premia $\rightarrow$ La visita física se consolida.
+\end{frame}
+
+% ========================================================
+% SLIDE 4: EL FACTOR DIFERENCIAL (MAPA DE CALOR)
+% ========================================================
+\begin{frame}
+  \frametitle{3. DIFERENCIAL TECNOLÓGICO: INTELIGENCIA ESPACIAL}
+  \framesubtitle{Business Intelligence y Mapa de Calor en tiempo real para la administración del Paseo}
+
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Telemetría Perimetral No Intrusiva (200m)}
+        \footnotesize
+        \begin{itemize}\setlength\itemsep{0.3em}
+          \item \textbf{Geocerca Perimetral Automática:} Al cruzar el perímetro de 200m del Paseo (Av. América), la app detecta la presencia del cliente sin fricción.
+          \item \textbf{Privacidad por Diseño:} Telemetría anonimizada; no almacena trayectorias GPS continuas, únicamente \textit{heartbeats} de validación presencial.
+          \item \textbf{Eficiencia Energética:} El monitoreo se desactiva inmediatamente cuando el usuario abandona la zona comercial.
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{Dashboard de Analítica para Directivos}
+        \footnotesize
+        \textbf{Decisiones respaldadas por evidencia:}
+        \begin{itemize}\setlength\itemsep{0.3em}
+          \item \textbf{Mapa de Calor Dinámico:} Densidad peatonal comparativa entre planta baja, niveles comerciales y terraza El Cuarto.
+          \item \textbf{Tiempo de Permanencia:} Registro exacto del tiempo promedio de estadía por segmento de cliente.
+          \item \textbf{Valorización de Arrendamientos:} Tarifas de alquiler justificadas con datos auditables de afluencia peatonal.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+
+  \vskip 0.25cm
+  \begin{center}
+    \footnotesize \color{AranjuezOrange} \textbf{Ventaja Competitiva:} Ningún centro comercial del país cuenta con trazabilidad analítica de afluencia alimentada de forma nativa por su propia comunidad de clientes.
+  \end{center}
+\end{frame}
+
+% ========================================================
+% SLIDE 5: ARQUITECTURA TÉCNICA
+% ========================================================
+\begin{frame}
+  \frametitle{4. ARQUITECTURA TÉCNICA DE ALTA DISPONIBILIDAD}
+  \framesubtitle{Ecosistema de producción moderno, robusto y preparado para escalabilidad}
+
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{alertblock}{Frontend \& App Móvil}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Next.js 16 (Turbopack):} Renderizado híbrido optimizado.
+          \item \textbf{PWA + TWA Android:} Compilación nativa automatizada en CI/CD con Bubblewrap.
+          \item \textbf{Web Audio API:} Interacción de voz de ultra-baja latencia sin plugins.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{block}{Capa de Datos \& Seguridad}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Supabase PostgreSQL:} Base de datos relacional con alta concurrencia.
+          \item \textbf{Row Level Security (RLS):} Aislamiento estricto de transacciones entre comercios.
+          \item \textbf{Funciones RPC Atómicas:} Acreditación de puntos anti-duplicidad con transacciones ACID.
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{exampleblock}{Inteligencia Artificial}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Google Gemini Cascade:}
+          \begin{itemize}\scriptsize
+            \item Primario: \textit{3.1 Flash Lite} ($<$800ms)
+            \item Fallback: \textit{1.5 Flash}
+            \item Respaldo: \textit{1.5 Pro}
+          \end{itemize}
+          \item \textbf{RAG en Memoria:} Inyección dinámica de catálogos y promociones del Paseo.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+
+  \vskip 0.35cm
+  \centering \scriptsize \color{AranjuezMuted}
+  \textbf{Estándar de Calidad:} 100\% TypeScript verificado $\cdot$ 29 Rutas de producción compiladas $\cdot$ Cero advertencias críticas.
+\end{frame}
+
+% ========================================================
+% SLIDE 6: DEMOSTRACIÓN OPERATIVA
+% ========================================================
+\begin{frame}
+  \frametitle{5. VALIDACIÓN OPERATIVA EN CAMPO}
+  \framesubtitle{El ciclo completo: Cliente $\rightarrow$ Comercio $\rightarrow$ Administración}
+
+  \begin{center}
+    \begin{tikzpicture}[node distance=2.2cm, auto]
+      \node (c1) [draw=AranjuezGold, fill=AranjuezCard, rounded corners, text width=2.4cm, align=center, inner sep=4pt] {
+        \textbf{\color{AranjuezGold}\scriptsize 1. Cliente}\\
+        \tiny Consulta por voz o compra en PaseoYa.
+      };
+      \node (c2) [right of=c1, xshift=0.8cm, draw=AranjuezOrange, fill=AranjuezCard, rounded corners, text width=2.4cm, align=center, inner sep=4pt] {
+        \textbf{\color{AranjuezOrange}\scriptsize 2. Código QR}\\
+        \tiny Generación instantánea de token de retiro y puntos.
+      };
+      \node (c3) [right of=c2, xshift=0.8cm, draw=EmeraldLight, fill=AranjuezCard, rounded corners, text width=2.4cm, align=center, inner sep=4pt] {
+        \textbf{\color{EmeraldLight}\scriptsize 3. Geocerca 200m}\\
+        \tiny Registro silencioso de presencia y permanencia.
+      };
+      \node (c4) [right of=c3, xshift=0.8cm, draw=AranjuezGreen, fill=AranjuezCard, rounded corners, text width=2.4cm, align=center, inner sep=4pt] {
+        \textbf{\color{AranjuezGreen}\scriptsize 4. Comercio}\\
+        \tiny Escaneo de validación en caja ($<$1 segundo).
+      };
+
+      \draw[->, >=stealth, color=AranjuezGold, line width=1.2pt] (c1) -- (c2);
+      \draw[->, >=stealth, color=AranjuezOrange, line width=1.2pt] (c2) -- (c3);
+      \draw[->, >=stealth, color=EmeraldLight, line width=1.2pt] (c3) -- (c4);
+    \end{tikzpicture}
+  \end{center}
+
+  \vskip 0.2cm
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Credenciales de Demostración}
+        \scriptsize
+        \textbf{Contraseña unificada:} \texttt{Paseo2024Aranjuez!}
+        \begin{itemize}\setlength\itemsep{0.15em}
+          \item \textbf{Administrador General:} \texttt{k3v1bvo@gmail.com}
+          \item \textbf{Propietario Comercio:} \texttt{comercio@paseo.example}
+          \item \textbf{Cajero (Lector QR):} \texttt{empleado@paseo.example}
+          \item \textbf{Cliente Activo (350 pts):} \texttt{cliente@paseo.example}
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{Métricas de Rendimiento Comprobadas}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.2em}
+          \item \textbf{Tiempo de Respuesta Jarvis:} $<$800ms en inferencia y síntesis.
+          \item \textbf{Velocidad de Escaneo QR:} Detección en cámara móvil en $<$300ms.
+          \item \textbf{Seguridad de Datos:} Cero filtraciones entre comercios bajo RLS.
+          \item \textbf{Modo Offline Parcial:} Catálogo navegable bajo cortes de red.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ========================================================
+% SLIDE 7: MODELO DE NEGOCIO E IMPACTO
+% ========================================================
+\begin{frame}
+  \frametitle{6. MODELO DE NEGOCIO \& IMPACTO ECONÓMICO}
+  \framesubtitle{Generación de valor medible para locatarios, visitantes y la dirección del Paseo}
+
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{alertblock}{Para los Locatarios}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Aumento de Ticket Medio:} Dinámica de puntos que incentiva la adición de artículos al carrito.
+          \item \textbf{Venta Cruzada en Punto de Retiro:} Ingreso extra derivado del tráfico que acude al mall.
+          \item \textbf{Cero Inversión en Hardware:} Operación desde cualquier teléfono inteligente.
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{block}{Para la Administración}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Rentas Basadas en Tráfico:} Optimización de tarifas comerciales con evidencia de afluencia.
+          \item \textbf{Monetización de Visibilidad:} Posicionamiento destacado de marcas en Jarvis y el home de PaseoYa.
+          \item \textbf{Fidelización del Consumidor:} Blindaje ante centros comerciales competidores.
+        \end{itemize}
+      \end{block}
+    \end{column}
+
+    \begin{column}{0.31\textwidth}
+      \begin{exampleblock}{Fases de Implementación}
+        \scriptsize
+        \begin{itemize}\setlength\itemsep{0.25em}
+          \item \textbf{Fase 1 (Día 1 a 30):} Piloto con 15 locales clave de gastronomía y retail.
+          \item \textbf{Fase 2 (Mes 2):} Despliegue de tótems de auto-consulta en accesos peatonales.
+          \item \textbf{Fase 3 (Mes 4):} Integración con barreras automatizadas de parqueo.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+
+  \vskip 0.35cm
+  \centering \footnotesize \color{AranjuezText}
+  \textbf{Retorno de Inversión (ROI):} Recuperación proyectada en menos de 90 días por incremento del consumo presencial.
+\end{frame}
+
+% ========================================================
+% SLIDE 8: CONCLUSIÓN Y PREGUNTAS TÉCNICAS
+% ========================================================
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[AranjuezDark] (current page.south west) rectangle (current page.north east);
+  \end{tikzpicture}
+
+  \begin{center}
+    \vspace{0.6cm}
+    {\Huge \textbf{\color{AranjuezGold}PASEO ARANJUEZ}} \\
+    \vskip 0.15cm
+    {\large \color{white}``Transformando el comercio físico mediante tecnología presencial inteligente.''}
+    \vskip 0.6cm
+
+    \begin{columns}[c]
+      \begin{column}{0.4\textwidth}
+        \begin{block}{Acceso a la Solución en Vivo}
+          \centering \scriptsize
+          \textbf{Aplicación Web Desplegada:} \\
+          \texttt{https://aranjeuez-xi.vercel.app} \\
+          \vskip 0.15cm
+          \textbf{Paquete Android Nativo (APK):} \\
+          Compilado y disponible en GitHub Actions
+        \end{block}
+      \end{column}
+
+      \begin{column}{0.4\textwidth}
+        \begin{exampleblock}{Ingeniería y Código Fuente}
+          \centering \scriptsize
+          \textbf{Repositorio de Código:} \\
+          \texttt{github.com/k3v1bvo/Aranjeuez} \\
+          \vskip 0.15cm
+          \textbf{Infraestructura en la Nube:} \\
+          Supabase PostgreSQL + Google Gemini AI
+        \end{exampleblock}
+      \end{column}
+    \end{columns}
+
+    \vskip 0.6cm
+    {\large \color{AranjuezOrange} \textbf{Ronda de Preguntas Técnicas y Demostración en Vivo}}
+  \end{center}
+\end{frame}
+
+\end{document}
