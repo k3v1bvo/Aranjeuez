@@ -213,76 +213,82 @@ CAPACIDADES Y CONOCIMIENTO:
 
 DATOS EN TIEMPO REAL: ${JSON.stringify(context)}`;
 
-  const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  // Cascada inteligente de modelos Gemini: si uno satura (503/404), prueba el siguiente en ms
+  const configuredModel = process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
+  const models = [configuredModel, 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-flash-latest'];
+  const uniqueModels = [...new Set(models)];
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (apiKey) {
-    try {
-      const requestBody = {
-        systemInstruction: { parts: [{ text: prompt }] },
-        contents: messages,
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 2048,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              reply: { type: 'STRING' },
-              productIds: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3 },
-              storeIds: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3 },
+    for (const model of uniqueModels) {
+      try {
+        const requestBody = {
+          systemInstruction: { parts: [{ text: prompt }] },
+          contents: messages,
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 2048,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'OBJECT',
+              properties: {
+                reply: { type: 'STRING' },
+                productIds: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3 },
+                storeIds: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3 },
+              },
+              required: ['reply', 'productIds', 'storeIds'],
             },
-            required: ['reply', 'productIds', 'storeIds'],
           },
-        },
-      };
+        };
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': apiKey,
+            },
+            signal: AbortSignal.timeout(12000),
+            body: JSON.stringify(requestBody),
           },
-          signal: AbortSignal.timeout(18000),
-          body: JSON.stringify(requestBody),
-        },
-      );
+        );
 
-      if (response.ok) {
-        const result = await response.json();
-        const raw = result.candidates?.[0]?.content?.parts
-          ?.filter((p: { thought?: boolean }) => !p.thought)
-          ?.map((p: { text?: string }) => p.text || '')
-          .join('');
+        if (response.ok) {
+          const result = await response.json();
+          const raw = result.candidates?.[0]?.content?.parts
+            ?.filter((p: { thought?: boolean }) => !p.thought)
+            ?.map((p: { text?: string }) => p.text || '')
+            .join('');
 
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const products = knowledge.products
-            .filter((p) => Array.isArray(parsed.productIds) && parsed.productIds.includes(p.id))
-            .slice(0, 3);
-          const stores = knowledge.stores
-            .filter((s) => Array.isArray(parsed.storeIds) && parsed.storeIds.includes(s.id))
-            .slice(0, 3);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const products = knowledge.products
+              .filter((p) => Array.isArray(parsed.productIds) && parsed.productIds.includes(p.id))
+              .slice(0, 3);
+            const stores = knowledge.stores
+              .filter((s) => Array.isArray(parsed.storeIds) && parsed.storeIds.includes(s.id))
+              .slice(0, 3);
 
-          return NextResponse.json({
-            reply: parsed.reply,
-            products,
-            stores,
-            source: 'gemini',
-            model,
-          });
+            return NextResponse.json({
+              reply: parsed.reply,
+              products,
+              stores,
+              source: 'gemini',
+              model,
+            });
+          }
+        } else {
+          console.warn(`[Jarvis] Model ${model} returned status ${response.status}. Probando fallback...`);
         }
-      } else {
-        console.warn('[Jarvis Gemini API warning]', response.status);
+      } catch (err) {
+        console.warn(`[Jarvis] Error con ${model}. Intentando siguiente modelo.`);
       }
-    } catch (apiErr) {
-      console.error('[Jarvis Gemini error, fallback to expert concierge]', apiErr);
     }
   }
 
-  // Motor Experto Resiliente de Asistente si la API de IA externa tiene timeout o no está disponible
+  // Fallback si la API de Google externa estuviera totalmente ca?da
+
   let reply = '';
   let matchedStores: Store[] = [];
   const matchedProducts: Product[] = [];
