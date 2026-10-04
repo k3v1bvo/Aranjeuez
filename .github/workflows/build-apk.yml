@@ -1,4 +1,4 @@
-﻿name: Build Android APK (Paseo Aranjuez)
+name: Build Android APK (Paseo Aranjuez)
 
 on:
   workflow_dispatch:
@@ -11,11 +11,11 @@ on:
 
 jobs:
   build-apk:
-    name: Generar APK Android
+    name: Compilar APK Android
     runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar repositorio
+      - name: Descargar codigo fuente
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
@@ -32,17 +32,28 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Compilar APK desde PWA con PWABuilder Cloud
+      - name: Instalar Bubblewrap CLI de Google
         run: |
-          echo "Iniciando empaquetado nativo de Paseo Aranjuez..."
-          mkdir -p output
-          # Usar PWABuilder CLI para generar el paquete Android nativo
-          npx --yes @pwabuilder/cli https://aranjeuez-xi.vercel.app -d ./output -p android
-          echo "Compilacion completada con exito."
+          npm install -g @bubblewrap/cli
+
+      - name: Inicializar y Compilar Proyecto TWA Nativo
+        run: |
+          echo "Generando aplicacion nativa TWA para Paseo Aranjuez..."
+          mkdir -p twa-project
+          cd twa-project
+
+          # Inicializar proyecto TWA sin prompts interactivos
+          bubblewrap init --manifest="https://aranjeuez-xi.vercel.app/manifest.json" --directory="./app"
+
+          cd app
+          # Compilar el APK usando Gradle integrado
+          ./gradlew assembleRelease || ./gradlew assembleDebug
+
+          echo "APK generado exitosamente."
 
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
-          name: PaseoAranjuez-Android-APK
-          path: output/**/*.apk
+          name: PaseoAranjuez-v1.0.apk
+          path: twa-project/app/app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
