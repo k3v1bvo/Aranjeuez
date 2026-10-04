@@ -17,20 +17,29 @@ while True:
     try:
         idx = child.expect([r'\?', pexpect.EOF, pexpect.TIMEOUT], timeout=35)
         if idx == 0:
-            # Obtener UNICAMENTE la ultima linea donde esta la pregunta activa actual
-            raw_lines = child.before.strip().split('\n')
-            current_prompt = raw_lines[-1].strip().lower() if raw_lines else ""
-            print(f"\n[AUTO-REPLY] Pregunta actual: '{current_prompt}'", flush=True)
+            # Obtener las ultimas lineas para analizar la pregunta activa
+            raw_text = child.before.strip()
+            raw_lines = [l.strip() for l in raw_text.split('\n') if l.strip()]
+            current_prompt = raw_lines[-1].lower() if raw_lines else ""
+            print(f"\n[AUTO-REPLY] Pregunta detectada: '{current_prompt}'", flush=True)
             
-            if 'password' in current_prompt:
-                child.sendline('android')
-            elif 'key name' in current_prompt or 'alias' in current_prompt:
+            # Prioridad 1: Colores (Status bar, splash, theme color)
+            if 'color' in current_prompt or 'status bar' in current_prompt or 'splash' in current_prompt:
+                print("-> Enviando color hexadecimal: #061734", flush=True)
+                child.sendline('#061734')
+            # Prioridad 2: Credenciales de firma y Keystore
+            elif 'password' in current_prompt:
+                print("-> Enviando password keystore", flush=True)
                 child.sendline('android')
             elif 'location' in current_prompt and 'key' in current_prompt:
+                print("-> Enviando ruta keystore", flush=True)
                 child.sendline('./android.keystore')
+            elif 'key name' in current_prompt or 'alias' in current_prompt:
+                print("-> Enviando alias key", flush=True)
+                child.sendline('android')
             elif 'first and last' in current_prompt:
                 child.sendline('Paseo Aranjuez')
-            elif 'organizational unit' in current_prompt:
+            elif 'organizational unit' in current_prompt or 'unit' in current_prompt:
                 child.sendline('Mobile')
             elif 'organization' in current_prompt:
                 child.sendline('Paseo Aranjuez')
@@ -40,13 +49,21 @@ while True:
                 child.sendline('Cochabamba')
             elif 'country' in current_prompt:
                 child.sendline('BO')
-            elif 'is' in current_prompt and 'correct' in current_prompt:
+            elif 'correct' in current_prompt:
                 child.sendline('yes')
+            # Prioridad 3: Atributos de PWA/TWA
             elif 'version code' in current_prompt:
+                print("-> Enviando version code: 1", flush=True)
                 child.sendline('1')
             elif 'short name' in current_prompt:
+                print("-> Enviando short name: PsjAranjuez", flush=True)
                 child.sendline('PsjAranjuez')
+            elif 'display' in current_prompt:
+                child.sendline('standalone')
+            elif 'orientation' in current_prompt:
+                child.sendline('portrait')
             else:
+                print("-> Aceptando valor por defecto (Enter)", flush=True)
                 child.sendline('')
         elif idx == 1:
             print("\n=== BUBBLEWRAP INIT FINALIZO CON EXITO ===", flush=True)
