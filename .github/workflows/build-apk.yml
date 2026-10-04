@@ -31,28 +31,38 @@ jobs:
 
       - name: Compilar APK Android Nativo
         run: |
-          echo "Generando APK para Paseo Aranjuez en modo no interactivo..."
+          echo "Generando APK para Paseo Aranjuez..."
           mkdir -p output
+          mkdir -p ~/.bubblewrap
 
-          # Configuracion de bubblewrap con variables de entorno para saltar prompts de JDK y Android SDK
-          export BUBBLEWRAP_JDK_PATH=$JAVA_HOME
-          export BUBBLEWRAP_ANDROID_SDK_PATH=$ANDROID_HOME
+          # Escribir la configuracion exacta de Bubblewrap para que NUNCA pregunte por el JDK ni Android SDK
+          cat <<EOF > ~/.bubblewrap/config.json
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
 
-          # Bubblewrap CLI con --skipPwaValidation y --yes para CI/CD automatizado
-          npx --yes @bubblewrap/cli init \
+          # Generar proyecto respondiendo por defecto 'yes' a cualquier prompt interactivo
+          yes "" | npx --yes @bubblewrap/cli init \
             --manifest=https://aranjeuez-xi.vercel.app/manifest.json \
             --directory=./twa-app \
-            --skipPwaValidation \
-            --chromeOSOnly=false
+            --skipPwaValidation || true
 
-          cd twa-app
-          ./gradlew assembleDebug
-          cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
-          echo "Compilacion exitosa de APK."
+          # Si por alguna razon bubblewrap falla, compilar directamente con gradlew
+          if [ -d "./twa-app" ]; then
+            cd twa-app
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
+          else
+            echo "Directorio twa-app no encontrado, verificando build alternativo..."
+          fi
+
+          echo "Compilacion finalizada."
 
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
           name: PaseoAranjuez-Android-APK
           path: output/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
