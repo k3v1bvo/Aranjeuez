@@ -26,6 +26,11 @@ jobs:
 
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+            cmdline-tools;latest
 
       - name: Configurar Node.js 20
         uses: actions/setup-node@v4
@@ -42,11 +47,11 @@ jobs:
           mkdir -p twa-project
           cd twa-project
 
-          # Inicializar proyecto TWA sin prompts interactivos
+          # Inicializar proyecto TWA con el manifest de produccion
           bubblewrap init --manifest="https://aranjeuez-xi.vercel.app/manifest.json" --directory="./app"
 
           cd app
-          # Compilar el APK usando Gradle integrado
+          # Compilar el APK usando Gradle nativo
           ./gradlew assembleRelease || ./gradlew assembleDebug
 
           echo "APK generado exitosamente."
@@ -54,6 +59,6 @@ jobs:
       - name: Subir APK como Artefacto descargable
         uses: actions/upload-artifact@v4
         with:
-          name: PaseoAranjuez-v1.0.apk
+          name: PaseoAranjuez-Android-APK
           path: twa-project/app/app/build/outputs/apk/**/*.apk
           if-no-files-found: warn
