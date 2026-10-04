@@ -31,11 +31,20 @@ jobs:
 
       - name: Compilar APK Android Nativo
         run: |
-          echo "Generando APK para Paseo Aranjuez..."
+          echo "Generando APK para Paseo Aranjuez en modo no interactivo..."
           mkdir -p output
 
-          # Generar paquete Android oficial desde el manifest usando Bubblewrap CLI de Google en modo no-interactivo
-          npx --yes @bubblewrap/cli init --manifest=https://aranjeuez-xi.vercel.app/manifest.json --directory=./twa-app
+          # Configuracion de bubblewrap con variables de entorno para saltar prompts de JDK y Android SDK
+          export BUBBLEWRAP_JDK_PATH=$JAVA_HOME
+          export BUBBLEWRAP_ANDROID_SDK_PATH=$ANDROID_HOME
+
+          # Bubblewrap CLI con --skipPwaValidation y --yes para CI/CD automatizado
+          npx --yes @bubblewrap/cli init \
+            --manifest=https://aranjeuez-xi.vercel.app/manifest.json \
+            --directory=./twa-app \
+            --skipPwaValidation \
+            --chromeOSOnly=false
+
           cd twa-app
           ./gradlew assembleDebug
           cp app/build/outputs/apk/debug/*.apk ../output/PaseoAranjuez-debug.apk
