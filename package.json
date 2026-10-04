@@ -11,7 +11,9 @@
     "check:services": "node scripts/check-services.mjs",
     "seed:demo": "node scripts/seed-demo.mjs",
     "test:migration": "node scripts/test-migration.mjs",
-    "test:e2e": "node scripts/test-e2e.mjs"
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "test:audit:unit": "node scripts/test-audit-unit.mjs",
+    "test:audit:ui": "node scripts/test-audit-ui.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

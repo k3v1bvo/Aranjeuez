@@ -8,6 +8,7 @@ export type JarvisOrbState = 'idle' | 'listening' | 'thinking' | 'speaking';
 interface JarvisOrbProps {
   onClick?: () => void;
   initialState?: JarvisOrbState;
+  state?: JarvisOrbState;
   size?: 'sm' | 'md' | 'lg';
   showControls?: boolean;
   onStateChange?: (state: JarvisOrbState) => void;
@@ -16,11 +17,13 @@ interface JarvisOrbProps {
 export function JarvisOrb({
   onClick,
   initialState = 'idle',
+  state,
   size = 'md',
   showControls = true,
   onStateChange,
 }: JarvisOrbProps) {
-  const [orbState, setOrbState] = useState<JarvisOrbState>(initialState);
+  const [localState, setOrbState] = useState<JarvisOrbState>(initialState);
+  const orbState = state ?? localState;
 
   const handleSetState = (newState: JarvisOrbState) => {
     setOrbState(newState);
@@ -41,11 +44,11 @@ export function JarvisOrb({
         {/* Escuchando: ondas cada 1.5s */}
         {orbState === 'listening' && (
           <>
-            <div 
+            <div
               className="absolute inset-0 rounded-full border-2 border-[#FF6B1A]/60 pointer-events-none animate-ping"
               style={{ animationDuration: '1.5s' }}
             />
-            <div 
+            <div
               className="absolute inset-0 rounded-full border border-[#D4A24C]/40 pointer-events-none animate-ping"
               style={{ animationDuration: '1.5s', animationDelay: '0.5s' }}
             />
@@ -55,11 +58,11 @@ export function JarvisOrb({
         {/* Hablando: ondas suaves y sincronizadas */}
         {orbState === 'speaking' && (
           <>
-            <div 
+            <div
               className="absolute inset-0 rounded-full border border-white/40 pointer-events-none animate-ping"
               style={{ animationDuration: '2.0s' }}
             />
-            <div 
+            <div
               className="absolute inset-0 rounded-full border border-[#FF8F4D]/30 pointer-events-none animate-ping"
               style={{ animationDuration: '2.0s', animationDelay: '0.7s' }}
             />
@@ -67,20 +70,34 @@ export function JarvisOrb({
         )}
 
         {/* Resplandor ambiental de fondo (Transición 400ms Regla 6) */}
-        <div 
+        <div
           className="absolute inset-0 rounded-full blur-3xl opacity-50 transition-all duration-400"
           style={{
-            background: orbState === 'thinking' 
-              ? 'radial-gradient(circle, #D4A24C 0%, #B84D0B 70%, transparent 100%)' 
-              : orbState === 'listening'
-              ? 'radial-gradient(circle, #FF6B1A 0%, #B84D0B 60%, transparent 100%)'
-              : 'radial-gradient(circle, #FF8F4D 0%, #B84D0B 60%, transparent 100%)'
+            background:
+              orbState === 'thinking'
+                ? 'radial-gradient(circle, #D4A24C 0%, #B84D0B 70%, transparent 100%)'
+                : orbState === 'listening'
+                  ? 'radial-gradient(circle, #FF6B1A 0%, #B84D0B 60%, transparent 100%)'
+                  : 'radial-gradient(circle, #FF8F4D 0%, #B84D0B 60%, transparent 100%)',
           }}
         />
 
         {/* Orbe Central con Transición de 400ms (Regla 6) */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label={orbState === 'speaking' ? 'Silenciar Jarvis' : 'Activar micrófono de Jarvis'}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onClick?.();
+            }
+          }}
           onClick={() => {
+            if (onClick) {
+              onClick();
+              return;
+            }
             const nextStates: Record<JarvisOrbState, JarvisOrbState> = {
               idle: 'listening',
               listening: 'thinking',
@@ -90,39 +107,37 @@ export function JarvisOrb({
             handleSetState(nextStates[orbState]);
           }}
           className={`relative ${sizeClasses} rounded-full cursor-pointer shadow-2xl flex items-center justify-center overflow-hidden transition-all duration-400 ${
-            orbState === 'idle'
-              ? 'animate-pulse'
-              : orbState === 'listening'
-              ? 'animate-bounce'
-              : ''
+            orbState === 'idle' ? 'animate-pulse' : orbState === 'listening' ? 'animate-bounce' : ''
           }`}
           style={{
-            background: orbState === 'thinking'
-              ? 'linear-gradient(135deg, #D4A24C 0%, #B84D0B 50%, #061734 100%)'
-              : 'linear-gradient(135deg, #FF6B1A 0%, #B84D0B 45%, #061734 100%)',
-            boxShadow: orbState === 'thinking'
-              ? '0 0 50px rgba(212, 162, 76, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.4)'
-              : '0 0 50px rgba(255, 107, 26, 0.5), inset 0 0 30px rgba(255, 255, 255, 0.4)',
+            background:
+              orbState === 'thinking'
+                ? 'linear-gradient(135deg, #D4A24C 0%, #B84D0B 50%, #061734 100%)'
+                : 'linear-gradient(135deg, #FF6B1A 0%, #B84D0B 45%, #061734 100%)',
+            boxShadow:
+              orbState === 'thinking'
+                ? '0 0 50px rgba(212, 162, 76, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.4)'
+                : '0 0 50px rgba(255, 107, 26, 0.5), inset 0 0 30px rgba(255, 255, 255, 0.4)',
             animationDuration: orbState === 'idle' ? '3s' : '1s',
           }}
         >
           {/* Anillo concéntrico 1 (exterior) - Rotación lenta de 20s en Idle (Regla 6) */}
-          <div 
+          <div
             className="absolute inset-2 rounded-full border border-white/20 border-dashed animate-spin"
             style={{ animationDuration: orbState === 'thinking' ? '3s' : '20s' }}
           />
 
           {/* Anillo concéntrico 2 (medio) */}
-          <div 
+          <div
             className="absolute inset-5 rounded-full border border-[#D4A24C]/40 border-dotted animate-spin"
-            style={{ 
-              animationDuration: orbState === 'thinking' ? '2s' : '8s', 
-              animationDirection: 'reverse' 
+            style={{
+              animationDuration: orbState === 'thinking' ? '2s' : '8s',
+              animationDirection: 'reverse',
             }}
           />
 
           {/* Anillo concéntrico 3 (núcleo interno con brillo pulsante) */}
-          <div 
+          <div
             className="absolute inset-9 rounded-full border border-white/30 animate-pulse"
             style={{ animationDuration: '2s' }}
           />
@@ -133,7 +148,7 @@ export function JarvisOrb({
             {orbState === 'listening' && <Mic className="w-8 h-8 text-white animate-bounce" />}
             {orbState === 'thinking' && <Brain className="w-8 h-8 text-amber-300 animate-spin" />}
             {orbState === 'speaking' && <Volume2 className="w-8 h-8 text-white animate-pulse" />}
-            
+
             <span className="text-[10px] uppercase font-bold tracking-widest mt-1 text-white/90">
               {orbState === 'idle' && 'Jarvis'}
               {orbState === 'listening' && 'Oyendo...'}
@@ -150,7 +165,9 @@ export function JarvisOrb({
           <button
             onClick={() => handleSetState('idle')}
             className={`px-3 py-1.5 rounded-full font-medium transition-all ${
-              orbState === 'idle' ? 'bg-[#B84D0B] text-white shadow-md' : 'text-white/60 hover:text-white'
+              orbState === 'idle'
+                ? 'bg-[#B84D0B] text-white shadow-md'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             Espera
@@ -158,7 +175,9 @@ export function JarvisOrb({
           <button
             onClick={() => handleSetState('listening')}
             className={`px-3 py-1.5 rounded-full font-medium transition-all ${
-              orbState === 'listening' ? 'bg-[#FF6B1A] text-white shadow-md' : 'text-white/60 hover:text-white'
+              orbState === 'listening'
+                ? 'bg-[#FF6B1A] text-white shadow-md'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             Escuchar
@@ -166,7 +185,9 @@ export function JarvisOrb({
           <button
             onClick={() => handleSetState('thinking')}
             className={`px-3 py-1.5 rounded-full font-medium transition-all ${
-              orbState === 'thinking' ? 'bg-[#D4A24C] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+              orbState === 'thinking'
+                ? 'bg-[#D4A24C] text-black shadow-md font-bold'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             Pensar
@@ -174,7 +195,9 @@ export function JarvisOrb({
           <button
             onClick={() => handleSetState('speaking')}
             className={`px-3 py-1.5 rounded-full font-medium transition-all ${
-              orbState === 'speaking' ? 'bg-[#FF8F4D] text-black shadow-md font-bold' : 'text-white/60 hover:text-white'
+              orbState === 'speaking'
+                ? 'bg-[#FF8F4D] text-black shadow-md font-bold'
+                : 'text-white/60 hover:text-white'
             }`}
           >
             Hablar

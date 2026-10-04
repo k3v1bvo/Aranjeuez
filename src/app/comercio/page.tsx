@@ -1,9 +1,12 @@
-﻿import Link from 'next/link';
+import { protectPage } from '@/lib/paseo/server';
+import Link from 'next/link';
 import { Store, ArrowRight } from 'lucide-react';
 import { Orders } from '@/components/paseo/Orders';
 import { Dashboard } from '@/components/paseo/Admin';
 
-export default function Page() {
+export default async function Page() {
+  const user = await protectPage(['comercio', 'empleado', 'admin']);
+  if (user.role === 'empleado') return <Orders commerce />;
   return (
     <div className="space-y-6">
       {/* Banner de Acceso Rápido y Onboarding de Comercio */}
@@ -15,7 +18,8 @@ export default function Page() {
           <div>
             <h3 className="text-sm font-bold text-white">Mi Establecimiento en Paseo Aranjuez</h3>
             <p className="text-xs text-slate-300">
-              Mantén actualizados tus horarios, número de local y WhatsApp para los visitantes del centro comercial.
+              Mantén actualizados tus horarios, número de local y WhatsApp para los visitantes del
+              centro comercial.
             </p>
           </div>
         </div>

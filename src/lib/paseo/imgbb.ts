@@ -1,16 +1,8 @@
-/**
- * Helper para subir imágenes a ImgBB y guardar únicamente el enlace en Supabase.
- * Key: b049b0990069aec5dfec445cff31a63a
- */
-
-export const IMGBB_API_KEY =
-  process.env.IMGBB_API_KEY ||
-  process.env.NEXT_PUBLIC_IMGBB_API_KEY ||
-  'b049b0990069aec5dfec445cff31a63a';
-
+import 'server-only';
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 export async function uploadImageToImgBB(
   imageSource: File | Blob | string,
-  name?: string
+  name?: string,
 ): Promise<string> {
   const apiKey = IMGBB_API_KEY;
   if (!apiKey) {
@@ -33,6 +25,7 @@ export async function uploadImageToImgBB(
   const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
     method: 'POST',
     body: formData,
+    signal: AbortSignal.timeout(30000),
   });
 
   const json = await res.json();

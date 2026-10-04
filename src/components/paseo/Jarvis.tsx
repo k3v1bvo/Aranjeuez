@@ -5,6 +5,8 @@ import { ArrowUp, MapPin, RotateCcw, Sparkles, User, Award, Clock } from 'lucide
 import type { Product, Store, User as UserModel } from '@/lib/paseo/model';
 import { api } from './Providers';
 import { ProductCard } from './UI';
+import { JarvisOrb } from './JarvisOrb';
+import { useJarvisVoice } from './useJarvisVoice';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -29,6 +31,7 @@ export function Jarvis() {
   const [error, setError] = useState('');
   const [currentUser, setCurrentUser] = useState<UserModel | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const voice = useJarvisVoice((text) => void send(text));
 
   useEffect(() => {
     fetch('/api/paseo/auth')
@@ -59,6 +62,7 @@ export function Jarvis() {
           messages: next.slice(-19).map(({ role, content }) => ({ role, content })),
         }),
       });
+      voice.speak(result.reply);
       setMessages([
         ...next,
         {
@@ -79,22 +83,53 @@ export function Jarvis() {
     ? (currentUser.points || 0) >= 1000
       ? 'Platino'
       : (currentUser.points || 0) >= 500
-      ? 'Oro'
-      : (currentUser.points || 0) >= 200
-      ? 'Plata'
-      : 'Bronce'
+        ? 'Oro'
+        : (currentUser.points || 0) >= 200
+          ? 'Plata'
+          : 'Bronce'
     : null;
 
   return (
     <div className="container jarvis-page">
       <aside className="jarvis-intro">
-        <span className="jarvis-orb">
-          <Sparkles size={34} />
-        </span>
+        <JarvisOrb
+          state={
+            busy ? 'thinking' : voice.listening ? 'listening' : voice.speaking ? 'speaking' : 'idle'
+          }
+          showControls={false}
+          onClick={() => {
+            if (voice.speaking) voice.stopSpeaking();
+            else if (voice.listening) voice.sendNow();
+            else if (!busy) voice.startListening();
+          }}
+        />
+        <button className="button secondary small" onClick={voice.toggle}>
+          {voice.enabled ? 'Silenciar respuestas' : 'Activar respuestas por voz'}
+        </button>
+        {voice.voiceError && (
+          <p role="alert" className="notice">
+            {voice.voiceError}
+          </p>
+        )}
+        {voice.listening && (
+          <div className="voice-listening" role="status">
+            <strong>Escuchando…</strong>
+            <p>{voice.transcript || 'Puedes hablar ahora'}</p>
+            <button className="button small" onClick={voice.sendNow}>
+              Enviar ahora
+            </button>
+            <button className="button secondary small" onClick={voice.cancelListening}>
+              Cancelar
+            </button>
+          </div>
+        )}
         <p className="eyebrow">Concierge VIP de Paseo Aranjuez</p>
         <h1>Un gran plan empieza con una pregunta.</h1>
-        <p>Te ayudo a ubicar tiendas, verificar tus pedidos y códigos de retiro, consultar puntos y organizar tu visita.</p>
-        
+        <p>
+          Te ayudo a ubicar tiendas, verificar tus pedidos y códigos de retiro, consultar puntos y
+          organizar tu visita.
+        </p>
+
         {currentUser ? (
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-sm text-white/90 my-4">
             <div className="flex items-center gap-2 text-amber-300 font-semibold">
@@ -110,7 +145,8 @@ export function Jarvis() {
           </div>
         ) : (
           <div className="notice my-4">
-            Inicia sesión para que Jarvis pueda darte el estado exacto de tus pedidos, códigos de recogida y saldo de puntos.
+            Inicia sesión para que Jarvis pueda darte el estado exacto de tus pedidos, códigos de
+            recogida y saldo de puntos.
           </div>
         )}
 
@@ -143,8 +179,15 @@ export function Jarvis() {
           {!messages.length && (
             <div className="chat-welcome">
               <Sparkles size={34} />
-              <h2>{currentUser ? `Hola ${currentUser.name}, ¿en qué te puedo ayudar hoy?` : 'Hola, ¿qué te gustaría hacer hoy?'}</h2>
-              <p>Puedes preguntarme por tus pedidos, tus puntos de fidelidad, recomendaciones de comida o cómo llegar a cualquier tienda.</p>
+              <h2>
+                {currentUser
+                  ? `Hola ${currentUser.name}, ¿en qué te puedo ayudar hoy?`
+                  : 'Hola, ¿qué te gustaría hacer hoy?'}
+              </h2>
+              <p>
+                Puedes preguntarme por tus pedidos, tus puntos de fidelidad, recomendaciones de
+                comida o cómo llegar a cualquier tienda.
+              </p>
               <div className="suggestions">
                 {suggestions.map((s) => (
                   <button key={s} onClick={() => send(s)}>
@@ -186,7 +229,11 @@ export function Jarvis() {
                       <MapPin size={16} />
                       <span>
                         <strong>{s.name}</strong>
-                        <small>{s.floor ? `${s.floor} · ${s.local_num || ''}` : (s.schedule || 'Horario por confirmar')}</small>
+                        <small>
+                          {s.floor
+                            ? `${s.floor} · ${s.local_num || ''}`
+                            : s.schedule || 'Horario por confirmar'}
+                        </small>
                       </span>
                     </Link>
                   ))}
@@ -252,7 +299,8 @@ export function Jarvis() {
         </form>
 
         <small className="chat-disclaimer">
-          Jarvis cuenta con información en tiempo real de Paseo Aranjuez. Para pedidos y saldo de puntos personales, consulta habiendo iniciado sesión.
+          Jarvis cuenta con información en tiempo real de Paseo Aranjuez. Para pedidos y saldo de
+          puntos personales, consulta habiendo iniciado sesión.
         </small>
       </section>
     </div>

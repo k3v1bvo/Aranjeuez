@@ -1,7 +1,6 @@
 import { protectPage } from '@/lib/paseo/server';
-import { MerchantStoreProfile } from '@/components/paseo/MerchantStoreProfile';
-
+import { MerchantEmployees } from '@/components/paseo/MerchantEmployees';
 export default async function Page() {
   await protectPage(['comercio', 'admin']);
-  return <MerchantStoreProfile />;
+  return <MerchantEmployees />;
 }

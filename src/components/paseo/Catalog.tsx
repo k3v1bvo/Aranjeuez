@@ -227,7 +227,7 @@ export function Marketplace({ storeId }: { storeId?: string }) {
   const { data, error, loading, reload } = useResource<CatalogData>('catalogo');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [tab, setTab] = useState<'products' | 'stores'>('products');
+  const [tab, setTab] = useState<'all' | 'products' | 'stores'>('all');
   if (loading)
     return (
       <div className="container">
@@ -306,6 +306,9 @@ export function Marketplace({ storeId }: { storeId?: string }) {
         </label>
         {!store && (
           <div className="segmented">
+            <button className={tab === 'all' ? 'active' : ''} onClick={() => setTab('all')}>
+              Todo
+            </button>
             <button
               className={tab === 'products' ? 'active' : ''}
               onClick={() => setTab('products')}
@@ -333,13 +336,15 @@ export function Marketplace({ storeId }: { storeId?: string }) {
         ))}
       </div>
       <div className="results-count">
-        {tab === 'products' || store
-          ? `${products.length} productos para descubrir`
-          : `${stores.length} establecimientos`}
+        {tab === 'all' && !store
+          ? products.length + ' productos · ' + stores.length + ' establecimientos'
+          : tab === 'products' || store
+            ? `${products.length} productos para descubrir`
+            : `${stores.length} establecimientos`}
         <span>Retiro presencial · Sin costo de envío</span>
       </div>
-      {tab === 'products' || store ? (
-        products.length ? (
+      {(tab !== 'stores' || store) &&
+        (products.length ? (
           <div className="product-grid">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
@@ -350,17 +355,21 @@ export function Marketplace({ storeId }: { storeId?: string }) {
             title="No encontramos productos"
             detail="Prueba con otro nombre o cambia la categoría."
           />
-        )
-      ) : (
+        ))}
+      {!store && (tab !== 'products' || !!search) && (
         <div className="store-grid">
           {stores.map((s) => (
             <Link className="store-card" href={`/cliente/tiendas/${s.id}`} key={s.id}>
-              <CategoryArt category={s.category} name={s.name} />
+              <CategoryArt category={s.category} name={s.name} image={s.image_url} />
               <div>
                 <span className="eyebrow">
                   {data.categories.find((c) => c.id === s.category)?.name || s.category}
                 </span>
                 <h3>{s.name}</h3>
+                <small>{s.schedule || 'Horario por confirmar'}</small>
+                {!data.products.some((p) => p.store_id === s.id) && (
+                  <span className="tag">Visita presencial</span>
+                )}
                 <p>{s.description}</p>
                 <small>
                   <MapPin size={13} />

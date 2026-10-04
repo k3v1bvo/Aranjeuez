@@ -25,7 +25,7 @@ function TotemCameraReader({
 }) {
   const id = 'camera-totem-' + useId().replace(/:/g, '');
   const [error, setError] = useState('');
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const coords = useRef<{ lat: number; lng: number } | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [locating, setLocating] = useState(true);
 
@@ -37,20 +37,20 @@ function TotemCameraReader({
   // Obtener geolocalización para telemetría y geocerca
   useEffect(() => {
     if (!navigator.geolocation) {
-      setLocating(false);
+      queueMicrotask(() => setLocating(false));
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords;
-        setCoords({ lat: latitude, lng: longitude });
+        coords.current = { lat: latitude, lng: longitude };
 
-        // Distancia a Paseo Aranjuez (-17.37365, -66.15582)
+        // Distancia a Paseo Aranjuez (-17.3739, -66.1558)
         const R = 6371e3;
         const φ1 = (latitude * Math.PI) / 180;
-        const φ2 = (-17.37365 * Math.PI) / 180;
-        const Δφ = ((-17.37365 - latitude) * Math.PI) / 180;
-        const Δλ = ((-66.15582 - longitude) * Math.PI) / 180;
+        const φ2 = (-17.3739 * Math.PI) / 180;
+        const Δφ = ((-17.3739 - latitude) * Math.PI) / 180;
+        const Δλ = ((-66.1558 - longitude) * Math.PI) / 180;
         const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const dist = Math.round(R * c);
@@ -61,7 +61,7 @@ function TotemCameraReader({
       () => {
         setLocating(false);
       },
-      { timeout: 7000, enableHighAccuracy: true }
+      { timeout: 7000, enableHighAccuracy: true },
     );
   }, []);
 
@@ -79,15 +79,15 @@ function TotemCameraReader({
           (value) => {
             if (!delivered && !stopped) {
               delivered = true;
-              const st = findStation(value); receive.current(st ? st.code : value, coords);
+              const st = findStation(value);
+              receive.current(st ? st.code : value, coords.current);
             }
           },
           () => {},
         );
       })
       .catch(() => {
-        if (!stopped)
-          setError('No pudimos abrir la cámara. Autoriza el acceso en tu navegador.');
+        if (!stopped) setError('No pudimos abrir la cámara. Autoriza el acceso en tu navegador.');
       });
     return () => {
       stopped = true;
@@ -98,7 +98,7 @@ function TotemCameraReader({
         })
         .catch(() => {});
     };
-  }, [id, coords]);
+  }, [id]);
 
   return (
     <Modal title="Escanear Tótem de Entrada" onClose={onClose}>
@@ -110,7 +110,11 @@ function TotemCameraReader({
           </span>
         ) : distance !== null ? (
           <div className="flex items-center justify-between">
-            <span className={distance <= 200 ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'}>
+            <span
+              className={
+                distance <= 200 ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'
+              }
+            >
               {distance <= 200 ? '🟢 Perímetro Aranjuez verificado' : '📍 Proximidad detectada'}
             </span>
             <span className="text-slate-300 font-mono">~{distance} metros</span>
@@ -126,7 +130,9 @@ function TotemCameraReader({
           {error}
         </p>
       )}
-      <p className="muted">Apunta la cámara al código QR impreso en el tótem o mostrador del Paseo.</p>
+      <p className="muted">
+        Apunta la cámara al código QR impreso en el tótem o mostrador del Paseo.
+      </p>
     </Modal>
   );
 }
@@ -137,9 +143,10 @@ export function Points() {
   const [coupon, setCoupon] = useState<Redemption | null>(null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState('');
-  
+
   const [camera, setCamera] = useState(false);
   const [checkinBusy, setCheckinBusy] = useState(false);
+  const [manualCode, setManualCode] = useState('');
   // Reclamar QR pendiente si venía de un escaneo con cámara antes de loguearse
   useEffect(() => {
     try {
@@ -150,10 +157,26 @@ export function Points() {
       }
     } catch {}
   }, []);
-    async function handleEntranceCheckIn(customCode?: string, userCoords?: { lat: number; lng: number } | null) {
+  async function handleEntranceCheckIn(
+    customCode?: string,
+    userCoords?: { lat: number; lng: number } | null,
+  ) {
     setCheckinBusy(true);
     try {
-      const res = await api<{ ok: boolean; message: string; pointsAwarded?: number; distanceToPaseo?: number }>('checkin', {
+      if (!userCoords && navigator.geolocation)
+        userCoords = await new Promise((resolve) =>
+          navigator.geolocation.getCurrentPosition(
+            (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+            () => resolve(null),
+            { timeout: 7000, enableHighAccuracy: true },
+          ),
+        );
+      const res = await api<{
+        ok: boolean;
+        message: string;
+        pointsAwarded?: number;
+        distanceToPaseo?: number;
+      }>('checkin', {
         method: 'POST',
         body: JSON.stringify({
           code: customCode || 'PASEO-TOTEM-LOBBY',
@@ -171,7 +194,6 @@ export function Points() {
       setCheckinBusy(false);
     }
   }
-
 
   const key = useRef('');
   async function redeem() {
@@ -201,7 +223,7 @@ export function Points() {
         <ErrorState message={error} retry={reload} />
       </div>
     );
-  const level = levelFor(data.user.lifetime_points);
+  const level = levelFor(data.user.points);
   const valid = (c: Redemption) => c.status === 'activo';
   return (
     <div className="container page-space">
@@ -211,7 +233,7 @@ export function Points() {
         description="Compra, acumula y disfruta más del Paseo."
       />
       {error && <ErrorState message={error} retry={reload} />}
-      
+
       {/* Banner de Mapeo Peatonal y Puntos por Recorrido */}
       <div className="mb-6 p-5 rounded-3xl bg-gradient-to-r from-[#061734] via-[#0b2554] to-[#061734] border border-[#FF6B1A]/40 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
@@ -224,7 +246,9 @@ export function Points() {
             </h3>
           </div>
           <p className="text-xs text-white/70 max-w-2xl leading-relaxed">
-            Escanea los códigos QR ubicados al inicio (+1 pt) y salida (+2 pts) de cada nivel, o en los accesos principales (+5 pts). No necesitas comprar para sumar puntos y ayudarnos a mapear el tráfico del edificio.
+            Escanea los códigos QR ubicados al inicio (+1 pt) y salida (+2 pts) de cada nivel, o en
+            los accesos principales (+5 pts). No necesitas comprar para sumar puntos y ayudarnos a
+            mapear el tráfico del edificio.
           </p>
         </div>
         <button
@@ -235,6 +259,30 @@ export function Points() {
         </button>
       </div>
 
+      <form
+        className="surface"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleEntranceCheckIn(manualCode);
+        }}
+      >
+        <label>
+          Código del tótem
+          <input
+            required
+            value={manualCode}
+            maxLength={200}
+            onChange={(e) => setManualCode(e.target.value)}
+            placeholder="PASEO-P1-ENTRADA"
+          />
+        </label>
+        <button className="button secondary" disabled={checkinBusy}>
+          {checkinBusy ? 'Registrando…' : 'Registrar código manual'}
+        </button>
+        <p className="muted">
+          Máximo 100 puntos diarios por visitas. Autoriza tu ubicación cuando se solicite.
+        </p>
+      </form>
       <div className="points-hero">
         <div>
           <span className="tag">
@@ -251,15 +299,15 @@ export function Points() {
           <div className="level-track">
             <span
               style={{
-                width: `${level.next ? Math.min(100, ((data.user.lifetime_points - level.min) / (level.next - level.min)) * 100) : 100}%`,
+                width: `${level.next ? Math.min(100, ((data.user.points - level.min) / (level.next - level.min)) * 100) : 100}%`,
               }}
             />
           </div>
           <small>
             {level.next
-              ? `${level.next - data.user.lifetime_points} puntos acumulados para tu próximo nivel`
+              ? `${level.next - data.user.points} puntos acumulados para tu próximo nivel`
               : 'Llegaste al nivel más alto del Club'}
-            . Canjear no baja tu nivel.
+            . El nivel refleja tu saldo disponible.
           </small>
         </div>
         <Code type="user" token={data.user.qr_token} label="Muéstralo al comprar" />

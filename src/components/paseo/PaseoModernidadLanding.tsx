@@ -58,10 +58,10 @@ export function PaseoModernidadLanding() {
         level: ((user.points || 0) >= 1000
           ? 'Platino'
           : (user.points || 0) >= 500
-          ? 'Oro'
-          : (user.points || 0) >= 200
-          ? 'Plata'
-          : 'Bronce') as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
+            ? 'Oro'
+            : (user.points || 0) >= 200
+              ? 'Plata'
+              : 'Bronce') as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
         role: user.role,
         qrToken: user.qr_token,
       }
@@ -76,8 +76,9 @@ export function PaseoModernidadLanding() {
       storeLocation: 'Piso 3, Local 302',
       price: 85,
       quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
-    }
+      imageUrl:
+        'https://images.unsplash.com/photo-1544025162-d76694265947?w=600&auto=format&fit=crop&q=80',
+    },
   ]);
 
   const handleAddToCartItem = (item: CartItem) => {
@@ -85,7 +86,7 @@ export function PaseoModernidadLanding() {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+          i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i,
         );
       }
       return [...prev, item];
@@ -93,16 +94,17 @@ export function PaseoModernidadLanding() {
   };
 
   const handleUpdateQuantity = (id: string, delta: number) => {
-    setCartItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[]
+    setCartItems(
+      (prev) =>
+        prev
+          .map((item) => {
+            if (item.id === id) {
+              const newQty = item.quantity + delta;
+              return newQty > 0 ? { ...item, quantity: newQty } : null;
+            }
+            return item;
+          })
+          .filter(Boolean) as CartItem[],
     );
   };
 
@@ -114,8 +116,8 @@ export function PaseoModernidadLanding() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       sender: 'jarvis',
-      text: `¡Hola! Soy Jarvis, tu asistente inteligente en Paseo Aranjuez. Te puedo ayudar a ubicar locales, revisar tus pedidos y códigos de retiro, consultar tus puntos y recomendarte lo mejor del mall. ¿Qué te gustaría consultar hoy?`
-    }
+      text: `¡Hola! Soy Jarvis, tu asistente inteligente en Paseo Aranjuez. Te puedo ayudar a ubicar locales, revisar tus pedidos y códigos de retiro, consultar tus puntos y recomendarte lo mejor del mall. ¿Qué te gustaría consultar hoy?`,
+    },
   ]);
   const [inputValue, setInputValue] = useState<string>('');
   const [isJarvisBusy, setIsJarvisBusy] = useState<boolean>(false);
@@ -123,8 +125,14 @@ export function PaseoModernidadLanding() {
   const floatingChatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatScrollRef.current?.scrollTo({ top: chatScrollRef.current.scrollHeight, behavior: 'smooth' });
-    floatingChatScrollRef.current?.scrollTo({ top: floatingChatScrollRef.current.scrollHeight, behavior: 'smooth' });
+    chatScrollRef.current?.scrollTo({
+      top: chatScrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+    floatingChatScrollRef.current?.scrollTo({
+      top: floatingChatScrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
   }, [chatMessages, isJarvisBusy]);
 
   const handleSendMessage = async (textToSend?: string) => {
@@ -179,21 +187,38 @@ export function PaseoModernidadLanding() {
     <ToastProvider>
       <div className="w-full flex flex-col font-sans">
         <AndeanHero
-          onExploreMarketplace={() => { window.location.href = '/cliente'; }}
-          onOpenJarvis={() => setIsJarvisChatOpen(true)}
-          onOpenPoints={() => { window.location.href = '/cliente/puntos'; }}
-          onOpenQr={() => { if (currentUser) setIsQrOpen(true); else window.location.href = '/auth/login'; }}
+          onExploreMarketplace={() => {
+            window.location.href = '/cliente';
+          }}
+          onOpenJarvis={() => {
+            window.location.href = '/jarvis';
+          }}
+          onOpenPoints={() => {
+            window.location.href = '/cliente/puntos';
+          }}
+          onOpenQr={() => {
+            if (currentUser) setIsQrOpen(true);
+            else window.location.href = '/auth/login';
+          }}
         />
 
         <div id="paseoya">
-          <PaseoYaShowcase 
-            onOpenQr={() => { if (currentUser) setIsQrOpen(true); else window.location.href = '/auth/login'; }} 
+          <PaseoYaShowcase
+            onOpenQr={() => {
+              if (currentUser) setIsQrOpen(true);
+              else window.location.href = '/auth/login';
+            }}
             onAddToCartItem={handleAddToCartItem}
           />
         </div>
 
         <div id="puntos">
-          <PaseoPointsShowcase onOpenQr={() => { if (currentUser) setIsQrOpen(true); else window.location.href = '/auth/login'; }} />
+          <PaseoPointsShowcase
+            onOpenQr={() => {
+              if (currentUser) setIsQrOpen(true);
+              else window.location.href = '/auth/login';
+            }}
+          />
         </div>
 
         {currentUser?.role === 'admin' && (
@@ -214,8 +239,8 @@ export function PaseoModernidadLanding() {
             userName={currentUser.name}
             points={currentUser.points}
             level={currentUser.level}
-            pinCode="8821"
-            qrToken={currentUser.qrToken || 'PASEO-VIP-001'}
+            pinCode={currentUser.qrToken}
+            qrToken={currentUser.qrToken}
           />
         )}
 
@@ -237,7 +262,9 @@ export function PaseoModernidadLanding() {
                 <JarvisOrb size="sm" initialState={isJarvisBusy ? 'thinking' : 'idle'} />
                 <div>
                   <h4 className="font-bold text-sm text-white">Jarvis Concierge</h4>
-                  <span className="text-[10px] text-[#D4A24C] font-semibold">Paseo Aranjuez AI</span>
+                  <span className="text-[10px] text-[#D4A24C] font-semibold">
+                    Paseo Aranjuez AI
+                  </span>
                 </div>
               </div>
               <button

@@ -3,10 +3,25 @@
 import { ChakanaIcon } from './ChakanaIcon';
 
 import React, { useState } from 'react';
-import { 
-  Flame, Award, Shield, Star, Crown, Check, QrCode, 
-  History, ArrowUpRight, ArrowDownLeft, X, Sparkles, 
-  CreditCard, ChevronRight, Zap, Gift, CheckCircle2, Clock
+import {
+  Flame,
+  Award,
+  Shield,
+  Star,
+  Crown,
+  Check,
+  QrCode,
+  History,
+  ArrowUpRight,
+  ArrowDownLeft,
+  X,
+  Sparkles,
+  CreditCard,
+  ChevronRight,
+  Zap,
+  Gift,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { MOCK_USER, MOCK_REWARDS, MOCK_POINTS_HISTORY, PointsHistoryItem } from '@/lib/mock-data';
 import { AnimatedCounter } from './AnimatedCounter';
@@ -15,7 +30,6 @@ import { ScrollRevealContainer, ScrollRevealItem, ScrollReveal } from './ScrollR
 import { usePaseoToast } from './PaseoToast';
 import { useSession } from './Providers';
 
-
 interface PaseoPointsShowcaseProps {
   onOpenQr: () => void;
 }
@@ -23,19 +37,29 @@ interface PaseoPointsShowcaseProps {
 export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
   const { showToast } = usePaseoToast();
   const { user } = useSession();
-  const activePoints = user ? (user.points || 0) : 0;
-  const activeLevel = activePoints >= 1000 ? 'Platino' : activePoints >= 500 ? 'Oro' : activePoints >= 200 ? 'Plata' : 'Bronce';
+  const activePoints = user ? user.points || 0 : 0;
+  const activeLevel =
+    activePoints >= 1000
+      ? 'Platino'
+      : activePoints >= 500
+        ? 'Oro'
+        : activePoints >= 200
+          ? 'Plata'
+          : 'Bronce';
   const activeName = user ? user.name : 'Miembro Paseo';
   const [points, setPoints] = useState<number>(activePoints);
   const [claimedReward, setClaimedReward] = useState<string | null>(null);
   const [isConfettiActive, setIsConfettiActive] = useState<boolean>(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false);
   const [historyFilter, setHistoryFilter] = useState<'todos' | 'ganado' | 'canjeado'>('todos');
-  const [selectedTierDetail, setSelectedTierDetail] = useState<'Bronce' | 'Plata' | 'Oro' | 'Platino' | null>(null);
+  const [selectedTierDetail, setSelectedTierDetail] = useState<
+    'Bronce' | 'Plata' | 'Oro' | 'Platino' | null
+  >(null);
 
-  const filteredHistory = historyFilter === 'todos'
-    ? MOCK_POINTS_HISTORY
-    : MOCK_POINTS_HISTORY.filter(item => item.type === historyFilter);
+  const filteredHistory =
+    historyFilter === 'todos'
+      ? MOCK_POINTS_HISTORY
+      : MOCK_POINTS_HISTORY.filter((item) => item.type === historyFilter);
 
   const handleClaim = (rewardTitle: string, cost: number) => {
     if (points >= cost) {
@@ -51,7 +75,10 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
 
   // Cálculo de progreso de Mateo: de 1.000 (Plata) a 5.000 (Oro) -> rango 4.000 pts
   // Actualmente tiene 1.450 -> 450 / 4000 = 11.25% dentro del nivel Plata, o 1450/5000 = 29% total
-  const progressToGold = Math.min(Math.round(((points - 1000) / (MOCK_USER.nextLevelPoints - 1000)) * 100), 100);
+  const progressToGold = Math.min(
+    Math.round(((points - 1000) / (MOCK_USER.nextLevelPoints - 1000)) * 100),
+    100,
+  );
   const pointsRemaining = Math.max(MOCK_USER.nextLevelPoints - points, 0);
 
   return (
@@ -69,11 +96,9 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
       <div className="absolute bottom-10 right-0 w-[600px] h-[600px] bg-[#B84D0B]/15 rounded-full blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative z-10">
-        
         {/* Encabezado Principal y Tarjeta VIP Hero de Saldo */}
         <ScrollReveal>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-16">
-            
             {/* Texto y Concepto */}
             <div className="lg:col-span-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#B84D0B]/20 to-[#D4A24C]/20 border border-[#D4A24C]/40 text-xs font-bold uppercase tracking-wider text-[#FF6B1A] mb-4">
@@ -84,7 +109,8 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 PASEO <span className="text-[#D4A24C]">POINTS</span>
               </h2>
               <p className="text-white/70 text-base sm:text-lg max-w-xl mt-3 font-sans leading-relaxed">
-                Premia cada visita y compra en el mall. Sube de categoría, desbloquea privilegios exclusivos y canjea experiencias gastronómicas y de moda.
+                Premia cada visita y compra en el mall. Sube de categoría, desbloquea privilegios
+                exclusivos y canjea experiencias gastronómicas y de moda.
               </p>
 
               {/* Badges de beneficios rápidos */}
@@ -103,11 +129,12 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
 
             {/* Tarjeta Digital VIP de Membresía (Estilo Apple Wallet / Black Card Luxury) */}
             <div className="lg:col-span-6">
-              <div 
+              <div
                 className="relative rounded-[2rem] p-6 sm:p-8 overflow-hidden text-white shadow-2xl border border-white/20 transition-all duration-500 hover:scale-[1.01]"
                 style={{
                   background: 'linear-gradient(135deg, #0A1B36 0%, #030B1A 50%, #152238 100%)',
-                  boxShadow: '0 25px 60px -15px rgba(212, 162, 76, 0.25), 0 0 40px rgba(184, 77, 11, 0.2)',
+                  boxShadow:
+                    '0 25px 60px -15px rgba(212, 162, 76, 0.25), 0 0 40px rgba(184, 77, 11, 0.2)',
                 }}
               >
                 {/* Línea LED Superior */}
@@ -138,7 +165,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#C0C7D1]/20 to-[#D4A24C]/20 border border-[#D4A24C] shadow-lg shadow-[#D4A24C]/15">
                     <Award className="w-4 h-4 text-[#D4A24C]" />
                     <span className="text-xs font-black uppercase tracking-wider text-white">
-                      Nivel {user ? activeLevel : "Bronce"}
+                      Nivel {user ? activeLevel : 'Bronce'}
                     </span>
                   </div>
                 </div>
@@ -146,7 +173,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 {/* Fila Central: Saldo de Puntos Animado */}
                 <div className="my-5 relative z-10">
                   <span className="text-[11px] uppercase font-bold tracking-widest text-[#D4A24C] block mb-1">
-                    {user ? `Saldo de ${activeName}` : "Club Paseo Points"}
+                    {user ? `Saldo de ${activeName}` : 'Club Paseo Points'}
                   </span>
                   <div className="flex items-baseline gap-3">
                     <div className="text-5xl sm:text-6xl font-black text-white font-display tracking-tight tabular-nums drop-shadow-md">
@@ -170,7 +197,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   </div>
 
                   <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5">
-                    <div 
+                    <div
                       className="h-full rounded-full bg-gradient-to-r from-[#B84D0B] via-[#FF6B1A] to-[#D4A24C] transition-all duration-1000 ease-out"
                       style={{ width: `${progressToGold}%` }}
                     />
@@ -178,7 +205,9 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
 
                   <div className="flex justify-between items-center text-[10px] text-white/50 mt-1.5 tabular-nums">
                     <span>Plata (1.000)</span>
-                    <span className="text-[#D4A24C] font-bold">{points.toLocaleString()} pts actuales ({progressToGold}%)</span>
+                    <span className="text-[#D4A24C] font-bold">
+                      {points.toLocaleString()} pts actuales ({progressToGold}%)
+                    </span>
                     <span>Oro (5.000)</span>
                   </div>
                 </div>
@@ -186,7 +215,10 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 {/* Fila Inferior: Botones de Acción */}
                 <div className="flex items-center gap-3 relative z-10">
                   <button
-                    onClick={() => { if (user) onOpenQr(); else window.location.href = '/auth/login'; }}
+                    onClick={() => {
+                      if (user) onOpenQr();
+                      else window.location.href = '/auth/login';
+                    }}
                     className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#B84D0B] to-[#FF6B1A] text-white font-bold text-xs uppercase tracking-wider btn-primary-andino flex items-center justify-center gap-2 shadow-lg shadow-[#FF6B1A]/30 border border-white/20"
                   >
                     <QrCode className="w-4 h-4" />
@@ -204,7 +236,6 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 </div>
               </div>
             </div>
-
           </div>
         </ScrollReveal>
 
@@ -217,10 +248,12 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
               </div>
               <div>
                 <h4 className="font-bold text-sm">Canje confirmado</h4>
-                <p className="text-xs text-white/80">Has canjeado "{claimedReward}". El cupón QR está listo en tu credencial.</p>
+                <p className="text-xs text-white/80">
+                  Has canjeado &quot;{claimedReward}&quot;. El cupón QR está listo en tu credencial.
+                </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={onOpenQr}
               className="px-4 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-gray-100 transition-all"
             >
@@ -239,14 +272,14 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
               Los 4 Niveles de Paseo Aranjuez
             </h3>
             <p className="text-white/60 text-sm mt-1">
-              Cada nivel desbloquea multiplicadores de puntos, beneficios de estacionamiento y accesos exclusivos.
+              Cada nivel desbloquea multiplicadores de puntos, beneficios de estacionamiento y
+              accesos exclusivos.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            
             {/* TARJETA 1: BRONCE */}
-            <div 
+            <div
               onClick={() => setSelectedTierDetail('Bronce')}
               className="rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-2 border border-[#A9714B]/40 hover:border-[#A9714B] shadow-lg relative overflow-hidden group"
               style={{
@@ -271,12 +304,8 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-[#A9714B]">
                     Tier 1 · Inicial
                   </span>
-                  <h4 className="text-2xl font-black text-white font-display">
-                    Bronce
-                  </h4>
-                  <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">
-                    0 a 999 pts
-                  </p>
+                  <h4 className="text-2xl font-black text-white font-display">Bronce</h4>
+                  <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">0 a 999 pts</p>
                 </div>
 
                 {/* Beneficios */}
@@ -303,7 +332,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
             </div>
 
             {/* TARJETA 2: PLATA (NIVEL ACTUAL DE MATEO) */}
-            <div 
+            <div
               onClick={() => setSelectedTierDetail('Plata')}
               className="rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-2 border-2 border-[#C0C7D1] shadow-2xl relative overflow-hidden group"
               style={{
@@ -332,9 +361,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-[#C0C7D1]">
                     Tier 2 · Titanio
                   </span>
-                  <h4 className="text-2xl font-black text-white font-display">
-                    Plata
-                  </h4>
+                  <h4 className="text-2xl font-black text-white font-display">Plata</h4>
                   <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">
                     1.000 a 4.999 pts
                   </p>
@@ -347,7 +374,10 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                     <span className="font-mono text-[#D4A24C]">{points.toLocaleString()} pts</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
-                    <div className="bg-gradient-to-r from-[#FF6B1A] to-[#D4A24C] h-full" style={{ width: `${progressToGold}%` }} />
+                    <div
+                      className="bg-gradient-to-r from-[#FF6B1A] to-[#D4A24C] h-full"
+                      style={{ width: `${progressToGold}%` }}
+                    />
                   </div>
                 </div>
 
@@ -355,11 +385,15 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 <ul className="space-y-2 text-xs text-white/90 border-t border-white/10 pt-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#C0C7D1] shrink-0 mt-0.5" />
-                    <span><strong>1.2x Puntos</strong> en fines de semana</span>
+                    <span>
+                      <strong>1.2x Puntos</strong> en fines de semana
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#C0C7D1] shrink-0 mt-0.5" />
-                    <span><strong>1 hora gratis</strong> de estacionamiento cubierto</span>
+                    <span>
+                      <strong>1 hora gratis</strong> de estacionamiento cubierto
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#C0C7D1] shrink-0 mt-0.5" />
@@ -375,7 +409,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
             </div>
 
             {/* TARJETA 3: ORO */}
-            <div 
+            <div
               onClick={() => setSelectedTierDetail('Oro')}
               className="rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-2 border-2 border-[#D4A24C]/80 hover:border-[#D4A24C] shadow-2xl relative overflow-hidden group"
               style={{
@@ -404,9 +438,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-[#D4A24C]">
                     Tier 3 · Imperial
                   </span>
-                  <h4 className="text-2xl font-black text-white font-display">
-                    Oro
-                  </h4>
+                  <h4 className="text-2xl font-black text-white font-display">Oro</h4>
                   <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">
                     5.000 a 14.999 pts
                   </p>
@@ -416,11 +448,15 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 <ul className="space-y-2 text-xs text-white/90 border-t border-white/10 pt-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#D4A24C] shrink-0 mt-0.5" />
-                    <span><strong>1.5x Puntos</strong> en todo el centro comercial</span>
+                    <span>
+                      <strong>1.5x Puntos</strong> en todo el centro comercial
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#D4A24C] shrink-0 mt-0.5" />
-                    <span><strong>4 horas libres</strong> de parqueo cubierto</span>
+                    <span>
+                      <strong>4 horas libres</strong> de parqueo cubierto
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-[#D4A24C] shrink-0 mt-0.5" />
@@ -440,7 +476,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
             </div>
 
             {/* TARJETA 4: PLATINO */}
-            <div 
+            <div
               onClick={() => setSelectedTierDetail('Platino')}
               className="rounded-3xl p-6 flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-2 border-2 border-[#8E9AAF]/60 hover:border-white shadow-2xl relative overflow-hidden group"
               style={{
@@ -469,23 +505,23 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-[#8E9AAF]">
                     Tier 4 · Elite
                   </span>
-                  <h4 className="text-2xl font-black text-white font-display">
-                    Platino
-                  </h4>
-                  <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">
-                    15.000+ pts
-                  </p>
+                  <h4 className="text-2xl font-black text-white font-display">Platino</h4>
+                  <p className="text-xs text-white/50 font-mono mt-0.5 tabular-nums">15.000+ pts</p>
                 </div>
 
                 {/* Beneficios */}
                 <ul className="space-y-2 text-xs text-white/90 border-t border-white/10 pt-4">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <span><strong>2.0x Puntos dobles</strong> permanentes</span>
+                    <span>
+                      <strong>2.0x Puntos dobles</strong> permanentes
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-                    <span><strong>Valet parking</strong> y estacionamiento libre</span>
+                    <span>
+                      <strong>Valet parking</strong> y estacionamiento libre
+                    </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
@@ -503,7 +539,6 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
-
           </div>
         </div>
 
@@ -533,9 +568,7 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
           <ScrollRevealContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {MOCK_REWARDS.map((reward) => (
               <ScrollRevealItem key={reward.id}>
-                <div
-                  className="group rounded-3xl glass-andino card-hover-reward border border-white/10 overflow-hidden flex flex-col justify-between h-full"
-                >
+                <div className="group rounded-3xl glass-andino card-hover-reward border border-white/10 overflow-hidden flex flex-col justify-between h-full">
                   <div>
                     <div className="relative h-44 w-full overflow-hidden bg-black/40">
                       <img
@@ -552,15 +585,15 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                       <h4 className="text-base font-bold text-white group-hover:text-[#FF6B1A] transition-colors leading-snug">
                         {reward.title}
                       </h4>
-                      <p className="text-xs text-white/50 mt-1">
-                        {reward.store}
-                      </p>
+                      <p className="text-xs text-white/50 mt-1">{reward.store}</p>
                     </div>
                   </div>
 
                   <div className="p-5 pt-0 flex items-center justify-between border-t border-white/5 mt-4">
                     <div className="flex flex-col">
-                      <span className="text-[10px] text-white/40 uppercase font-semibold">Costo</span>
+                      <span className="text-[10px] text-white/40 uppercase font-semibold">
+                        Costo
+                      </span>
                       <span className="text-lg font-black text-[#D4A24C] font-mono tabular-nums">
                         {reward.pointsCost} pts
                       </span>
@@ -583,13 +616,12 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
             ))}
           </ScrollRevealContainer>
         </div>
-
       </div>
 
       {/* Modal Detalle de Nivel al hacer Click */}
       {selectedTierDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setSelectedTierDetail(null)}
             className="fixed inset-0 bg-[#030B1A]/85 backdrop-blur-md animate-in fade-in duration-200"
           />
@@ -610,16 +642,22 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                 {selectedTierDetail === 'Platino' && <Crown className="w-6 h-6" />}
               </div>
               <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-[#D4A24C]">Detalles de Membresía</span>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-[#D4A24C]">
+                  Detalles de Membresía
+                </span>
                 <h3 className="text-2xl font-black font-display">Nivel {selectedTierDetail}</h3>
               </div>
             </div>
 
             <p className="text-xs text-white/70 mb-5 leading-relaxed">
-              {selectedTierDetail === 'Bronce' && 'Nivel de entrada para todos los visitantes de Paseo Aranjuez. Cada consumo suma puntos para canjear en gastronomía y servicios.'}
-              {selectedTierDetail === 'Plata' && 'Nivel actual de Mateo Quiroga. Otorga 1 hora de estacionamiento cubierto gratis por visita y multiplicador 1.2x en fines de semana.'}
-              {selectedTierDetail === 'Oro' && 'Nivel preferencial para clientes frecuentes. Incluye 4 horas libres de parqueo cubierto, mesa preferencial en Terraza Grill e invitaciones VIP a eventos Huari.'}
-              {selectedTierDetail === 'Platino' && 'Máxima distinción de honor en Paseo Aranjuez. Valet parking permanente, puntos dobles 2.0x en cada compra y asistencia personal Jarvis VIP.'}
+              {selectedTierDetail === 'Bronce' &&
+                'Nivel de entrada para todos los visitantes de Paseo Aranjuez. Cada consumo suma puntos para canjear en gastronomía y servicios.'}
+              {selectedTierDetail === 'Plata' &&
+                'Nivel actual de Mateo Quiroga. Otorga 1 hora de estacionamiento cubierto gratis por visita y multiplicador 1.2x en fines de semana.'}
+              {selectedTierDetail === 'Oro' &&
+                'Nivel preferencial para clientes frecuentes. Incluye 4 horas libres de parqueo cubierto, mesa preferencial en Terraza Grill e invitaciones VIP a eventos Huari.'}
+              {selectedTierDetail === 'Platino' &&
+                'Máxima distinción de honor en Paseo Aranjuez. Valet parking permanente, puntos dobles 2.0x en cada compra y asistencia personal Jarvis VIP.'}
             </p>
 
             <button
@@ -639,13 +677,13 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
       {/* Modal Historial de Puntos */}
       {isHistoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
+          <div
             onClick={() => setIsHistoryModalOpen(false)}
             className="fixed inset-0 bg-[#030B1A]/80 backdrop-blur-md animate-in fade-in duration-200"
           />
           <div className="relative w-full max-w-lg rounded-3xl bg-[#061734] border border-[#D4A24C]/40 p-6 text-white shadow-2xl z-10 overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="absolute top-0 left-0 right-0 h-1.5 led-effect" />
-            
+
             <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
               <div className="flex items-center gap-2.5">
                 <History className="w-5 h-5 text-[#D4A24C]" />
@@ -684,9 +722,13 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                   className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      item.type === 'ganado' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
-                    }`}>
+                    <div
+                      className={`p-2 rounded-lg ${
+                        item.type === 'ganado'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}
+                    >
                       {item.type === 'ganado' ? (
                         <ArrowDownLeft className="w-4 h-4" />
                       ) : (
@@ -699,9 +741,11 @@ export function PaseoPointsShowcase({ onOpenQr }: PaseoPointsShowcaseProps) {
                       <span className="text-[10px] text-white/40">{item.date}</span>
                     </div>
                   </div>
-                  <span className={`font-mono font-black text-sm tabular-nums ${
-                    item.type === 'ganado' ? 'text-emerald-400' : 'text-red-400'
-                  }`}>
+                  <span
+                    className={`font-mono font-black text-sm tabular-nums ${
+                      item.type === 'ganado' ? 'text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
                     {item.points > 0 ? `+${item.points}` : item.points} pts
                   </span>
                 </div>

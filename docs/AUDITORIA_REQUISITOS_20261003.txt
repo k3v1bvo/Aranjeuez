@@ -1,0 +1,334 @@
+================================================================================
+PROTOCOLO MAESTRO DE AUDITORIA INTEGRAL — SISTEMA PASEO ARANJUEZ
+Documento de Especificacion Tecnica, Auditoria de Permisos, Flujos y QA Completo
+================================================================================
+
+- Plataforma: Paseo Aranjuez — Centro Comercial & Complejo Empresarial
+- Sede: Av. America E-0834, Queru Queru, Cochabamba, Bolivia
+- Despliegue Oficial: https://aranjeuez-xi.vercel.app
+- Stack Tecnologico: Next.js (App Router), TypeScript, Vanilla CSS + Tailwind Tokens,
+  Supabase PostgreSQL, ImgBB API v1, Web Speech API (STT & TTS), HTML5 Video Camera.
+- Estado de Compilacion:
+  * TypeScript (npx tsc --noEmit): 0 errores
+  * Produccion (npm run build): 100% exitoso (todas las rutas estaticas y dinamicas)
+- Version del Documento: 3.0 (Master Audit Protocol - Zero Hallucinations)
+
+================================================================================
+INDICE DE SECCIONES
+================================================================================
+1. IDENTIDAD VISUAL, LOGO CORPORATIVO Y AISLAMIENTO DE NAVEGACION
+2. AUTENTICACION, SESION, COOKIES Y EXPERIENCIA DE USUARIO LOGUEADO
+3. MATRIZ DE CONTROL DE ACCESO BASADA EN ROLES (RBAC) Y PERMISOS
+4. COHERENCIA DE FORMULARIOS Y VENTANAS EMERGENTES (MODALES) POR ROL
+5. GESTION DE EQUIPOS, TIENDAS Y EMPLEADOS DEL COMERCIO
+6. CICLO DE VIDA DE ORDENES CLICK & COLLECT (PASEO YA) Y STOCK
+7. SISTEMA DE FIDELIZACION (PASEO POINTS, NIVELES VIP Y RECOMPENSAS)
+8. MODULOS DE HARDWARE, CAMARA EN VIVO Y ESCANERES QR
+9. CONCIERGE IA JARVIS (VOZ BIDIRECCIONAL, ORBE Y MOTOR DE CONSULTA)
+10. DIRECTORIO COMERCIAL UNIFICADO Y CARGA MULTIMEDIA (IMGBB)
+11. SUITE DE GOBERNANZA ADMINISTRATIVA (PANEL ADMIN)
+12. SISTEMA DE DISENO LUXURY DARK, FOOTER CORPORATIVO Y UX MOVIL
+13. AUDITORIA DE SEGURIDAD, BASE DE DATOS Y PREVENCION DE VULNERABILIDADES
+14. BATERIA EXHAUSTIVA DE VECTORES DE PRUEBA (25 TESTS OBLIGATORIOS)
+15. RUBRICA DE CALIFICACION Y MATRIZ DE DICTAMEN FINAL
+
+================================================================================
+1. IDENTIDAD VISUAL, LOGO CORPORATIVO Y AISLAMIENTO DE NAVEGACION
+================================================================================
+
+A. Tratamiento del Logo Oficial e Isotipo:
+- Regla de Marca Obligatoria: Debe utilizarse unicamente la imagen/isotipo oficial (el emblema iconografico del centro comercial). Queda terminantemente prohibido distorsionar su relacion de aspecto (aspect-ratio), deformar las lineas vectoriales, aplicar recortes arbitrarios que mutilen el isotipo o usar tipografias secundarias rasterizadas de baja resolucion.
+- Logotipo en Navbar: Acompana al isotipo el rotulo tipografico "Paseo Aranjuez" con jerarquia premium, enlace a la raiz o panel segun el rol, y contraste dorado (#D4A24C) sobre fondo azul noche (#030B1A).
+
+B. Aislamiento y Pureza del Panel de Administracion (/admin):
+- Desacoplamiento de Consumo: Cuando un usuario con rol 'admin' entra a la plataforma o a su panel, NO deben mostrarse accesos directos de consumo de cliente ("PaseoYa", "Paseo Points", "Jarvis" ni el icono de "Carrito de compras").
+- Navegacion Administrativa Pura: El admin debe visualizar estrictamente la suite de gobernanza corporativa:
+  * Establecimientos (Tiendas fisicas y locales 60+)
+  * Productos del Complejo y Control de Stock
+  * Promociones y Descuentos del Mall
+  * Eventos Culturales y Cartelera
+  * Usuarios, Roles y Puntos de Fidelidad
+  * Categorias Comerciales Oficiales
+  * Catalogo de Recompensas del Club
+  * Bitacora de Auditoria del Sistema
+
+================================================================================
+2. AUTENTICACION, SESION, COOKIES Y EXPERIENCIA DE USUARIO LOGUEADO
+================================================================================
+
+A. Flujo de Sesion y Reconocimiento del Usuario:
+- Problema Resuelto: Anteriormente, al iniciar sesion no se mostraba con claridad quien estaba conectado ni como cerrar sesion, invitando a iniciar sesion reiteradamente.
+- Solucion Implementada:
+  * En NavbarPaseo.tsx y Shell.tsx, una vez autenticado, se expone la tarjeta del usuario con su nombre, correo, badge de rol con color institucional y saldo de puntos.
+  * Boton visible y accesible de "Cerrar sesion" que llama al endpoint POST /api/paseo/auth con action: 'logout'.
+  * Limpieza estricta de la cookie paseo_token con maxAge: 0 y expiracion inmediata.
+
+B. Seguridad de Cookies:
+- Nombre de la cookie: paseo_token.
+- Propiedades requeridas:
+  * httpOnly: true (inaccesible desde scripts del lado del cliente, protegiendo contra robo XSS).
+  * sameSite: 'lax' (proteccion contra ataques CSRF).
+  * secure: true en entornos de produccion HTTPS.
+  * path: '/' (disponible en todo el dominio).
+
+C. Registro y Recuperacion:
+- /auth/registro: Registra nuevos usuarios como rol 'cliente' por defecto. Genera automaticamente su qr_token unico y le asigna 0 puntos iniciales con nivel 'Bronce'. Envia correo de bienvenida.
+- /auth/login: Autentica credenciales contra hash seguro Bcrypt (salt rounds 12).
+- /auth/recuperar: Genera token temporal criptografico firmado y remite correo con enlace de restablecimiento.
+
+================================================================================
+3. MATRIZ DE CONTROL DE ACCESO BASADA EN ROLES (RBAC) Y PERMISOS
+================================================================================
+
+El sistema define 4 roles en src/lib/paseo/model.ts. Cada solicitud a la API se valida mediante la funcion requireUser(req, allowedRoles) en src/lib/paseo/server.ts:
+
+1. ROL 'cliente':
+   - Permisos: Navegar catalogo, agregar articulos al carrito, realizar checkout Click & Collect, consultar sus propios pedidos y codigos de retiro, consultar su historial de puntos, canjear recompensas activas, escanear totems QR en el mall e interactuar con Jarvis.
+   - Restricciones: Bloqueado terminantemente de acceder a /admin, /comercio, /api/paseo/gestion/*, /api/paseo/empleados y metodos POST/PATCH/DELETE de tiendas o catalogo.
+
+2. ROL 'comercio' (Dueno de Tienda):
+   - Permisos: Administrar su propio establecimiento fisico, crear/modificar productos de su tienda, subir fotos a ImgBB, definir promociones con fechas limite, gestionar su equipo de empleados (/comercio/empleados), ver ordenes dirigidas a su local y usar el escaner de entrega.
+   - Verificacion de Propiedad: En cada operacion, se invoca ownsStore(user, storeId). Un comercio tiene terminantemente prohibido alterar productos, promociones, empleados o pedidos de otra tienda.
+
+3. ROL 'empleado' (Personal de Turno / Caja):
+   - Permisos: Vista exclusiva de ordenes dirigidas a su tienda asignada y acceso al escaner/terminal de despacho para validar codigos de retiro y QR de clientes.
+   - Vinculacion Tecnica: La tienda donde trabaja se almacena en paseo_users.avatar_url con formato 'store:<storeId>' y se verifica en la sesion del servidor.
+   - Restricciones: No tiene acceso a reportes financieros, inventario global, edicion de perfil de tienda, creacion de productos ni gestion de otros empleados.
+
+4. ROL 'admin' (Administracion General):
+   - Permisos: Gobierno total y absoluto sobre todas las tablas y recursos del mall.
+   - Salvaguarda: No puede revocar su propio rol de admin ni desactivar su propia cuenta para prevenir bloqueos accidentales del sistema.
+
+================================================================================
+4. COHERENCIA DE FORMULARIOS Y VENTANAS EMERGENTES (MODALES) POR ROL
+================================================================================
+
+Ubicacion: src/components/paseo/Manager.tsx y src/lib/paseo/api.ts
+
+A. Modal Dinamico de Usuarios segun el Rol Seleccionado:
+Al abrir la ventana emergente para crear o editar un usuario, los campos se adaptan con estricta coherencia:
+
+1. Si el rol es 'cliente':
+   - Campos generales: Nombre completo, Rol (cliente), Correo electronico, Telefono/WhatsApp, Contrasena inicial (si es nuevo) y Checkbox "Cuenta Activa".
+   - Tarjeta Dorada de Fidelidad: Campo numerico para ver o ajustar los Puntos Paseo acumulados con indicador en tiempo real de su Nivel VIP:
+     * 0 a 199 pts: Nivel Bronce
+     * 200 a 499 pts: Nivel Plata
+     * 500 a 999 pts: Nivel Oro
+     * 1000+ pts: Nivel Platino
+   - Aislamiento: Se eliminan por completo selectores de tiendas o creacion de locales.
+
+2. Si el rol es 'comercio' (Dueno de Local):
+   - Tarjeta Naranja de Establecimiento Comercial:
+     * Al editar un comercio existente: Expone de forma prominente la tienda que opera actualmente (ej. "Tienda actualmente vinculada: Cafe Aranjuez - Local L-102") y permite mantenerla o reasignarla.
+     * Al crear un nuevo dueno: Permite elegir mediante radio-buttons entre:
+       a) "Asignar a local existente": Lista desplegable de todos los locales comerciales del mall.
+       b) "Crear nuevo local ahora": Campos para Nombre del nuevo local, Categoria, Piso, Numero de local y Telefono de contacto.
+   - Aislamiento: Se eliminan los puntos de cliente.
+
+3. Si el rol es 'empleado' (Caja y Despacho):
+   - Tarjeta Azul de Operaciones: Selector obligatorio del establecimiento comercial del mall donde prestara servicios en caja.
+   - Texto informativo aclarando que su cuenta tendra acceso limitado a toma de ordenes y escaner de ese local.
+   - Aislamiento: Se eliminan creacion de tiendas y puntos de cliente.
+
+4. Si el rol es 'admin':
+   - Tarjeta Purpura de Privilegios: Certifica autorizacion total sobre toda la infraestructura digital de Paseo Aranjuez.
+
+B. Persistencia e Integridad en api.ts:
+- validateFields('usuarios'): Valida y procesa name, role, is_active, phone y points.
+- Desvinculacion Limpia: Si a un comercio se le cambia de rol o se le asigna otra tienda, el backend desvincula la tienda anterior (owner_id = null). Si a un empleado se le cambia de rol, se limpia el avatar_url: 'store:<id>'.
+
+================================================================================
+5. GESTION DE EQUIPOS, TIENDAS Y EMPLEADOS DEL COMERCIO
+================================================================================
+
+Ubicacion: src/components/paseo/MerchantEmployees.tsx y ruta /comercio/empleados
+
+A. Funcionalidades del Dueno de Tienda:
+1. Vista de Equipo: Muestra la tienda del comercio, total de colaboradores, empleados activos y lista de personal con estado en tiempo real.
+2. Vinculacion de Cliente Existente (Pestana 1): Permite ingresar el correo electronico de un cliente registrado para promoverlo a empleado de su tienda sin que pierda su cuenta.
+3. Creacion de Nueva Cuenta (Pestana 2): Registra un nuevo empleado desde cero (Nombre, Correo, Celular y Contrasena).
+4. Alternar Estado Operativo: Switch para activar o pausar temporalmente a un empleado en caja.
+5. Accion "Volver a Cliente": Si un empleado concluye su relacion laboral, el dueno presiona "Volver a Cliente". La API limpia su asignacion de tienda y degrada su rol a 'cliente', conservando su historial sin eliminar la cuenta.
+
+================================================================================
+6. CICLO DE VIDA DE ORDENES CLICK & COLLECT (PASEO YA) Y STOCK
+================================================================================
+
+A. Estados de Orden Estrictamente Definidos:
+1. 'pendiente': Orden registrada por el cliente tras el checkout.
+2. 'en_preparacion': Tienda toma conocimiento y prepara los articulos.
+3. 'listo_para_recoger': Pedido empaquetado en el local esperando el retiro presencial.
+4. 'entregado': El cliente presenta su codigo o QR en caja. El empleado valida el codigo, confirma cobro/retiro, se acredita la entrega y se suman los puntos al cliente.
+5. 'cancelado': La orden se anula y el sistema devuelve automaticamente las unidades al stock de paseo_products.
+
+B. Integridad de Codigos de Recogida:
+- Cada orden genera un codigo de recogida alfanumerico seguro (ej. RET-8492) y un token QR unico.
+- En Orders.tsx y Terminal.tsx, el empleado debe validar que el codigo coincida antes de marcar la orden como 'entregado'.
+
+================================================================================
+7. SISTEMA DE FIDELIZACION (PASEO POINTS, NIVELES VIP Y RECOMPENSAS)
+================================================================================
+
+A. Acumulacion de Puntos:
+1. Consumo en PaseoYa: Cada Bs. 1 gastado en compras en linea genera 1 Paseo Point tras confirmarse la entrega.
+2. Escaneo en Totems Presenciales: Visitar el centro comercial y escanear los tótems QR de ingreso en Planta Baja o pisos comerciales otorga puntos segun configuracion.
+3. Reglas Antifraude:
+   - Tiempo minimo entre escaneos en el mismo piso: MIN_MINUTES_ON_FLOOR (evita escaneos repetitivos instantaneos).
+   - Limite diario maximo de puntos acumulables por visitas presenciales.
+
+B. Catalogo de Recompensas (/cliente/puntos y paseo_rewards):
+- Recompensas activas: Descuentos en terrazas El Cuarto, entradas de cine, combos en Cinnabon, etc.
+- Canje: Descuenta puntos del saldo del cliente y reduce el stock de la recompensa de forma atomica.
+
+================================================================================
+8. MODULOS DE HARDWARE, CAMARA EN VIVO Y ESCANERES QR
+================================================================================
+
+A. Totem de Ingreso para Clientes (src/components/paseo/Points.tsx):
+1. Inicializacion de Video HTML5: Solicita acceso a camara trasera/frontal mediante getUserMedia o libreria Html5Qrcode.
+2. Geocerca GPS de Seguridad (Radio 200 metros):
+   - Coordenadas oficiales de Paseo Aranjuez: Latitud -17.3739, Longitud -66.1558.
+   - Calcula la distancia en metros entre el GPS del dispositivo y el complejo comercial.
+   - Informa si el usuario esta dentro del perimetro (🟢 ~X metros) o si se encuentra fuera de zona.
+3. Modo Alternativo Manual: Permite ingresar el codigo del totem manualmente por teclado para usuarios en laptops sin camara o con permisos bloqueados.
+
+B. Terminal de Caja de Tienda (src/components/paseo/Terminal.tsx):
+1. Permite escanear el QR presentado por el cliente en la pantalla de su telefono o ingresar el codigo RET-XXXX.
+2. Despacho Seguro: Valida que la orden pertenezca a la tienda del comercio autenticado antes de habilitar la confirmacion de entrega.
+
+================================================================================
+9. CONCIERGE IA JARVIS (VOZ BIDIRECCIONAL, ORBE Y MOTOR DE CONSULTA)
+================================================================================
+
+Ubicacion: src/components/paseo/Jarvis.tsx, JarvisOrb.tsx y jarvis-server.ts
+
+A. Reconocimiento de Voz (STT):
+1. Auto-Envio al Terminar de Hablar: Cuando el usuario termina de hablar y el navegador dispara onend, el componente extrae el texto de transcriptRef y llama de inmediato a send(spokenText). Se erradica por completo el fallo donde el microfono se apagaba y no procesaba la pregunta.
+2. Compatibilidad Universal: Selecciona dinamicamente navigator.language con fallback a es-419 (Latinoamerica) y es-ES, garantizando funcionamiento en Chrome, Edge, Safari, Android e iOS.
+3. Banner Telemetrico: Pulso rojo interactivo, previsualizacion de lo que se va reconociendo en tiempo real, boton "Enviar ahora" y boton "Cancelar".
+
+B. Sintesis de Voz (TTS):
+1. Depuracion de Formato: Filtra codigos markdown (**negritas**, titulos ###, enlaces y emojis) para que la voz lea con entonacion limpia y natural.
+2. Voces Neuronales: Selecciona la mejor voz en espanol instalada en el sistema (Sabina, Raul, Helena, Google espanol).
+3. Anti-Congelamiento: Temporizador de rescate cada 10 segundos (resume()) para evitar el corte nativo de audio a los 15 segundos en motores Chromium.
+
+C. Maquina de Estados del Orbe Jarvis:
+- 'idle': Brillo dorado de reposo.
+- 'listening': Ondas y pulso rojo/naranja al escuchar.
+- 'thinking': Giro orbital ambar mientras consulta el catalogo en tiempo real.
+- 'speaking': Ondas doradas expansivas mientras lee la respuesta en voz alta.
+- Click Interactivo: Si habla, al tocarlo se silencia; si esta en reposo, activa la escucha por microfono.
+
+D. Resiliencia del Motor de IA:
+- Conexion principal: Google Gemini API (gemini-3.8-flash) con prompt especializado del mall.
+- Fallback Experto Local: Si no hay clave de API o la red falla, se activa el motor de reglas de jarvis-server.ts que conoce los 4 pisos comerciales, terrazas El Cuarto, horarios, locales de tecnologia, comida turca, silpanchos, estacionamiento y saldos de puntos del usuario conectado.
+
+================================================================================
+10. DIRECTORIO COMERCIAL UNIFICADO Y CARGA MULTIMEDIA (IMGBB)
+================================================================================
+
+A. Subida de Imagenes Drag-and-Drop (src/components/paseo/ImageDragDropUploader.tsx):
+- Funcionalidad: Permite arrastrar y soltar cualquier imagen (PNG, JPG, WEBP) o seleccionarla desde el explorador de archivos.
+- Envio a ImgBB: Hace POST multipart/form-data al endpoint seguro /api/upload.
+- Persistencia: Retorna la URL directa permanente con certificado SSL (https://i.ibb.co/...) y la guarda en la base de datos Supabase en image_url.
+
+B. Catalogo Unificado Omnicanal (src/components/paseo/Catalog.tsx):
+- Problema Resuelto: Anteriormente, 40 tiendas fisicas sin productos cargados desaparecian del buscador para clientes.
+- Solucion Implementada: Busqueda dual unificada. El buscador encuentra tanto los 60 establecimientos comerciales fisicos del complejo como los productos de venta digital. Si una tienda no tiene productos online, despliega su tarjeta de visita presencial indicando piso, numero de local, horario y fachada.
+
+================================================================================
+11. SUITE DE GOBERNANZA ADMINISTRATIVA (PANEL ADMIN)
+================================================================================
+
+El panel de administracion centraliza la supervision en tiempo real:
+- Establecimientos (/admin/tiendas): Alta, baja, edicion, asignacion de piso, local, sector, horarios y propietario.
+- Catalogo Global (/admin/productos): Precios en Bolivianos (Bs.), stock en tiempo real, categorias y fotos.
+- Usuarios (/admin/usuarios): Control de clientes, comercios, empleados y administradores, con edicion de puntos y celulares.
+- Eventos (/admin/eventos): Cartelera de conciertos, ferias, exposiciones en La Galeria y actividades en el mall.
+- Promociones (/admin/promociones): Campanas de descuentos con fechas de vigencia auditadas.
+- Recompensas (/admin/recompensas): Catalogo de canjes por puntos y stock disponible.
+- Bitacora (/admin/auditoria): Registro inmutable con fecha, actor_id, entidad afectada y detalle de cada modificacion.
+
+================================================================================
+12. SISTEMA DE DISENO LUXURY DARK, FOOTER CORPORATIVO Y UX MOVIL
+================================================================================
+
+A. Paleta Cromatica Oficial Luxury Dark:
+- Background Base: #030B1A (Azul Noche Profundo Aranjuez).
+- Superficies y Modales: #061734 y #081B3D con bordes sutiles en rgba(255, 255, 255, 0.1).
+- Acento Oro: #D4A24C (Oro Metalico de Alta Gama).
+- Acento Naranja: #FF6B1A (Atardecer Cochabambino).
+- Textos: #FFFFFF para titulos principales y #CBD5E1 para parrafos secundarios (WCAG AAA).
+
+B. Erradicacion de Cajas Blancas Residuales:
+- En globals.css se aplicaron selectores de alta especificidad sobre .store-card, .product-card, .promo-card, .event-card, .notice, .search-field, .modal y formularios, eliminando cualquier fondo blanco heredado que cause texto blanco sobre fondo blanco.
+
+C. Experiencia Movil Responsive:
+- Navbar: Sin desbordamientos de botones ni solapamiento de texto en pantallas < 768px.
+- Slide-over Drawer: Menu lateral fluido que despliega enlaces, perfil, puntos y botones de sesion.
+- Floating Bottom Dock (MobileBottomDock.tsx): Barra flotante de 5 iconos ergonomicos (Inicio, PaseoYa, Mi QR pulsante central, Jarvis, Carrito), acompanada de espaciado pb-20 md:pb-0 para no tapar contenido inferior.
+
+D. Footer Corporativo Ordenado:
+- Bloques claros con horarios: Locales comerciales (10:00 a 21:00) vs Terrazas Gourmet El Cuarto (Piso 4, hasta las 02:00).
+- Datos de infraestructura: Estacionamiento subterraneo 24/7 (200+ plazas), Red WiFi libre 'PaseoAranjuez_Gratis', Farmacorp y cajeros 24 horas.
+- Canales oficiales: WhatsApp de atencion al cliente y terminos de servicio.
+
+================================================================================
+13. AUDITORIA DE SEGURIDAD, BASE DE DATOS Y PREVENCION DE VULNERABILIDADES
+================================================================================
+
+- Validacion de Schemas: Todo campo numerico se parsea explicitamente con parseInt/parseFloat; cadenas de texto se sanean y limitan en longitud maxima.
+- Inyeccion SQL: Todas las consultas se canalizan mediante el cliente tipado de Supabase (PostgREST) usando consultas parametrizadas.
+- Passwords: Se almacenan exclusivamente como hashes Bcrypt (salt rounds 12).
+- Rate Limiting: Aplicado en endpoints criticos (/api/paseo/jarvis, auth, scanner) mediante funcion rateLimit para mitigar ataques de fuerza bruta o saturacion de tokens.
+- Restriccion CORS y Headers: Seguridad garantizada mediante cookies SameSite y protecciones nativas de Next.js App Router.
+
+================================================================================
+14. BATERIA EXHAUSTIVA DE VECTORES DE PRUEBA (25 TESTS OBLIGATORIOS)
+================================================================================
+
+La IA auditora debe evaluar formalmente el cumplimiento de cada uno de los siguientes 25 vectores de prueba:
+
+[ ] TEST 01 - Identidad de Marca: Verificar que el isotipo oficial conserve su proporcion sin deformarse ni recortarse, y este acompanado por el texto "Paseo Aranjuez".
+[ ] TEST 02 - Pureza del Admin: Verificar que al iniciar sesion como admin no aparezcan los accesos de cliente (PaseoYa, Jarvis, Mis Puntos, Carrito) en la navegacion principal.
+[ ] TEST 03 - Estado de Sesion: Verificar que al estar logueado se muestre con claridad el nombre del usuario, su rol, su saldo de puntos y un boton funcional para cerrar sesion.
+[ ] TEST 04 - Modal Cliente: Al crear o editar un usuario con rol 'cliente', verificar que no aparezca ningun selector de tiendas ni campos comerciales, y que se expongan los Puntos Paseo con su nivel VIP correspondiente.
+[ ] TEST 05 - Modal Comercio (Edicion): Al editar un usuario 'comercio', verificar que se exhiba su establecimiento actualmente operado y se ofrezca opcion para reasignarlo o mantenerlo.
+[ ] TEST 06 - Modal Comercio (Creacion): Al crear un nuevo dueno 'comercio', verificar que permita elegir entre vincular una tienda existente o crear un nuevo local en el acto (nombre, categoria, piso, local, telefono).
+[ ] TEST 07 - Modal Empleado: Al crear o editar un 'empleado', verificar que sea mandatorio asignarle una tienda de operacion para caja y pedidos.
+[ ] TEST 08 - Modal Admin: Verificar que el modal de usuario 'admin' certifique privilegios globales sin campos de tiendas ni puntos de cliente.
+[ ] TEST 09 - Reversion de Empleado a Cliente: En /comercio/empleados, verificar que la accion "Volver a Cliente" remueva el avatar_url de tienda y devuelva la cuenta al rol 'cliente' sin borrar el usuario.
+[ ] TEST 10 - Aislamiento entre Tiendas: Verificar que un comercio A no pueda ver, editar ni eliminar productos, promociones, empleados u ordenes del comercio B.
+[ ] TEST 11 - Restriccion de Empleado: Verificar que un empleado no pueda ingresar al panel de productos ni promociones, limitandose a pedidos del dia y escaner.
+[ ] TEST 12 - Subida a ImgBB: Verificar que el componente ImageDragDropUploader realice la carga a /api/upload y persista la URL permanente https://i.ibb.co en Supabase.
+[ ] TEST 13 - Catalogo Omnicanal: Verificar que la busqueda para clientes devuelva tanto las 60 tiendas fisicas del complejo como los productos de venta digital.
+[ ] TEST 14 - Tiendas sin Productos Online: Verificar que las tiendas que no venden por Click & Collect no desaparezcan del catalogo y muestren su ficha presencial (piso, local, horario).
+[ ] TEST 15 - Jarvis STT (Auto-Envio): Al hablar por el microfono de Jarvis y detectar silencio, verificar que el evento onend envie la consulta de inmediato sin exigir clic adicional.
+[ ] TEST 16 - Jarvis STT (Compatibilidad): Verificar que la configuracion de idioma use navigator.language y es-419 para evitar errores de modelo no disponible.
+[ ] TEST 17 - Jarvis TTS (Diccion): Verificar que la lectura por voz filtre codigos markdown, titulos con hashes y emojis para pronunciar unicamente texto natural.
+[ ] TEST 18 - Jarvis TTS (Anti-Congelamiento): Verificar la presencia del temporizador keep-alive para evitar que Chromium pause la locucion tras 15 segundos.
+[ ] TEST 19 - Sincronizacion del Orbe: Verificar que el componente JarvisOrb refleje los estados 'idle', 'listening', 'thinking' y 'speaking' y responda al clic.
+[ ] TEST 20 - Camara HTML5 en Totem: En /cliente/puntos, verificar la solicitud de permisos de video y despliegue del lector QR.
+[ ] TEST 21 - Geocerca GPS: Verificar el calculo de proximidad respecto a las coordenadas (-17.3739, -66.1558) con radio de 200m y soporte de ingreso manual.
+[ ] TEST 22 - Escaner de Caja: En /comercio/scanner, verificar la validacion de coincidencia de tienda antes de acreditar puntos y marcar la orden como entregada.
+[ ] TEST 23 - Contraste Luxury Dark: Verificar que no existan cuadros blancos residuales con texto blanco ilegible en modales, tarjetas, notices o tablas.
+[ ] TEST 24 - Dock y Margen Movil: Verificar que el pie de pagina y los paneles incluyan pb-20 md:pb-0 para no quedar ocultos detras de la barra flotante.
+[ ] TEST 25 - Footer Corporativo: Verificar que el pie de pagina exponga en bloques legibles los horarios del mall, terrazas El Cuarto, estacionamiento 24h y canales de WhatsApp.
+
+================================================================================
+15. RUBRICA DE CALIFICACION Y MATRIZ DE DICTAMEN FINAL
+================================================================================
+
+Ponderacion Oficial de Auditoria:
+- Identidad de Marca, Logo y Pureza Admin: 15%
+- Control de Acceso (RBAC), Roles y Modales: 25%
+- Módulo de Voz y Concierge Jarvis IA: 20%
+- Hardware, Camaras y Escaneres QR: 10%
+- Diseno Visual Luxury Dark, Footer y Mobile: 15%
+- Seguridad, Base de Datos e Integridad: 15%
+
+Escala de Dictamen:
+- 90 a 100 puntos: APROBADO PARA PRODUCCION (Excelente nivel arquitectonico y UX).
+- 75 a 89 puntos: APROBADO CON OBSERVACIONES MENORES.
+- Menos de 75 puntos: RECHAZADO (Requiere refactorizacion antes del pase a produccion).
+================================================================================

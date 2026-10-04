@@ -2,7 +2,7 @@ import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiError, body, db, rateLimit, string, session } from './server';
 import { catalog } from './api';
-import { dateTime, User } from './model';
+import { dateTime, User, Order, Store, Product } from './model';
 
 export async function askJarvis(req: NextRequest) {
   rateLimit('jarvis:' + (req.headers.get('x-forwarded-for') || 'local'), 30);
@@ -28,18 +28,20 @@ export async function askJarvis(req: NextRequest) {
   // Obtener sesión del usuario actual (si está logueado con cookie segura)
   const token = req.cookies.get('paseo_token')?.value;
   let currentUser: User | null = null;
-  let userOrders: any[] = [];
+  let userOrders: Order[] = [];
   try {
     currentUser = await session(token);
     if (currentUser) {
       const client = db();
       const { data: orders } = await client
         .from('paseo_orders')
-        .select('id,pickup_code,status,total,created_at,store:paseo_stores(id,name,floor,sector,local_num,schedule),items:paseo_order_items(product_name,quantity,unit_price)')
+        .select(
+          'id,pickup_code,status,total,created_at,store:paseo_stores(id,name,floor,sector,local_num,schedule),items:paseo_order_items(product_name,quantity,unit_price)',
+        )
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false })
         .limit(10);
-      userOrders = orders || [];
+      userOrders = (orders || []) as unknown as Order[];
     }
   } catch (err) {
     console.error('Error fetching user context for Jarvis:', err);
@@ -86,7 +88,8 @@ export async function askJarvis(req: NextRequest) {
   // Perfil del usuario para que Jarvis lo atienda como asistente de compras y fidelidad
   const pts = currentUser?.points || 0;
   const nivelVip = pts >= 1000 ? 'Platino' : pts >= 500 ? 'Oro' : pts >= 200 ? 'Plata' : 'Bronce';
-  const ptsParaSiguiente = pts < 200 ? 200 - pts : pts < 500 ? 500 - pts : pts < 1000 ? 1000 - pts : 0;
+  const ptsParaSiguiente =
+    pts < 200 ? 200 - pts : pts < 500 ? 500 - pts : pts < 1000 ? 1000 - pts : 0;
   const proxNivel = pts < 200 ? 'Plata' : pts < 500 ? 'Oro' : pts < 1000 ? 'Platino' : 'Máximo';
 
   const userContext = currentUser
@@ -96,7 +99,10 @@ export async function askJarvis(req: NextRequest) {
         correo: currentUser.email,
         puntos_actuales: pts,
         nivel_vip: nivelVip,
-        puntos_para_siguiente_nivel: ptsParaSiguiente > 0 ? `${ptsParaSiguiente} pts para nivel ${proxNivel}` : '¡Nivel VIP Platino alcanzado!',
+        puntos_para_siguiente_nivel:
+          ptsParaSiguiente > 0
+            ? `${ptsParaSiguiente} pts para nivel ${proxNivel}`
+            : '¡Nivel VIP Platino alcanzado!',
         pedidos_recientes: userOrders.map((o) => ({
           codigo_retiro: o.pickup_code,
           tienda: o.store?.name,
@@ -105,7 +111,7 @@ export async function askJarvis(req: NextRequest) {
           estado: o.status,
           total_bs: o.total,
           fecha: o.created_at,
-          items: (o.items || []).map((i: any) => `${i.product_name} (x${i.quantity})`),
+          items: (o.items || []).map((i) => `${i.product_name} (x${i.quantity})`),
         })),
       }
     : {
@@ -121,18 +127,27 @@ export async function askJarvis(req: NextRequest) {
     horarios: {
       locales_comerciales: 'Lunes a Domingo 10:00 - 21:00',
       mercado_gastronomico_piso_3: 'Lunes a Domingo 11:30 - 23:00',
-      terrazas_el_cuarto_piso_4: 'Lunes a Miércoles 16:00 - 00:00, Jueves a Sábado 16:00 - 02:00, Domingo 12:00 - 23:00',
-      estacionamiento_subterraneo: 'Abierto 24/7 (200+ plazas monitoreadas, tarifa preferencial por compras)',
-      cajeros_y_farmacia: 'Farmacorp en PB abierto horario extendido, cajeros automáticos 24h en ingreso América',
+      terrazas_el_cuarto_piso_4:
+        'Lunes a Miércoles 16:00 - 00:00, Jueves a Sábado 16:00 - 02:00, Domingo 12:00 - 23:00',
+      estacionamiento_subterraneo:
+        'Abierto 24/7 (200+ plazas monitoreadas, tarifa preferencial por compras)',
+      cajeros_y_farmacia:
+        'Farmacorp en PB abierto horario extendido, cajeros automáticos 24h en ingreso América',
       wifi_gratuito: 'Red PaseoAranjuez_Gratis en todo el complejo sin contraseña',
     },
     guia_por_pisos: {
-      planta_baja: 'Tecnología (Samsung Store LYNX Local L9 entrada principal, Apple Land gadgets y accesorios iPhone, Facephone fundas y cargadores), Moda Urbana y Casual (Burbank Local #104 moda boliviana urbana, Gap indumentaria americana, Puma calzado deportivo oficial, BOLD Shoes & Accessories calzado formal y carteras, Marroquinería Amore / Carrasco Collection artículos de puro cuero), Salud y Belleza (Farmacorp + Amarket farmacia y micromercado, Ópticas Pauker boutique visual, Perfumería Cosbelle perfumes de diseñador), Cafetería (Cinnabon rollos de canela calientes y café), Cultura (La Galería muro central de arte y ferias de fin de semana).',
-      piso_1: 'Moda Femenina y Juvenil (Pinkie Local #103 moda juvenil, Lili Pink ropa íntima y autocuidado, Eye Lencería corsetería fina), Sastrería y Moda Masculina (Manhattan Local #114 camisas y trajes ejecutivos, Hermassi sastrería a medida y corbatas de alta gama), Megatienda Europea (EuroStyle con Springfield, Women\'secret y Cortefiel), Accesorios (Ohanna Accesorios Local BELU lado ascensor sud joyas de acero), Denim (Kosi Jeans prendas y pantalones de mezclilla), Outdoor y Térmico (Sajama Store equipo de montaña y mochilas camping, Textilón medias y pijamas familiares), Belleza (Blush Beauty Station estación de maquillaje y skincare).',
-      piso_2: 'Accesorios y Viajes (Totto Local #203 mochilas escolares, universitarias y maletas), Abrigo y Moda (Top Collection Local #212 chamarras pesadas y abrigos), Calzado y Deporte (Gool Store zapatillas running y fútbol, Cat Lifestyle Bolivia botas de cuero y outdoor, Fair Play Kids ropa deportiva y tenis para niños), Hogar y Decoración (Hauscenter / Home Select vajillas finas y diseño para sala).',
-      piso_3: 'Mercado Gastronómico / Plaza de Comidas: DeliStanbul (shawarmas gigantes y comida turca), La Sanguchería Sede Patio (hamburguesas y sándwiches rápidos), El Guajojo (rellenos tradicionales de papa con pollo, res o mondongo), Hoy Hay (combos de hamburguesas con papas fritas), Chipotle / By Pass (alitas y snacks rápidos). Entretenimiento: Sky Games área techada con simuladores de carreras, mesas de hockey y tickets. Coworking: Cowork Estudiantil Aranjuez con mesas amplias, enchufes libres y wifi gratuito para estudiar o trabajar.',
-      piso_4: 'Terrazas Gourmet El Cuarto: terraza panorámica con 8 barras de cocina de autor, coctelería y vista a la cordillera. Restaurantes: Patanegra Taberna Española (tapas, jamón ibérico, paellas y cañas), Brocheta King (anticuchos al carbón, chorizos parrilleros y carnes), La Sanguchería Gourmet (hamburguesas artesanales en pan masa madre), Botánica Infusiones & Café (café de especialidad, tés finos calientes/helados y tortas saludables). Entretenimiento: Sky Games atracciones mecánicas infantiles.',
-      torres_corporativas: 'Pisos 5 al 11 (Torres A y B con ascensores inteligentes): Consultorios médicos y odontología especializada, despachos jurídicos y notaría corporativa, sedes centrales de agencias de marketing y empresas multinacionales.',
+      planta_baja:
+        'Tecnología (Samsung Store LYNX Local L9 entrada principal, Apple Land gadgets y accesorios iPhone, Facephone fundas y cargadores), Moda Urbana y Casual (Burbank Local #104 moda boliviana urbana, Gap indumentaria americana, Puma calzado deportivo oficial, BOLD Shoes & Accessories calzado formal y carteras, Marroquinería Amore / Carrasco Collection artículos de puro cuero), Salud y Belleza (Farmacorp + Amarket farmacia y micromercado, Ópticas Pauker boutique visual, Perfumería Cosbelle perfumes de diseñador), Cafetería (Cinnabon rollos de canela calientes y café), Cultura (La Galería muro central de arte y ferias de fin de semana).',
+      piso_1:
+        "Moda Femenina y Juvenil (Pinkie Local #103 moda juvenil, Lili Pink ropa íntima y autocuidado, Eye Lencería corsetería fina), Sastrería y Moda Masculina (Manhattan Local #114 camisas y trajes ejecutivos, Hermassi sastrería a medida y corbatas de alta gama), Megatienda Europea (EuroStyle con Springfield, Women'secret y Cortefiel), Accesorios (Ohanna Accesorios Local BELU lado ascensor sud joyas de acero), Denim (Kosi Jeans prendas y pantalones de mezclilla), Outdoor y Térmico (Sajama Store equipo de montaña y mochilas camping, Textilón medias y pijamas familiares), Belleza (Blush Beauty Station estación de maquillaje y skincare).",
+      piso_2:
+        'Accesorios y Viajes (Totto Local #203 mochilas escolares, universitarias y maletas), Abrigo y Moda (Top Collection Local #212 chamarras pesadas y abrigos), Calzado y Deporte (Gool Store zapatillas running y fútbol, Cat Lifestyle Bolivia botas de cuero y outdoor, Fair Play Kids ropa deportiva y tenis para niños), Hogar y Decoración (Hauscenter / Home Select vajillas finas y diseño para sala).',
+      piso_3:
+        'Mercado Gastronómico / Plaza de Comidas: DeliStanbul (shawarmas gigantes y comida turca), La Sanguchería Sede Patio (hamburguesas y sándwiches rápidos), El Guajojo (rellenos tradicionales de papa con pollo, res o mondongo), Hoy Hay (combos de hamburguesas con papas fritas), Chipotle / By Pass (alitas y snacks rápidos). Entretenimiento: Sky Games área techada con simuladores de carreras, mesas de hockey y tickets. Coworking: Cowork Estudiantil Aranjuez con mesas amplias, enchufes libres y wifi gratuito para estudiar o trabajar.',
+      piso_4:
+        'Terrazas Gourmet El Cuarto: terraza panorámica con 8 barras de cocina de autor, coctelería y vista a la cordillera. Restaurantes: Patanegra Taberna Española (tapas, jamón ibérico, paellas y cañas), Brocheta King (anticuchos al carbón, chorizos parrilleros y carnes), La Sanguchería Gourmet (hamburguesas artesanales en pan masa madre), Botánica Infusiones & Café (café de especialidad, tés finos calientes/helados y tortas saludables). Entretenimiento: Sky Games atracciones mecánicas infantiles.',
+      torres_corporativas:
+        'Pisos 5 al 11 (Torres A y B con ascensores inteligentes): Consultorios médicos y odontología especializada, despachos jurídicos y notaría corporativa, sedes centrales de agencias de marketing y empresas multinacionales.',
     },
     usuario: userContext,
     stores: knowledge.stores.map((s) => ({
@@ -232,7 +247,7 @@ DATOS EN TIEMPO REAL: ${JSON.stringify(context)}`;
           },
           signal: AbortSignal.timeout(18000),
           body: JSON.stringify(requestBody),
-        }
+        },
       );
 
       if (response.ok) {
@@ -269,49 +284,133 @@ DATOS EN TIEMPO REAL: ${JSON.stringify(context)}`;
 
   // Motor Experto Resiliente de Asistente si la API de IA externa tiene timeout o no está disponible
   let reply = '';
-  let matchedStores: any[] = [];
-  let matchedProducts: any[] = [];
+  let matchedStores: Store[] = [];
+  const matchedProducts: Product[] = [];
 
   const lowerQuery = query;
 
-  if (lowerQuery.includes('pedido') || lowerQuery.includes('orden') || lowerQuery.includes('codigo') || lowerQuery.includes('retiro') || lowerQuery.includes('compr')) {
+  if (
+    lowerQuery.includes('pedido') ||
+    lowerQuery.includes('orden') ||
+    lowerQuery.includes('codigo') ||
+    lowerQuery.includes('retiro') ||
+    lowerQuery.includes('compr')
+  ) {
     if (currentUser && userOrders.length > 0) {
       const latest = userOrders[0];
-      const itemsStr = (latest.items || []).map((it: any) => `${it.product_name} (x${it.quantity})`).join(', ');
-      reply = `¡Hola ${currentUser.name}! Tienes un pedido registrado en **${latest.store?.name || 'la tienda'}** por un total de **Bs. ${latest.total}**.\n\n📍 **Ubicación de retiro:** ${latest.store?.floor || 'Piso asignado'} (${latest.store?.local_num || ''}).\n🔑 **Código de recogida:** ${latest.pickup_code}\n📋 **Estado:** ${latest.status === 'listo_para_recoger' ? '✅ ¡Listo para retirar en el local!' : '⏳ En preparación en la tienda.'}` + (itemsStr ? `\n🛍️ **Artículos:** ${itemsStr}` : '') + `\n\nPuedes mostrar este código o tu credencial QR en caja para recoger sin demoras.`;
+      const itemsStr = (latest.items || [])
+        .map((it) => `${it.product_name} (x${it.quantity})`)
+        .join(', ');
+      reply =
+        `¡Hola ${currentUser.name}! Tienes un pedido registrado en **${latest.store?.name || 'la tienda'}** por un total de **Bs. ${latest.total}**.\n\n📍 **Ubicación de retiro:** ${latest.store?.floor || 'Piso asignado'} (${latest.store?.local_num || ''}).\n🔑 **Código de recogida:** ${latest.pickup_code}\n📋 **Estado:** ${latest.status === 'listo_para_recoger' ? '✅ ¡Listo para retirar en el local!' : '⏳ En preparación en la tienda.'}` +
+        (itemsStr ? `\n🛍️ **Artículos:** ${itemsStr}` : '') +
+        `\n\nPuedes mostrar este código o tu credencial QR en caja para recoger sin demoras.`;
       matchedStores = latest.store ? [latest.store] : [];
     } else if (currentUser) {
       reply = `Hola ${currentUser.name}, actualmente no tienes pedidos activos pendientes de retiro en Paseo Aranjuez. Puedes explorar el catálogo de PaseoYa para comprar y retirar con Click & Collect.`;
     } else {
       reply = `Para consultar tus pedidos activos, códigos de retiro y compras recientes, por favor inicia sesión con tu cuenta de cliente en Paseo Aranjuez.`;
     }
-  } else if (lowerQuery.includes('punto') || lowerQuery.includes('puntos') || lowerQuery.includes('nivel') || lowerQuery.includes('vip') || lowerQuery.includes('canj')) {
+  } else if (
+    lowerQuery.includes('punto') ||
+    lowerQuery.includes('puntos') ||
+    lowerQuery.includes('nivel') ||
+    lowerQuery.includes('vip') ||
+    lowerQuery.includes('canj')
+  ) {
     if (currentUser) {
       const currentPts = currentUser.points || 0;
-      const nivel = currentPts >= 1000 ? 'Platino' : currentPts >= 500 ? 'Oro' : currentPts >= 200 ? 'Plata' : 'Bronce';
-      const meta = currentPts < 200 ? 200 - currentPts : currentPts < 500 ? 500 - currentPts : currentPts < 1000 ? 1000 - currentPts : 0;
-      const siguienteNivel = currentPts < 200 ? 'Plata' : currentPts < 500 ? 'Oro' : currentPts < 1000 ? 'Platino' : 'VIP Máximo';
-      
-      reply = `¡Hola ${currentUser.name}! Tienes un saldo actual de **${currentPts} Paseo Points** (Nivel **${nivel}**).` +
-        (meta > 0 ? `\nTe faltan solo **${meta} puntos** para subir al nivel **${siguienteNivel}** y desbloquear mayores beneficios.` : '\n¡Felicidades, tienes el máximo nivel VIP!') +
+      const nivel =
+        currentPts >= 1000
+          ? 'Platino'
+          : currentPts >= 500
+            ? 'Oro'
+            : currentPts >= 200
+              ? 'Plata'
+              : 'Bronce';
+      const meta =
+        currentPts < 200
+          ? 200 - currentPts
+          : currentPts < 500
+            ? 500 - currentPts
+            : currentPts < 1000
+              ? 1000 - currentPts
+              : 0;
+      const siguienteNivel =
+        currentPts < 200
+          ? 'Plata'
+          : currentPts < 500
+            ? 'Oro'
+            : currentPts < 1000
+              ? 'Platino'
+              : 'VIP Máximo';
+
+      reply =
+        `¡Hola ${currentUser.name}! Tienes un saldo actual de **${currentPts} Paseo Points** (Nivel **${nivel}**).` +
+        (meta > 0
+          ? `\nTe faltan solo **${meta} puntos** para subir al nivel **${siguienteNivel}** y desbloquear mayores beneficios.`
+          : '\n¡Felicidades, tienes el máximo nivel VIP!') +
         `\n\n💡 **¿Cómo sumar más puntos?** Cada Bs. 1 gastado en PaseoYa te suma 1 punto. Puedes canjearlos por rollitos en Cinnabon, combos de cine o descuentos en las Terrazas El Cuarto.`;
     } else {
       reply = `En el programa de fidelidad de Paseo Aranjuez ganas 1 punto por cada Bs. 1 de consumo. Accedes a niveles Bronce, Plata, Oro y Platino con beneficios exclusivos en tiendas y terrazas. ¡Inicia sesión para ver tu puntaje acumulado!`;
     }
-  } else if (lowerQuery.includes('cuarto') || lowerQuery.includes('terraza') || lowerQuery.includes('cena') || lowerQuery.includes('bar') || lowerQuery.includes('trago') || lowerQuery.includes('vino')) {
+  } else if (
+    lowerQuery.includes('cuarto') ||
+    lowerQuery.includes('terraza') ||
+    lowerQuery.includes('cena') ||
+    lowerQuery.includes('bar') ||
+    lowerQuery.includes('trago') ||
+    lowerQuery.includes('vino')
+  ) {
     reply = `**El Cuarto** está ubicado en el **Piso 4 (Terraza Gourmet)** de Paseo Aranjuez. Es un espacio de alta cocina y mixología con una vista panorámica impresionante a la Cordillera del Tunari.\n\nTe recomiendo:\n- **Patanegra (Local 402):** Especialistas en tapas españolas, jamón serrano y tablas ibéricas.\n- **Botánica Infusiones (Local 405):** Coctelería botánica y de autor para el atardecer.\nHorario: Miércoles a Sábados hasta las 02:00.`;
-    matchedStores = knowledge.stores.filter((s) => s.floor?.toLowerCase().includes('4') || s.name.toLowerCase().includes('cuarto') || s.name.toLowerCase().includes('patanegra')).slice(0, 3);
-  } else if (lowerQuery.includes('comer') || lowerQuery.includes('comida') || lowerQuery.includes('almuer') || lowerQuery.includes('hambre') || lowerQuery.includes('restaurante')) {
+    matchedStores = knowledge.stores
+      .filter(
+        (s) =>
+          s.floor?.toLowerCase().includes('4') ||
+          s.name.toLowerCase().includes('cuarto') ||
+          s.name.toLowerCase().includes('patanegra'),
+      )
+      .slice(0, 3);
+  } else if (
+    lowerQuery.includes('comer') ||
+    lowerQuery.includes('comida') ||
+    lowerQuery.includes('almuer') ||
+    lowerQuery.includes('hambre') ||
+    lowerQuery.includes('restaurante')
+  ) {
     reply = `Para comer en Paseo Aranjuez tienes opciones fantásticas según tu plan:\n\n1. **Piso 3 (Plaza de Comidas / Mercado Gastronómico):**\n   - **DeliStanbul (Local 301):** Shawarma gigante y cocina turca.\n   - **La Sanguchería (Local 302):** Hamburguesas artesanales de primer nivel.\n   - **El Guajojo (Local 303):** Sabores tradicionales bolivianos (silpancho, pique).\n   - **Brocheta King (Local 304):** Brochetas y anticuchos a la brasa.\n2. **Piso 4 (Terrazas El Cuarto):** Para cenas especiales y cócteles.\n3. **Planta Baja:** Rolls de canela y café en **Cinnabon (PB-09)**.`;
     matchedStores = knowledge.stores.filter((s) => s.category === 'gastronomia').slice(0, 3);
-  } else if (lowerQuery.includes('tecnolog') || lowerQuery.includes('samsung') || lowerQuery.includes('celular') || lowerQuery.includes('iphone') || lowerQuery.includes('apple') || lowerQuery.includes('cargador')) {
+  } else if (
+    lowerQuery.includes('tecnolog') ||
+    lowerQuery.includes('samsung') ||
+    lowerQuery.includes('celular') ||
+    lowerQuery.includes('iphone') ||
+    lowerQuery.includes('apple') ||
+    lowerQuery.includes('cargador')
+  ) {
     reply = `En tecnología y telefonía encuentras todo en **Planta Baja**:\n- **Samsung Store oficial (LYNX) (Local L9):** Equipos Galaxy S, Z Fold/Flip, tablets y asesoría técnica oficial.\n- **Apple Land (Local PB-12):** Accesorios para iPhone, fundas MagSafe y cargadores certificados.\n- **Facephone (Local PB-10):** Protectores cerámicos, soportes y cables de carga rápida.\n- **Burbank (Local 104):** Estilo moderno y tecnología lifestyle.`;
     matchedStores = knowledge.stores.filter((s) => s.category === 'tecnologia').slice(0, 3);
-  } else if (lowerQuery.includes('parqueo') || lowerQuery.includes('estacion') || lowerQuery.includes('auto') || lowerQuery.includes('cochera')) {
+  } else if (
+    lowerQuery.includes('parqueo') ||
+    lowerQuery.includes('estacion') ||
+    lowerQuery.includes('auto') ||
+    lowerQuery.includes('cochera')
+  ) {
     reply = `Paseo Aranjuez cuenta con un **Estacionamiento Subterráneo Inteligente** con más de 200 plazas vigiladas.\n\n🚗 **Ingreso:** Por Avenida América y Calle Pantaleón Dalence.\n💡 **Sensores:** Luces LED verdes y rojas que te indican lugares libres en tiempo real.\n🎟️ **Beneficio:** Primera hora gratis presentando compras mayores a Bs. 50 en tiendas o restaurantes.`;
-  } else if (lowerQuery.includes('horario') || lowerQuery.includes('abierto') || lowerQuery.includes('cierra') || lowerQuery.includes('hora')) {
+  } else if (
+    lowerQuery.includes('horario') ||
+    lowerQuery.includes('abierto') ||
+    lowerQuery.includes('cierra') ||
+    lowerQuery.includes('hora')
+  ) {
     reply = `Los horarios de atención en Paseo Aranjuez son:\n- **Locales comerciales y tiendas:** Lunes a Domingo de 10:00 a 21:00.\n- **Mercado Gastronómico (Piso 3):** Lunes a Domingo de 11:30 a 23:00.\n- **Terrazas Gourmet El Cuarto (Piso 4):** Miércoles a Sábados de 16:00 a 02:00.\n- **Farmacorp y Cajeros (PB):** Acceso permanente en ingreso de Av. América.`;
-  } else if (lowerQuery.includes('juego') || lowerQuery.includes('niño') || lowerQuery.includes('cine') || lowerQuery.includes('pelicula') || lowerQuery.includes('sky game')) {
+  } else if (
+    lowerQuery.includes('juego') ||
+    lowerQuery.includes('niño') ||
+    lowerQuery.includes('cine') ||
+    lowerQuery.includes('pelicula') ||
+    lowerQuery.includes('sky game')
+  ) {
     reply = `¡Para entretenimiento tienes:\n- **Sky Games:** Simuladores arcade, pistas de air hockey y juegos infantiles en **Piso 3 (Local 306)** y atracciones mecánicas en **Piso 4**.\n- **Prime Cinemas:** Salas de cine modernas en Niveles 3 y 4 con dulcería y sonido Dolby Atmos.\n- **Fair Play Kids (Local 218):** Moda deportiva para los pequeños de la casa.`;
     matchedStores = knowledge.stores.filter((s) => s.category === 'entretenimiento').slice(0, 3);
   } else {

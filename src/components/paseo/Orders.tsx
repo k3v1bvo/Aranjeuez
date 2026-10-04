@@ -165,44 +165,24 @@ export function Orders({ commerce = false }: { commerce?: boolean }) {
                 )}
               </div>
               <div className="order-actions">
-                {!commerce && o.status === 'listo' && (
-                  <button className="button" onClick={() => ask(o, 'llego')}>
-                    <MapPin size={17} /> Ya estoy en el Paseo
-                  </button>
-                )}
-                {commerce && ['recibido', 'confirmado', 'preparando'].includes(o.status) && (
+                {commerce && ['pendiente', 'en_preparacion'].includes(o.status) && (
                   <button
                     className="button"
                     onClick={() =>
-                      ask(
-                        o,
-                        (
-                          {
-                            recibido: 'confirmado',
-                            confirmado: 'preparando',
-                            preparando: 'listo',
-                          } as Record<string, OrderStatus>
-                        )[o.status],
-                      )
+                      ask(o, o.status === 'pendiente' ? 'en_preparacion' : 'listo_para_recoger')
                     }
                   >
-                    {
-                      (
-                        {
-                          recibido: 'Confirmar pedido',
-                          confirmado: 'Comenzar preparación',
-                          preparando: 'Marcar listo para retirar',
-                        } as Record<string, string>
-                      )[o.status]
-                    }
+                    {o.status === 'pendiente'
+                      ? 'Comenzar preparación'
+                      : 'Marcar listo para recoger'}
                   </button>
                 )}
-                {commerce && ['listo', 'llego'].includes(o.status) && (
+                {commerce && ['listo_para_recoger'].includes(o.status) && (
                   <button className="button" onClick={() => ask(o, 'entregado')}>
                     <PackageCheck size={17} /> Validar entrega y cobro
                   </button>
                 )}
-                {((!commerce && o.status === 'recibido') ||
+                {((!commerce && o.status === 'pendiente') ||
                   (commerce && !['entregado', 'cancelado'].includes(o.status))) && (
                   <button className="text-button danger" onClick={() => ask(o, 'cancelado')}>
                     Cancelar pedido

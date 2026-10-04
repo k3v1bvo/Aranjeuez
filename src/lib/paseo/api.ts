@@ -1,5 +1,8 @@
+import { employees, operationalStores } from './team';
 import 'server-only';
 import bcrypt from 'bcryptjs';
+import { SignJWT } from 'jose';
+import { createHash } from 'node:crypto';
 import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -10,6 +13,7 @@ import {
   failure,
   number,
   ownsStore,
+  operatesStore,
   passwordValue,
   rateLimit,
   requireUser,
@@ -21,8 +25,26 @@ import {
 } from './server';
 import type { Catalog, User } from './model';
 import { askJarvis } from './jarvis-server';
-import { STATIONS, FLOORS, MIN_MINUTES_ON_FLOOR, DEFAULT_QR_CONFIG, getStationPoints, type QrPointsConfig, findStation, laPazHour, bucketFor, type TimeBucket } from './stations';
-import { sendPaseoWelcomeEmail, sendPaseoOrderCustomerEmail, sendPaseoOrderMerchantEmail, sendPaseoOrderStatusEmail, sendPaseoPasswordRecoveryEmail, sendPaseoMerchantPromotedEmail } from './email';
+import {
+  STATIONS,
+  FLOORS,
+  MIN_MINUTES_ON_FLOOR,
+  DEFAULT_QR_CONFIG,
+  getStationPoints,
+  type QrPointsConfig,
+  findStation,
+  laPazHour,
+  bucketFor,
+  type TimeBucket,
+} from './stations';
+import {
+  sendPaseoWelcomeEmail,
+  sendPaseoOrderCustomerEmail,
+  sendPaseoOrderMerchantEmail,
+  sendPaseoOrderStatusEmail,
+  sendPaseoPasswordRecoveryEmail,
+  sendPaseoMerchantPromotedEmail,
+} from './email';
 
 const ORDER_FIELDS =
   '*,store:paseo_stores(id,name,floor,sector,local_num,schedule,reference),user:paseo_users(id,name,email),items:paseo_order_items(*)';
@@ -121,32 +143,48 @@ async function auth(req: NextRequest) {
     );
 
     if (record && record.is_active) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-      let randomPart = '';
-      for (let i = 0; i < 6; i++) {
-        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      const tempPassword = `Aranjuez-${randomPart}`;
-      const hashedPassword = await bcrypt.hash(tempPassword, 12);
-
+      const secret = process.env.JWT_SECRET;
+      if (!secret || secret.length < 32)
+        throw new ApiError(503, 'Configuración de recuperación no disponible.');
+      const token = await new SignJWT({ purpose: 'password-reset' })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setSubject(record.id)
+        .setJti(randomUUID())
+        .setIssuedAt()
+        .setExpirationTime('30m')
+        .sign(new TextEncoder().encode(secret));
       checked(
         await db()
-          .from('paseo_users')
-          .update({ password: hashedPassword })
-          .eq('id', record.id),
+          .from('paseo_password_resets')
+          .insert({
+            token_hash: createHash('sha256').update(token).digest('hex'),
+            user_id: record.id,
+            expires_at: new Date(Date.now() + 30 * 60000).toISOString(),
+          }),
       );
-
-      void sendPaseoPasswordRecoveryEmail({
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+      await sendPaseoPasswordRecoveryEmail({
         to: record.email,
         name: record.name,
-        tempPassword,
+        resetUrl: appUrl + '/auth/recuperar#token=' + encodeURIComponent(token),
       });
     }
-
     return NextResponse.json({
       ok: true,
-      message: 'Si el correo está registrado, recibirás un mensaje con tu nueva contraseña temporal.',
+      message: 'Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.',
     });
+  }
+  if (data.action === 'reset_password') {
+    rateLimit('reset:' + (req.headers.get('x-forwarded-for') || 'local'), 10);
+    const token = string(data.token, 'Enlace', 20, 2000);
+    const hash = await bcrypt.hash(passwordValue(data.password), 12);
+    checked(
+      await db().rpc('paseo_reset_password', {
+        p_hash: createHash('sha256').update(token).digest('hex'),
+        p_password: hash,
+      }),
+    );
+    return NextResponse.json({ ok: true });
   }
 
   // 2. Cambio de contraseña desde el perfil
@@ -159,11 +197,7 @@ async function auth(req: NextRequest) {
     }
 
     const record = checked(
-      await db()
-        .from('paseo_users')
-        .select('password')
-        .eq('id', user.id)
-        .single(),
+      await db().from('paseo_users').select('password').eq('id', user.id).single(),
     );
     const valid = await bcrypt.compare(currentPass, record?.password || '');
     if (!valid) {
@@ -171,12 +205,7 @@ async function auth(req: NextRequest) {
     }
 
     const hashedPassword = await bcrypt.hash(newPass, 12);
-    checked(
-      await db()
-        .from('paseo_users')
-        .update({ password: hashedPassword })
-        .eq('id', user.id),
-    );
+    checked(await db().from('paseo_users').update({ password: hashedPassword }).eq('id', user.id));
     return NextResponse.json({
       ok: true,
       message: 'Tu contraseña ha sido actualizada con éxito.',
@@ -190,12 +219,7 @@ async function auth(req: NextRequest) {
     const phone = data.phone ? string(data.phone, 'Celular', 5, 25) : null;
     const birthday = data.birthday ? string(data.birthday, 'Fecha de nacimiento', 10, 10) : null;
 
-    checked(
-      await db()
-        .from('paseo_users')
-        .update({ name, phone, birthday })
-        .eq('id', user.id),
-    );
+    checked(await db().from('paseo_users').update({ name, phone, birthday }).eq('id', user.id));
 
     const updated = checked(
       await db().from('paseo_users').select(USER_FIELDS).eq('id', user.id).single(),
@@ -254,7 +278,6 @@ async function auth(req: NextRequest) {
   const password = passwordValue(data.password);
 
   if (data.action === 'register') {
-    const isMerchant = data.accountType === 'comercio' || Boolean(data.storeName);
     const name = string(data.name, 'Nombre', 2, 80);
     const phone = data.phone ? string(data.phone, 'Celular', 5, 25) : null;
     const birthday = data.birthday ? string(data.birthday, 'Fecha de nacimiento', 10, 10) : null;
@@ -278,37 +301,10 @@ async function auth(req: NextRequest) {
       }),
     );
 
-    if (isMerchant) {
-      checked(
-        await db()
-          .from('paseo_users')
-          .update({ role: 'comercio' })
-          .eq('id', id),
-      );
-
-      const storeName = string(data.storeName || `${name} Store`, 'Nombre del comercio', 2, 100);
-      const storeCategory = string(data.storeCategory || 'Comercio General', 'Categoría', 2, 50);
-      const storeFloor = string(data.storeFloor || 'Piso 1', 'Piso', 1, 50);
-      const storeLocal = string(data.storeLocal || 'Por asignar', 'Local', 1, 50);
-      const storeDescription = string(data.storeDescription || '', 'Descripción', 0, 500);
-
-      checked(
-        await db().from('paseo_stores').insert({
-          name: storeName,
-          category: storeCategory,
-          floor: storeFloor,
-          local_num: storeLocal,
-          phone: phone,
-          description: storeDescription,
-          owner_id: id,
-          is_active: true,
-        }),
-      );
-    }
-
     const user = checked(
       await db().from('paseo_users').select(USER_FIELDS).eq('id', id).single(),
     ) as User;
+    void sendPaseoWelcomeEmail(user.email, user.name, user.points);
     return signedResponse(user);
   }
 
@@ -339,6 +335,12 @@ async function orders(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(200);
     if (user.role === 'cliente') query = query.eq('user_id', user.id);
+    if (user.role === 'empleado') {
+      const storeId = user.avatar_url?.startsWith('store:') ? user.avatar_url.slice(6) : '';
+      if (!storeId) return NextResponse.json({ orders: [] });
+      await operatesStore(user, storeId);
+      query = query.eq('store_id', storeId);
+    }
     if (user.role === 'comercio') {
       const stores =
         checked(await client.from('paseo_stores').select('id').eq('owner_id', user.id)) || [];
@@ -470,11 +472,12 @@ export function codeValue(value: unknown, expected: string) {
   return string(parsed.token, 'Token QR', 8, 100);
 }
 async function scanner(req: NextRequest) {
-  const user = await requireUser(req, ['comercio', 'admin']);
+  const user = await requireUser(req, ['comercio', 'empleado', 'admin']);
   const data = await body(req);
   rateLimit(`scanner:${user.id}`, 30);
   const code = codeValue(data.code, String(data.type));
   const client = db();
+  if (user.role === 'empleado') await operatesStore(user, uuid(user.avatar_url?.slice(6)));
   if (data.type === 'user') {
     if (user.role === 'comercio') {
       const stores =
@@ -521,12 +524,11 @@ async function scanner(req: NextRequest) {
         .maybeSingle(),
     );
     if (!order) throw new ApiError(404, 'Pedido no encontrado.');
-    await ownsStore(user, order.store_id);
+    await operatesStore(user, order.store_id);
     return NextResponse.json({ order: visibleOrder(order, user) });
   }
   throw new ApiError(400, 'Tipo de código inválido.');
 }
-
 
 function parseQrPoints(locationStr: string = ''): QrPointsConfig {
   if (!locationStr) return DEFAULT_QR_CONFIG;
@@ -535,10 +537,17 @@ function parseQrPoints(locationStr: string = ''): QrPointsConfig {
     try {
       const q = JSON.parse(parts[1].trim());
       return {
-        welcome: typeof q.welcome === 'number' && q.welcome >= 0 ? Number(q.welcome) : DEFAULT_QR_CONFIG.welcome,
-        entry: typeof q.entry === 'number' && q.entry >= 0 ? Number(q.entry) : DEFAULT_QR_CONFIG.entry,
+        welcome:
+          typeof q.welcome === 'number' && q.welcome >= 0
+            ? Number(q.welcome)
+            : DEFAULT_QR_CONFIG.welcome,
+        entry:
+          typeof q.entry === 'number' && q.entry >= 0 ? Number(q.entry) : DEFAULT_QR_CONFIG.entry,
         exit: typeof q.exit === 'number' && q.exit >= 0 ? Number(q.exit) : DEFAULT_QR_CONFIG.exit,
-        minMinutes: typeof q.minMinutes === 'number' && q.minMinutes >= 0 ? Number(q.minMinutes) : DEFAULT_QR_CONFIG.minMinutes,
+        minMinutes:
+          typeof q.minMinutes === 'number' && q.minMinutes >= 0
+            ? Number(q.minMinutes)
+            : DEFAULT_QR_CONFIG.minMinutes,
       };
     } catch {
       return DEFAULT_QR_CONFIG;
@@ -550,15 +559,17 @@ function parseQrPoints(locationStr: string = ''): QrPointsConfig {
 function parseGeofence(locationStr: string = '') {
   const DEFAULT_GEOFENCE = {
     radius: 200,
-    lat: -17.37365,
-    lng: -66.15582,
-    strict: false,
+    lat: -17.3739,
+    lng: -66.1558,
+    strict: true,
     address: 'Av. América Este & Pantaleón Dalence, Cochabamba',
   };
 
   if (!locationStr) return DEFAULT_GEOFENCE;
 
-  const address = locationStr.split('|| GEOFENCE:')[0].split('|| QR_POINTS:')[0].trim() || DEFAULT_GEOFENCE.address;
+  const address =
+    locationStr.split('|| GEOFENCE:')[0].split('|| QR_POINTS:')[0].trim() ||
+    DEFAULT_GEOFENCE.address;
 
   if (locationStr.includes('|| GEOFENCE:')) {
     try {
@@ -566,8 +577,8 @@ function parseGeofence(locationStr: string = '') {
       const geo = JSON.parse(geoRaw);
       return {
         radius: Number(geo.radius) || 200,
-        lat: Number(geo.lat) || -17.37365,
-        lng: Number(geo.lng) || -66.15582,
+        lat: Number(geo.lat) || -17.3739,
+        lng: Number(geo.lng) || -66.1558,
         strict: Boolean(geo.strict),
         address,
       };
@@ -595,14 +606,14 @@ function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: numbe
 }
 
 async function checkin(req: NextRequest) {
-  const user = await requireUser(req);
+  const user = await requireUser(req, ['cliente']);
   const client = db();
-  const data = (await body(req).catch(() => ({}))) as Record<string, unknown>;
+  const data = await body(req);
   const station = findStation(typeof data.code === 'string' ? data.code : '');
   if (!station) throw new ApiError(404, 'Este código QR no pertenece al Paseo Aranjuez.');
 
-  const userLat = typeof data.userLat === 'number' ? Number(data.userLat) : null;
-  const userLng = typeof data.userLng === 'number' ? Number(data.userLng) : null;
+  const userLat = data.userLat === undefined ? null : number(data.userLat, 'Latitud', -90, 90);
+  const userLng = data.userLng === undefined ? null : number(data.userLng, 'Longitud', -180, 180);
 
   rateLimit(`checkin:${user.id}`, 20);
 
@@ -614,6 +625,8 @@ async function checkin(req: NextRequest) {
   const qrConfig = parseQrPoints(rawSettings?.location);
   let distanceToPaseo: number | null = null;
   let inGeofence: boolean | null = null;
+  if (geo.strict && (userLat === null || userLng === null))
+    throw new ApiError(400, 'Activa tu ubicación para registrar esta visita.');
   if (userLat !== null && userLng !== null) {
     distanceToPaseo = getDistanceMeters(userLat, userLng, geo.lat, geo.lng);
     inGeofence = distanceToPaseo <= geo.radius;
@@ -639,7 +652,8 @@ async function checkin(req: NextRequest) {
   ).filter((s) => !s.detail?.demo);
 
   const scanned = (code: string) => todayScans.filter((s) => s.detail?.station_code === code);
-  const rewarded = (code: string) => scanned(code).some((s) => Number(s.detail?.points_granted) > 0);
+  const rewarded = (code: string) =>
+    scanned(code).some((s) => Number(s.detail?.points_granted) > 0);
 
   let points = getStationPoints(station, qrConfig);
   let message = '';
@@ -648,7 +662,8 @@ async function checkin(req: NextRequest) {
     const welcomed = STATIONS.filter((s) => s.kind === 'bienvenida').some((s) => rewarded(s.code));
     if (welcomed) {
       points = 0;
-      message = '¡Hola de nuevo! Tu bienvenida de hoy ya fue sumada. Recorre los pisos para ganar más puntos.';
+      message =
+        '¡Hola de nuevo! Tu bienvenida de hoy ya fue sumada. Recorre los pisos para ganar más puntos.';
     }
   } else if (rewarded(station.code)) {
     points = 0;
@@ -668,41 +683,13 @@ async function checkin(req: NextRequest) {
     }
   }
 
-  if (points > 0) {
-    checked(
-      await client.from('paseo_point_movements').insert({
-        user_id: user.id,
-        amount: points,
-        reason: `Recorrido · ${station.name}`,
-      }),
-    );
-    const current = checked(
-      await client.from('paseo_users').select('points,lifetime_points').eq('id', user.id).single(),
-    );
-    if (current) {
-      checked(
-        await client
-          .from('paseo_users')
-          .update({
-            points: (current.points || 0) + points,
-            lifetime_points: (current.lifetime_points || 0) + points,
-          })
-          .eq('id', user.id),
-      );
-    }
-    message =
-      station.kind === 'bienvenida'
-        ? `¡Bienvenido al Paseo Aranjuez! Sumaste +${points} puntos.`
-        : `${station.name}: sumaste +${points} ${points === 1 ? 'punto' : 'puntos'}.`;
-  }
-
-  // Registro interno del recorrido (solo visible para administración)
-  try {
-    await client.from('paseo_audit').insert({
-      actor_id: user.id,
-      action: 'telemetry_scan',
-      entity: 'heat_telemetry',
-      detail: {
+  points = checked(
+    await client.rpc('paseo_checkin', {
+      p_actor: user.id,
+      p_points: points,
+      p_min_minutes: qrConfig.minMinutes,
+      p_daily_limit: 100,
+      p_detail: {
         station_code: station.code,
         totem_code: station.code,
         totem_name: station.name,
@@ -712,7 +699,6 @@ async function checkin(req: NextRequest) {
         x: station.x,
         y: station.y,
         z: station.z,
-        points_granted: points,
         type: 'totem_scan',
         user_name: user.name,
         lat: userLat,
@@ -720,10 +706,13 @@ async function checkin(req: NextRequest) {
         distance_meters: distanceToPaseo,
         in_geofence: inGeofence,
       },
-    });
-  } catch {
-    // El registro interno nunca debe bloquear al cliente
-  }
+    }),
+  );
+  message =
+    points > 0
+      ? station.name + ': sumaste ' + points + ' puntos.'
+      : message ||
+        'Visita registrada. Ya alcanzaste la recompensa de esta visita o el límite diario.';
 
   return NextResponse.json({
     ok: true,
@@ -760,7 +749,13 @@ async function heatmap(req: NextRequest) {
     const empty = () => ({ manana: 0, mediodia: 0, tarde: 0, noche: 0 });
     const stats = new Map<
       string,
-      { total: number; real: number; demo: number; buckets: Record<TimeBucket, number>; visitors: Set<string> }
+      {
+        total: number;
+        real: number;
+        demo: number;
+        buckets: Record<TimeBucket, number>;
+        visitors: Set<string>;
+      }
     >();
     for (const s of STATIONS)
       stats.set(s.code, { total: 0, real: 0, demo: 0, buckets: empty(), visitors: new Set() });
@@ -831,7 +826,11 @@ async function heatmap(req: NextRequest) {
     const data = await body(req);
     if (data.accion === 'limpiar') {
       checked(
-        await client.from('paseo_audit').delete().eq('action', 'telemetry_scan').eq('detail->>demo', 'true'),
+        await client
+          .from('paseo_audit')
+          .delete()
+          .eq('action', 'telemetry_scan')
+          .eq('detail->>demo', 'true'),
       );
       return NextResponse.json({ ok: true, message: 'Datos de prueba eliminados.' });
     }
@@ -842,12 +841,20 @@ async function heatmap(req: NextRequest) {
         .eq('action', 'telemetry_scan')
         .eq('detail->>demo', 'true');
       if ((existing.count || 0) > 6000)
-        throw new ApiError(400, 'Ya hay suficientes datos de prueba. Límpialos antes de generar más.');
+        throw new ApiError(
+          400,
+          'Ya hay suficientes datos de prueba. Límpialos antes de generar más.',
+        );
 
       const people = (checked(
-        await client.from('paseo_users').select('id,name').eq('role', 'cliente').like('email', '%@paseo.example'),
+        await client
+          .from('paseo_users')
+          .select('id,name')
+          .eq('role', 'cliente')
+          .like('email', '%@paseo.example'),
       ) || []) as Array<{ id: string; name: string }>;
-      if (!people.length) throw new ApiError(400, 'No hay cuentas cliente de prueba (@paseo.example).');
+      if (!people.length)
+        throw new ApiError(400, 'No hay cuentas cliente de prueba (@paseo.example).');
 
       const rows = buildDemoJourneys(people, 7);
       for (let i = 0; i < rows.length; i += 500) {
@@ -861,7 +868,11 @@ async function heatmap(req: NextRequest) {
           detail: { generados: rows.length },
         }),
       );
-      return NextResponse.json({ ok: true, created: rows.length, message: `Se generaron ${rows.length} escaneos de prueba.` });
+      return NextResponse.json({
+        ok: true,
+        created: rows.length,
+        message: `Se generaron ${rows.length} escaneos de prueba.`,
+      });
     }
   }
   throw new ApiError(400, 'Acción no disponible.');
@@ -869,7 +880,7 @@ async function heatmap(req: NextRequest) {
 
 /** Genera recorridos verosímiles: horas pico, puerta de ingreso, pisos según la hora. */
 function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: number) {
-  const pick = <T,>(items: Array<[T, number]>): T => {
+  const pick = <T>(items: Array<[T, number]>): T => {
     const total = items.reduce((n, [, w]) => n + w, 0);
     let r = Math.random() * total;
     for (const [v, w] of items) {
@@ -911,12 +922,25 @@ function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: nu
     const visits = Math.round((weekend ? 70 : 45) * (0.85 + Math.random() * 0.3));
     for (let v = 0; v < visits; v++) {
       const hour = pick<number>([
-        [10, 3], [11, 4], [12, 8], [13, 10], [14, 6], [15, 4], [16, 5], [17, 7], [18, 8], [19, 10], [20, 9], [21, 5],
+        [10, 3],
+        [11, 4],
+        [12, 8],
+        [13, 10],
+        [14, 6],
+        [15, 4],
+        [16, 5],
+        [17, 7],
+        [18, 8],
+        [19, 10],
+        [20, 9],
+        [21, 5],
       ]);
       const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(
         new Date(Date.now() - d * 86400000),
       );
-      let t = new Date(`${day}T${String(hour).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:00-04:00`);
+      let t = new Date(
+        `${day}T${String(hour).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:00-04:00`,
+      );
       if (t.getTime() > Date.now()) continue;
       const person = Math.floor(Math.random() * 1000);
       const byCar = Math.random() < 0.25;
@@ -926,7 +950,11 @@ function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: nu
       };
 
       if (byCar) scan(person, 'PASEO-S1-ENTRADA', t);
-      scan(person, Math.random() < (byCar ? 0.5 : 0.7) ? 'PASEO-INGRESO-AMERICA' : 'PASEO-INGRESO-DALENCE', byCar ? later(2, 5) : t);
+      scan(
+        person,
+        Math.random() < (byCar ? 0.5 : 0.7) ? 'PASEO-INGRESO-AMERICA' : 'PASEO-INGRESO-DALENCE',
+        byCar ? later(2, 5) : t,
+      );
 
       const night = hour >= 19;
       const lunch = hour >= 12 && hour < 15;
@@ -938,7 +966,12 @@ function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: nu
       for (const [short, chance] of floorChance) {
         if (Math.random() > chance) continue;
         scan(person, `PASEO-${short}-ENTRADA`, later(3, 8));
-        if (Math.random() < 0.7) scan(person, `PASEO-${short}-SALIDA`, later(short === 'P3' ? 30 : 10, short === 'P3' ? 75 : 35));
+        if (Math.random() < 0.7)
+          scan(
+            person,
+            `PASEO-${short}-SALIDA`,
+            later(short === 'P3' ? 30 : 10, short === 'P3' ? 75 : 35),
+          );
       }
       if (Math.random() < 0.6) scan(person, 'PASEO-PB-SALIDA', later(5, 20));
       if (byCar && Math.random() < 0.8) scan(person, 'PASEO-S1-SALIDA', later(2, 6));
@@ -948,7 +981,7 @@ function buildDemoJourneys(people: Array<{ id: string; name: string }>, days: nu
 }
 
 async function purchase(req: NextRequest) {
-  const user = await requireUser(req, ['comercio', 'admin']);
+  const user = await requireUser(req, ['comercio', 'empleado', 'admin']);
   const data = await body(req);
   const id = checked(
     await db().rpc('paseo_purchase', {
@@ -959,59 +992,59 @@ async function purchase(req: NextRequest) {
       p_reference: string(data.reference, 'Referencia de compra', 3, 100),
     }),
   );
-  
-    // Telemetría silenciosa interna de ubicación (x, y, z) del local
-    try {
-      const client = db();
-      const storeInfo = checked(
-        await client
-          .from('paseo_stores')
-          .select('id,name,floor,sector,local_num')
-          .eq('id', uuid(data.storeId))
-          .maybeSingle()
-      );
-      if (storeInfo) {
-        let z = 1;
-        const fl = (storeInfo.floor || '').toLowerCase();
-        if (fl.includes('subsuelo')) z = -1;
-        else if (fl.includes('baja') || fl.includes('pb') || fl.includes('lobby')) z = 0;
-        else if (fl.includes('1')) z = 1;
-        else if (fl.includes('2')) z = 2;
-        else if (fl.includes('3') || fl.includes('terraza')) z = 3;
-        else if (fl.includes('torre') || fl.includes('4')) z = 4;
 
-        const hash = storeInfo.name
-          .split('')
-          .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-        const x = 20 + (hash % 60);
-        const y = 20 + ((hash * 7) % 60);
+  // Telemetría silenciosa interna de ubicación (x, y, z) del local
+  try {
+    const client = db();
+    const storeInfo = checked(
+      await client
+        .from('paseo_stores')
+        .select('id,name,floor,sector,local_num')
+        .eq('id', uuid(data.storeId))
+        .maybeSingle(),
+    );
+    if (storeInfo) {
+      let z = 1;
+      const fl = (storeInfo.floor || '').toLowerCase();
+      if (fl.includes('subsuelo')) z = -1;
+      else if (fl.includes('baja') || fl.includes('pb') || fl.includes('lobby')) z = 0;
+      else if (fl.includes('1')) z = 1;
+      else if (fl.includes('2')) z = 2;
+      else if (fl.includes('3') || fl.includes('terraza')) z = 3;
+      else if (fl.includes('torre') || fl.includes('4')) z = 4;
 
-        await client.from('paseo_audit').insert({
-          actor_id: user.id,
-          action: 'telemetry_scan',
-          entity: 'heat_telemetry',
-          detail: {
-            x,
-            y,
-            z,
-            floor: storeInfo.floor || `Piso ${z}`,
-            sector: storeInfo.sector || 'Comercial',
-            local_num: storeInfo.local_num,
-            store_id: storeInfo.id,
-            store_name: storeInfo.name,
-            customer_id: data.customerId,
-            amount: data.amount,
-            type: 'qr_purchase',
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-    } catch {
-      // Silencioso
+      const hash = storeInfo.name
+        .split('')
+        .reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+      const x = 20 + (hash % 60);
+      const y = 20 + ((hash * 7) % 60);
+
+      await client.from('paseo_audit').insert({
+        actor_id: user.id,
+        action: 'telemetry_scan',
+        entity: 'heat_telemetry',
+        detail: {
+          x,
+          y,
+          z,
+          floor: storeInfo.floor || `Piso ${z}`,
+          sector: storeInfo.sector || 'Comercial',
+          local_num: storeInfo.local_num,
+          store_id: storeInfo.id,
+          store_name: storeInfo.name,
+          customer_id: data.customerId,
+          amount: data.amount,
+          type: 'qr_purchase',
+          timestamp: new Date().toISOString(),
+        },
+      });
     }
+  } catch {
+    // Silencioso
+  }
 
-    return NextResponse.json(
-      { purchase: checked(await db().from('paseo_purchases').select('*').eq('id', id).single()) },
+  return NextResponse.json(
+    { purchase: checked(await db().from('paseo_purchases').select('*').eq('id', id).single()) },
     { status: 201 },
   );
 }
@@ -1040,6 +1073,9 @@ function validateFields(resource: string, data: Record<string, unknown>) {
     for (const key of ['floor', 'sector', 'local_num', 'reference', 'schedule', 'phone'])
       text(key, 200, false);
     result.owner_id = data.owner_id ? uuid(data.owner_id) : null;
+    result.image_url = data.image_url ? string(data.image_url, 'Imagen', 1, 1000) : null;
+    if (result.image_url && !/^https:\/\//.test(String(result.image_url)))
+      throw new ApiError(400, 'La imagen debe usar HTTPS.');
     flag('is_active');
   } else if (resource === 'productos') {
     text('name', 100);
@@ -1097,9 +1133,12 @@ function validateFields(resource: string, data: Record<string, unknown>) {
   } else if (resource === 'usuarios') {
     text('name', 80);
     flag('is_active');
-    if (!['cliente', 'comercio', 'admin'].includes(String(data.role)))
+    if (!['cliente', 'comercio', 'empleado', 'admin'].includes(String(data.role)))
       throw new ApiError(400, 'Rol inválido.');
     result.role = data.role;
+    result.phone = data.phone ? string(data.phone, 'Teléfono', 5, 25) : null;
+    if (data.role === 'cliente')
+      result.points = number(data.points ?? 0, 'Puntos', 0, 1000000, true);
   } else throw new ApiError(404, 'Recurso no encontrado.');
   return result;
 }
@@ -1151,7 +1190,11 @@ async function manage(req: NextRequest, resource: string) {
         fields.owner_id = user.id;
       } else if (req.method === 'PATCH') {
         const prevStore = checked(
-          await client.from('paseo_stores').select('owner_id').eq('id', uuid(data.id)).maybeSingle(),
+          await client
+            .from('paseo_stores')
+            .select('owner_id')
+            .eq('id', uuid(data.id))
+            .maybeSingle(),
         );
         if (!prevStore) throw new ApiError(404, 'Establecimiento no encontrado.');
         if (prevStore.owner_id !== user.id) {
@@ -1171,33 +1214,38 @@ async function manage(req: NextRequest, resource: string) {
     }
   }
   if (resource === 'usuarios') {
-    if (req.method === 'POST') {
-      const email = string(data.email, 'Correo', 3, 254).toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Correo inválido.');
-      fields.email = email;
+    const email = string(data.email, 'Correo', 3, 254).toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError(400, 'Correo inválido.');
+    fields.email = email;
+    if (req.method === 'POST')
       fields.password = await bcrypt.hash(passwordValue(data.password), 12);
-      if (fields.role === 'comercio') {
-        void sendPaseoMerchantPromotedEmail({
-          to: email,
-          name: String(fields.name || 'Comercio Paseo Aranjuez'),
-        }).catch((e) => console.error('[Merchant Email Error]:', e));
-      }
-    } else if (data.id === user.id && (fields.role !== 'admin' || fields.is_active !== true)) {
-      throw new ApiError(
-        400,
-        'No puedes desactivar tu propia cuenta ni quitarte el rol de administrador.',
-      );
-    } else if (req.method === 'PATCH' && fields.role === 'comercio') {
-      const prevUser = checked(
-        await client.from('paseo_users').select('name,email,role').eq('id', uuid(data.id)).maybeSingle(),
-      );
-      if (prevUser && prevUser.role !== 'comercio') {
-        void sendPaseoMerchantPromotedEmail({
-          to: prevUser.email,
-          name: String(fields.name || prevUser.name || 'Comercio Paseo Aranjuez'),
-        }).catch((e) => console.error('[Merchant Promo Email Error]:', e));
-      }
+    const storeId =
+      ['comercio', 'empleado'].includes(String(fields.role)) && data.store_id
+        ? uuid(data.store_id)
+        : null;
+    let newStore = null;
+    if (fields.role === 'comercio' && data.store_mode === 'new') {
+      newStore = {
+        name: string(data.new_store_name, 'Nombre del local', 2, 100),
+        category: string(data.new_store_category, 'Categoría', 1, 50),
+        floor: string(data.new_store_floor, 'Piso', 1, 50),
+        local_num: string(data.new_store_local_num, 'Local', 1, 50),
+        phone: data.new_store_phone ? string(data.new_store_phone, 'Teléfono', 5, 25) : '',
+      };
     }
+    if (['comercio', 'empleado'].includes(String(fields.role)) && !storeId && !newStore)
+      throw new ApiError(400, 'Asigna un establecimiento.');
+    const id = checked(
+      await client.rpc('paseo_manage_user', {
+        p_actor: user.id,
+        p_id: req.method === 'POST' ? null : uuid(data.id),
+        p_fields: fields,
+        p_store: newStore ? null : storeId,
+        p_new_store: newStore,
+      }),
+    );
+    const row = checked(await client.from('paseo_users').select(USER_FIELDS).eq('id', id).single());
+    return NextResponse.json({ row }, { status: req.method === 'POST' ? 201 : 200 });
   }
   if (resource === 'tiendas' && fields.owner_id) {
     const owner = checked(
@@ -1323,22 +1371,38 @@ async function settings(req: NextRequest) {
   const currentQr = parseQrPoints(currentRaw?.location);
 
   const geoObj = {
-    radius: typeof data.geofence_radius === 'number' ? Math.max(50, Math.min(5000, Number(data.geofence_radius))) : currentGeo.radius,
+    radius:
+      typeof data.geofence_radius === 'number'
+        ? Math.max(50, Math.min(5000, Number(data.geofence_radius)))
+        : currentGeo.radius,
     lat: typeof data.geofence_lat === 'number' ? Number(data.geofence_lat) : currentGeo.lat,
     lng: typeof data.geofence_lng === 'number' ? Number(data.geofence_lng) : currentGeo.lng,
     strict: data.geofence_strict !== undefined ? Boolean(data.geofence_strict) : currentGeo.strict,
   };
 
   const qrPointsObj: QrPointsConfig = {
-    welcome: typeof data.qr_welcome_points === 'number' ? Math.max(0, Math.min(1000, Number(data.qr_welcome_points))) : currentQr.welcome,
-    entry: typeof data.qr_entry_points === 'number' ? Math.max(0, Math.min(500, Number(data.qr_entry_points))) : currentQr.entry,
-    exit: typeof data.qr_exit_points === 'number' ? Math.max(0, Math.min(500, Number(data.qr_exit_points))) : currentQr.exit,
-    minMinutes: typeof data.qr_min_minutes === 'number' ? Math.max(0, Math.min(120, Number(data.qr_min_minutes))) : currentQr.minMinutes,
+    welcome:
+      typeof data.qr_welcome_points === 'number'
+        ? Math.max(0, Math.min(1000, Number(data.qr_welcome_points)))
+        : currentQr.welcome,
+    entry:
+      typeof data.qr_entry_points === 'number'
+        ? Math.max(0, Math.min(500, Number(data.qr_entry_points)))
+        : currentQr.entry,
+    exit:
+      typeof data.qr_exit_points === 'number'
+        ? Math.max(0, Math.min(500, Number(data.qr_exit_points)))
+        : currentQr.exit,
+    minMinutes:
+      typeof data.qr_min_minutes === 'number'
+        ? Math.max(0, Math.min(120, Number(data.qr_min_minutes)))
+        : currentQr.minMinutes,
   };
 
-  const address = typeof data.location === 'string' && data.location.trim().length >= 2 
-    ? string(data.location, 'Ubicación', 2, 200) 
-    : currentGeo.address;
+  const address =
+    typeof data.location === 'string' && data.location.trim().length >= 2
+      ? string(data.location, 'Ubicación', 2, 200)
+      : currentGeo.address;
   const locationWithGeo = `${address} || GEOFENCE:${JSON.stringify(geoObj)} || QR_POINTS:${JSON.stringify(qrPointsObj)}`;
 
   const values: Record<string, unknown> = {
@@ -1356,12 +1420,14 @@ async function settings(req: NextRequest) {
 
   checked(await db().from('paseo_settings').update(values).eq('id', 1));
   checked(
-    await db().from('paseo_audit').insert({
-      actor_id: user.id,
-      action: 'configuracion_editada',
-      entity: 'configuracion',
-      detail: { ...values, geofence: geoObj, qr_points: qrPointsObj },
-    }),
+    await db()
+      .from('paseo_audit')
+      .insert({
+        actor_id: user.id,
+        action: 'configuracion_editada',
+        entity: 'configuracion',
+        detail: { ...values, geofence: geoObj, qr_points: qrPointsObj },
+      }),
   );
   return NextResponse.json({ success: true, qr_points: qrPointsObj });
 }
@@ -1379,6 +1445,9 @@ export async function handle(req: NextRequest, path: string[]) {
     else if (resource === 'mapa-calor') response = await heatmap(req);
     else if (resource === 'scanner' && req.method === 'POST') response = await scanner(req);
     else if (resource === 'compras' && req.method === 'POST') response = await purchase(req);
+    else if (resource === 'empleados') response = await employees(req);
+    else if (resource === 'operacion' && child === 'tiendas' && req.method === 'GET')
+      response = await operationalStores(req);
     else if (resource === 'gestion' && child) response = await manage(req, child);
     else if (resource === 'resumen' && req.method === 'GET') response = await dashboard(req);
     else if (resource === 'configuracion' && req.method === 'PATCH') response = await settings(req);

@@ -3,9 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  Sparkles, CheckCircle2, MapPin, Award, ArrowRight, 
-  LogIn, Compass, Flame, AlertCircle, RefreshCw, Layers 
+import {
+  Sparkles,
+  CheckCircle2,
+  MapPin,
+  Award,
+  ArrowRight,
+  LogIn,
+  Compass,
+  Flame,
+  AlertCircle,
+  RefreshCw,
+  Layers,
 } from 'lucide-react';
 import { api, useSession } from '@/components/paseo/Providers';
 import { findStation, PENDING_QR_KEY } from '@/lib/paseo/stations';
@@ -39,8 +48,10 @@ export default function QrCheckinPage() {
     }
 
     if (!loading && user && !result && !checking && !errorMsg) {
+      // Start the one-time check-in request when session data becomes available.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChecking(true);
-      
+
       const doCheckin = (coords?: { lat: number; lng: number } | null) => {
         api<{
           ok: boolean;
@@ -73,7 +84,7 @@ export default function QrCheckinPage() {
         navigator.geolocation.getCurrentPosition(
           (pos) => doCheckin({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
           () => doCheckin(null),
-          { timeout: 4000, enableHighAccuracy: true }
+          { timeout: 4000, enableHighAccuracy: true },
         );
       } else {
         doCheckin(null);
@@ -88,7 +99,8 @@ export default function QrCheckinPage() {
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto" />
           <h2 className="text-xl font-bold text-white">Código QR No Reconocido</h2>
           <p className="text-xs text-white/60">
-            El código <code className="text-[#FF6B1A] font-mono">{rawCode}</code> no corresponde a una estación oficial de Paseo Aranjuez.
+            El código <code className="text-[#FF6B1A] font-mono">{rawCode}</code> no corresponde a
+            una estación oficial de Paseo Aranjuez.
           </p>
           <Link
             href="/"
@@ -120,7 +132,6 @@ export default function QrCheckinPage() {
       {/* Tarjeta Central */}
       <main className="relative z-10 max-w-md mx-auto w-full my-8">
         <div className="p-6 sm:p-8 rounded-[2.5rem] bg-[#061734]/90 border border-white/15 shadow-2xl backdrop-blur-xl text-center space-y-6">
-          
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-[#B84D0B]/20 to-[#D4A24C]/20 border border-[#FF6B1A]/40 text-xs font-bold uppercase tracking-wider text-[#FF6B1A]">
             <Sparkles className="w-3.5 h-3.5 text-[#FF6B1A]" />
             <span>Mapeo Peatonal & Recompensas</span>
@@ -144,7 +155,9 @@ export default function QrCheckinPage() {
             <div className="py-8 space-y-3">
               <RefreshCw className="w-10 h-10 text-[#FF6B1A] animate-spin mx-auto" />
               <p className="text-sm font-bold text-white">Validando tu ubicación y visita...</p>
-              <p className="text-xs text-white/50">Conectando con la telemetría del edificio Paseo Aranjuez.</p>
+              <p className="text-xs text-white/50">
+                Conectando con la telemetría del edificio Paseo Aranjuez.
+              </p>
             </div>
           ) : result ? (
             /* Resultado de éxito o visita ya registrada */
@@ -159,9 +172,7 @@ export default function QrCheckinPage() {
                     ? `¡Ganaste +${result.pointsAwarded} Paseo Points!`
                     : 'Visita Registrada'}
                 </h3>
-                <p className="text-xs text-white/70 mt-1.5 leading-relaxed">
-                  {result.message}
-                </p>
+                <p className="text-xs text-white/70 mt-1.5 leading-relaxed">{result.message}</p>
               </div>
 
               <div className="pt-2 flex flex-col gap-2">
@@ -198,14 +209,13 @@ export default function QrCheckinPage() {
             /* Usuario No Autenticado */
             <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-4">
               <div className="text-center space-y-1">
-                <span className="text-3xl font-black text-[#FF6B1A]">
-                  +{station.points} pts
-                </span>
+                <span className="text-3xl font-black text-[#FF6B1A]">+{station.points} pts</span>
                 <p className="text-xs font-bold text-white">
                   Gana puntos gratis al recorrer este piso
                 </p>
                 <p className="text-[11px] text-white/60 leading-relaxed">
-                  Inicia sesión o crea tu cuenta en 10 segundos para acreditar estos puntos a tu billetera Club Paseo.
+                  Inicia sesión o crea tu cuenta en 10 segundos para acreditar estos puntos a tu
+                  billetera Club Paseo.
                 </p>
               </div>
 
@@ -225,7 +235,6 @@ export default function QrCheckinPage() {
               </div>
             </div>
           )}
-
         </div>
       </main>
 

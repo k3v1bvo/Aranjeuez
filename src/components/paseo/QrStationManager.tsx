@@ -3,10 +3,24 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import QRCode from 'qrcode';
-import { 
-  QrCode, Copy, Printer, RefreshCw, Sparkles, MapPin, 
-  Trash2, ShieldCheck, Flame, CheckCircle2, ArrowRight, X, ExternalLink,
-  Layers, DoorOpen, LogOut, Award
+import {
+  QrCode,
+  Copy,
+  Printer,
+  RefreshCw,
+  Sparkles,
+  MapPin,
+  Trash2,
+  ShieldCheck,
+  Flame,
+  CheckCircle2,
+  ArrowRight,
+  X,
+  ExternalLink,
+  Layers,
+  DoorOpen,
+  LogOut,
+  Award,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, useResource } from './Providers';
@@ -46,10 +60,16 @@ export function QrStationManager() {
 
   useEffect(() => {
     if (data?.settings) {
-      if (typeof data.settings.qr_welcome_points === 'number') setWelcomePts(data.settings.qr_welcome_points);
-      if (typeof data.settings.qr_entry_points === 'number') setEntryPts(data.settings.qr_entry_points);
-      if (typeof data.settings.qr_exit_points === 'number') setExitPts(data.settings.qr_exit_points);
-      if (typeof data.settings.qr_min_minutes === 'number') setMinMinutes(data.settings.qr_min_minutes);
+      // Sync server configuration into the editable settings form.
+      if (typeof data.settings.qr_welcome_points === 'number')
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setWelcomePts(data.settings.qr_welcome_points);
+      if (typeof data.settings.qr_entry_points === 'number')
+        setEntryPts(data.settings.qr_entry_points);
+      if (typeof data.settings.qr_exit_points === 'number')
+        setExitPts(data.settings.qr_exit_points);
+      if (typeof data.settings.qr_min_minutes === 'number')
+        setMinMinutes(data.settings.qr_min_minutes);
     }
   }, [data?.settings]);
 
@@ -87,7 +107,8 @@ export function QrStationManager() {
   useEffect(() => {
     async function generateQrs() {
       const urls: Record<string, string> = {};
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aranjeuez-xi.vercel.app';
+      const origin =
+        typeof window !== 'undefined' ? window.location.origin : 'https://aranjeuez-xi.vercel.app';
       for (const st of STATIONS) {
         try {
           const scanUrl = `${origin}/qr/${st.code}`;
@@ -110,7 +131,8 @@ export function QrStationManager() {
   }, []);
 
   const handleCopy = (code: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aranjeuez-xi.vercel.app';
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : 'https://aranjeuez-xi.vercel.app';
     const scanUrl = `${origin}/qr/${code}`;
     navigator.clipboard.writeText(scanUrl);
     toast.success('Enlace de escaneo copiado', { description: scanUrl });
@@ -151,7 +173,11 @@ export function QrStationManager() {
   };
 
   const handleClearDemoData = async () => {
-    if (!confirm('¿Deseas eliminar todos los escaneos de prueba? Los datos reales de clientes se conservarán intactos.')) {
+    if (
+      !confirm(
+        '¿Deseas eliminar todos los escaneos de prueba? Los datos reales de clientes se conservarán intactos.',
+      )
+    ) {
       return;
     }
     setActionBusy(true);
@@ -169,13 +195,18 @@ export function QrStationManager() {
     }
   };
 
-  const filteredStations = activeFloorFilter === 'todos' 
-    ? STATIONS 
-    : STATIONS.filter(s => s.floorId === activeFloorFilter);
+  const filteredStations =
+    activeFloorFilter === 'todos'
+      ? STATIONS
+      : STATIONS.filter((s) => s.floorId === activeFloorFilter);
 
   // Filtrar eventos de telemetría recientes
   const telemetryLogs = (data?.audit || [])
-    .filter(a => a.action === 'telemetry_scan' || (a.detail && (a.detail.x !== undefined || a.detail.totem_code || a.detail.station_code)))
+    .filter(
+      (a) =>
+        a.action === 'telemetry_scan' ||
+        (a.detail && (a.detail.x !== undefined || a.detail.totem_code || a.detail.station_code)),
+    )
     .slice(0, 35);
 
   return (
@@ -186,16 +217,16 @@ export function QrStationManager() {
         description="Imprime o comparte los códigos QR para cada nivel. Los clientes suman 1 a 2 puntos por recorrer el Paseo sin necesidad de comprar, mapeando de forma anónima los flujos peatonales."
       >
         <div className="flex flex-wrap items-center gap-2">
-          <button 
-            disabled={actionBusy} 
+          <button
+            disabled={actionBusy}
             onClick={handleGenerateDemoData}
             className="button small flex items-center gap-1.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-bold shadow-md"
             title="Genera recorridos coherentes con horas pico para visualizar el mapa de calor"
           >
             <Sparkles size={14} /> ⚡ Generar Datos de Prueba (7 días)
           </button>
-          <button 
-            disabled={actionBusy} 
+          <button
+            disabled={actionBusy}
             onClick={handleClearDemoData}
             className="button secondary small flex items-center gap-1.5 text-red-300 hover:text-red-200 border-red-500/30"
             title="Borra únicamente los registros de prueba generados"
@@ -223,7 +254,8 @@ export function QrStationManager() {
                 </span>
               </h3>
               <p className="text-xs text-white/60">
-                Ajusta en tiempo real cuántos puntos otorga cada tótem y el tiempo mínimo para validar la salida de un piso.
+                Ajusta en tiempo real cuántos puntos otorga cada tótem y el tiempo mínimo para
+                validar la salida de un piso.
               </p>
             </div>
           </div>
@@ -251,7 +283,9 @@ export function QrStationManager() {
                   onChange={(e) => setWelcomePts(Number(e.target.value))}
                   className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
                 />
-                <span className="text-[10px] text-white/50 block">Puertas Av. América y Dalence (1x al día)</span>
+                <span className="text-[10px] text-white/50 block">
+                  Puertas Av. América y Dalence (1x al día)
+                </span>
               </label>
 
               <label className="text-xs font-semibold text-slate-300 space-y-1 block">
@@ -266,7 +300,9 @@ export function QrStationManager() {
                   onChange={(e) => setEntryPts(Number(e.target.value))}
                   className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
                 />
-                <span className="text-[10px] text-white/50 block">PB, P1, P2, P3, S1 (1x al día)</span>
+                <span className="text-[10px] text-white/50 block">
+                  PB, P1, P2, P3, S1 (1x al día)
+                </span>
               </label>
 
               <label className="text-xs font-semibold text-slate-300 space-y-1 block">
@@ -281,7 +317,9 @@ export function QrStationManager() {
                   onChange={(e) => setExitPts(Number(e.target.value))}
                   className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
                 />
-                <span className="text-[10px] text-white/50 block">Fin del recorrido del piso (1x al día)</span>
+                <span className="text-[10px] text-white/50 block">
+                  Fin del recorrido del piso (1x al día)
+                </span>
               </label>
 
               <label className="text-xs font-semibold text-slate-300 space-y-1 block">
@@ -296,7 +334,9 @@ export function QrStationManager() {
                   onChange={(e) => setMinMinutes(Number(e.target.value))}
                   className="w-full bg-[#030B1A] border border-white/20 rounded-xl px-3 py-2 text-white font-bold text-sm focus:border-amber-400 outline-none"
                 />
-                <span className="text-[10px] text-white/50 block">Tiempo requerido antes de validar salida</span>
+                <span className="text-[10px] text-white/50 block">
+                  Tiempo requerido antes de validar salida
+                </span>
               </label>
             </div>
 
@@ -353,9 +393,12 @@ export function QrStationManager() {
             </h3>
           </div>
           <p className="text-xs text-white/70 max-w-3xl leading-relaxed">
-            • <strong>Bienvenida (+{welcomePts} pts):</strong> 1 vez al día en puertas principales (Av. América o Dalence).<br />
-            • <strong>Inicio de Piso (+{entryPts} pt):</strong> Al llegar al nivel por ascensor o gradas.<br />
-            • <strong>Salida de Piso (+{exitPts} pts):</strong> Al finalizar el recorrido del nivel (requiere haber iniciado el piso y pasar al menos {minMinutes} minutos).
+            • <strong>Bienvenida (+{welcomePts} pts):</strong> 1 vez al día en puertas principales
+            (Av. América o Dalence).
+            <br />• <strong>Inicio de Piso (+{entryPts} pt):</strong> Al llegar al nivel por
+            ascensor o gradas.
+            <br />• <strong>Salida de Piso (+{exitPts} pts):</strong> Al finalizar el recorrido del
+            nivel (requiere haber iniciado el piso y pasar al menos {minMinutes} minutos).
           </p>
         </div>
         <div className="shrink-0 flex items-center gap-2">
@@ -378,7 +421,7 @@ export function QrStationManager() {
           Todos ({STATIONS.length})
         </button>
         {FLOORS.map((f) => {
-          const count = STATIONS.filter(s => s.floorId === f.id).length;
+          const count = STATIONS.filter((s) => s.floorId === f.id).length;
           const isActive = activeFloorFilter === f.id;
           return (
             <button
@@ -391,7 +434,9 @@ export function QrStationManager() {
               }`}
             >
               <span>{f.label}</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded ${isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-white/50'}`}>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded ${isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-white/50'}`}
+              >
                 {count}
               </span>
             </button>
@@ -405,39 +450,42 @@ export function QrStationManager() {
           const isWelcome = station.kind === 'bienvenida';
           const isExit = station.kind === 'salida';
           return (
-            <article 
+            <article
               key={station.code}
               className={`p-5 rounded-2xl bg-[#061734]/90 border flex flex-col justify-between transition-all shadow-xl hover:scale-[1.01] ${
-                isWelcome 
-                  ? 'border-[#FF6B1A]/40 hover:border-[#FF6B1A]' 
+                isWelcome
+                  ? 'border-[#FF6B1A]/40 hover:border-[#FF6B1A]'
                   : isExit
-                  ? 'border-emerald-500/40 hover:border-emerald-400'
-                  : 'border-sky-500/40 hover:border-sky-400'
+                    ? 'border-emerald-500/40 hover:border-emerald-400'
+                    : 'border-sky-500/40 hover:border-sky-400'
               }`}
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider flex items-center gap-1 ${
-                    isWelcome
-                      ? 'bg-[#FF6B1A]/20 text-[#FF6B1A] border-[#FF6B1A]/30'
-                      : isExit
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                      : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
-                  }`}>
-                    {isWelcome ? <Sparkles size={11} /> : isExit ? <LogOut size={11} /> : <DoorOpen size={11} />}
-                    {isWelcome ? 'Bienvenida' : isExit ? 'Salida' : 'Inicio'} (+{currentPointsFor(station)} pts)
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider flex items-center gap-1 ${
+                      isWelcome
+                        ? 'bg-[#FF6B1A]/20 text-[#FF6B1A] border-[#FF6B1A]/30'
+                        : isExit
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          : 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                    }`}
+                  >
+                    {isWelcome ? (
+                      <Sparkles size={11} />
+                    ) : isExit ? (
+                      <LogOut size={11} />
+                    ) : (
+                      <DoorOpen size={11} />
+                    )}
+                    {isWelcome ? 'Bienvenida' : isExit ? 'Salida' : 'Inicio'} (+
+                    {currentPointsFor(station)} pts)
                   </span>
-                  <span className="text-[10px] font-mono text-white/50">
-                    Piso Z: {station.z}
-                  </span>
+                  <span className="text-[10px] font-mono text-white/50">Piso Z: {station.z}</span>
                 </div>
 
-                <h3 className="text-base font-bold text-white leading-snug mb-1">
-                  {station.name}
-                </h3>
-                <p className="text-xs text-[#D4A24C] font-semibold mb-2">
-                  {station.floorLabel}
-                </p>
+                <h3 className="text-base font-bold text-white leading-snug mb-1">{station.name}</h3>
+                <p className="text-xs text-[#D4A24C] font-semibold mb-2">{station.floorLabel}</p>
 
                 {/* Preview del Código QR */}
                 <div className="p-3 bg-white rounded-xl flex items-center justify-center my-3 shadow-inner">
@@ -464,7 +512,9 @@ export function QrStationManager() {
 
               <div className="space-y-2 pt-3 border-t border-white/5">
                 <div className="flex items-center justify-between text-[10px] text-white/40 font-mono">
-                  <span>Coord: ({station.x}%, {station.y}%)</span>
+                  <span>
+                    Coord: ({station.x}%, {station.y}%)
+                  </span>
                   <span>{station.code}</span>
                 </div>
 
@@ -491,7 +541,9 @@ export function QrStationManager() {
                   className="w-full py-1.5 rounded-lg text-[10px] font-semibold text-white/70 hover:text-white hover:bg-white/10 border border-white/10 transition-all text-center flex items-center justify-center gap-1.5"
                 >
                   <Flame size={12} className="text-[#FF6B1A]" />
-                  <span>{simulatingCode === station.code ? 'Simulando…' : 'Probar escaneo como cliente'}</span>
+                  <span>
+                    {simulatingCode === station.code ? 'Simulando…' : 'Probar escaneo como cliente'}
+                  </span>
                 </button>
               </div>
             </article>
@@ -507,11 +559,10 @@ export function QrStationManager() {
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Feed de Telemetría Peatonal en Vivo</span>
             </div>
-            <h2 className="text-xl font-bold text-white">
-              Últimos Escaneos Registrados
-            </h2>
+            <h2 className="text-xl font-bold text-white">Últimos Escaneos Registrados</h2>
             <p className="text-xs text-white/50">
-              Registros capturados cuando los visitantes escanean en tótems de entrada/salida o puntos comerciales.
+              Registros capturados cuando los visitantes escanean en tótems de entrada/salida o
+              puntos comerciales.
             </p>
           </div>
 
@@ -527,7 +578,7 @@ export function QrStationManager() {
         ) : error ? (
           <ErrorState message={error} retry={reload} />
         ) : !telemetryLogs.length ? (
-          <Empty 
+          <Empty
             title="Sin escaneos registrados aún"
             detail="Usa el botón '⚡ Generar Datos de Prueba' arriba o haz clic en 'Probar escaneo' en cualquier estación."
           />
@@ -551,7 +602,7 @@ export function QrStationManager() {
                   const time = new Date(log.created_at).toLocaleTimeString('es-BO', {
                     hour: '2-digit',
                     minute: '2-digit',
-                    second: '2-digit'
+                    second: '2-digit',
                   });
                   const isDemo = Boolean(d.demo);
                   return (
@@ -569,17 +620,21 @@ export function QrStationManager() {
                         {String(d.floor || `Piso ${d.z ?? 0}`)}
                       </td>
                       <td className="py-3 font-mono text-[11px] text-emerald-400">
-                        {d.x !== undefined && d.y !== undefined ? `X:${d.x}%, Y:${d.y}%` : 'Central'}
+                        {d.x !== undefined && d.y !== undefined
+                          ? `X:${d.x}%, Y:${d.y}%`
+                          : 'Central'}
                       </td>
                       <td className="py-3 font-bold text-[#FF6B1A]">
                         {d.points_granted ? `+${d.points_granted} pts` : '+0 pts'}
                       </td>
                       <td className="py-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          isDemo 
-                            ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
-                            : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
-                        }`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            isDemo
+                              ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                              : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                          }`}
+                        >
                           {isDemo ? 'Prueba Coherente' : 'Visita Real'}
                         </span>
                       </td>
@@ -613,12 +668,8 @@ export function QrStationManager() {
             </div>
 
             <div>
-              <h3 className="text-2xl font-black text-white font-display">
-                PASEO ARANJUEZ
-              </h3>
-              <p className="text-sm text-[#D4A24C] font-bold mt-1">
-                {printStation.name}
-              </p>
+              <h3 className="text-2xl font-black text-white font-display">PASEO ARANJUEZ</h3>
+              <p className="text-sm text-[#D4A24C] font-bold mt-1">{printStation.name}</p>
               <p className="text-xs text-white/60">
                 {printStation.floorLabel} · {printStation.place}
               </p>
@@ -640,7 +691,8 @@ export function QrStationManager() {
             <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white/80 space-y-1">
               <p className="font-bold text-white">📲 Escanea con la cámara de tu celular</p>
               <p className="text-emerald-400 font-bold">
-                ¡Suma +{printStation.points} {printStation.points === 1 ? 'Paseo Point' : 'Paseo Points'} gratis sin comprar!
+                ¡Suma +{printStation.points}{' '}
+                {printStation.points === 1 ? 'Paseo Point' : 'Paseo Points'} gratis sin comprar!
               </p>
               <p className="text-[10px] text-white/40 font-mono mt-1">{printStation.code}</p>
             </div>

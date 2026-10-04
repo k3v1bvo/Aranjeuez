@@ -1,11 +1,12 @@
-export type Role = 'cliente' | 'comercio' | 'admin';
+export type Role = 'cliente' | 'comercio' | 'empleado' | 'admin';
 export type OrderStatus =
-  'recibido' | 'confirmado' | 'preparando' | 'listo' | 'llego' | 'entregado' | 'cancelado';
+  'pendiente' | 'en_preparacion' | 'listo_para_recoger' | 'entregado' | 'cancelado';
 export interface User {
   id: string;
   name: string;
   email: string;
   phone: string | null;
+  avatar_url?: string | null;
   role: Role;
   points: number;
   lifetime_points: number;
@@ -150,27 +151,23 @@ export interface CartItem {
   quantity: number;
 }
 export const STATUS_LABEL: Record<OrderStatus, string> = {
-  recibido: 'Recibido',
-  confirmado: 'Confirmado',
-  preparando: 'En preparación',
-  listo: 'Listo para retirar',
-  llego: 'Cliente en el Paseo',
+  pendiente: 'Pendiente',
+  en_preparacion: 'En preparación',
+  listo_para_recoger: 'Listo para recoger',
   entregado: 'Entregado',
   cancelado: 'Cancelado',
 };
 export const ORDER_STEPS: OrderStatus[] = [
-  'recibido',
-  'confirmado',
-  'preparando',
-  'listo',
-  'llego',
+  'pendiente',
+  'en_preparacion',
+  'listo_para_recoger',
   'entregado',
 ];
 export function levelFor(points: number) {
-  if (points >= 15000) return { name: 'Platino', min: 15000, next: null };
-  if (points >= 5000) return { name: 'Oro', min: 5000, next: 15000 };
-  if (points >= 1000) return { name: 'Plata', min: 1000, next: 5000 };
-  return { name: 'Bronce', min: 0, next: 1000 };
+  if (points >= 1000) return { name: 'Platino', min: 1000, next: null };
+  if (points >= 500) return { name: 'Oro', min: 500, next: 1000 };
+  if (points >= 200) return { name: 'Plata', min: 200, next: 500 };
+  return { name: 'Bronce', min: 0, next: 200 };
 }
 export const money = (amount: number) =>
   new Intl.NumberFormat('es-BO', { style: 'currency', currency: 'BOB' }).format(amount);
@@ -181,4 +178,8 @@ export const dateTime = (value: string) =>
     timeZone: 'America/La_Paz',
   }).format(new Date(value));
 export const homeFor = (role: Role) =>
-  role === 'admin' ? '/admin/overview' : role === 'comercio' ? '/comercio' : '/cliente';
+  role === 'admin'
+    ? '/admin/overview'
+    : role === 'comercio' || role === 'empleado'
+      ? '/comercio'
+      : '/cliente';

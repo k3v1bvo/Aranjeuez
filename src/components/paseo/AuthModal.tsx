@@ -2,7 +2,18 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ArrowRight, Lock, Mail, Phone, User, AlertCircle, Loader2, Sparkles, Building2 } from 'lucide-react';
+import {
+  X,
+  ArrowRight,
+  Lock,
+  Mail,
+  Phone,
+  User,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  Building2,
+} from 'lucide-react';
 import { PaseoAranjuezLogo } from './PaseoAranjuezLogo';
 import { usePaseoToast } from './PaseoToast';
 import { getPublicDB } from '@/lib/paseo/supabase';
@@ -10,14 +21,17 @@ import { getPublicDB } from '@/lib/paseo/supabase';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccessLogin?: (userData: { name: string; role: 'cliente' | 'comercio' | 'admin' }) => void;
+  onSuccessLogin?: (userData: {
+    name: string;
+    role: 'cliente' | 'comercio' | 'empleado' | 'admin';
+  }) => void;
 }
 
 export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
   const router = useRouter();
   const { showToast } = usePaseoToast();
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'forgot'>('login');
-  const [accountType, setAccountType] = useState<'cliente' | 'comercio'>('cliente');
+  const [accountType] = useState<'cliente' | 'comercio'>('cliente');
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -48,7 +62,11 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al procesar la solicitud.');
-        showToast('Correo enviado', 'success', 'Revisa tu bandeja de entrada o spam. Te enviamos una contraseña temporal.');
+        showToast(
+          'Correo enviado',
+          'success',
+          'Revisa tu bandeja de entrada o spam. Te enviamos una contraseña temporal.',
+        );
         setActiveTab('login');
         return;
       }
@@ -88,7 +106,7 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
       showToast(
         activeTab === 'login' ? '¡Bienvenido de vuelta!' : '¡Cuenta creada con éxito!',
         'success',
-        `Sesión iniciada como ${user.name}`
+        `Sesión iniciada como ${user.name}`,
       );
 
       if (onSuccessLogin) {
@@ -100,14 +118,18 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
       // Redirect depending on role
       if (user.role === 'admin') {
         router.push('/admin/overview');
-      } else if (user.role === 'comercio') {
+      } else if (user.role === 'comercio' || user.role === 'empleado') {
         router.push('/comercio');
       } else {
         router.push('/cliente');
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error al autenticar');
-      showToast('Error de autenticación', 'error', err.message || 'No se pudo procesar la solicitud');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Error al autenticar');
+      showToast(
+        'Error de autenticación',
+        'error',
+        err instanceof Error ? err.message : 'No se pudo procesar la solicitud',
+      );
     } finally {
       setBusy(false);
     }
@@ -126,9 +148,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
         },
       });
       if (error) throw error;
-    } catch (err: any) {
-      setErrorMsg(err.message || 'No se pudo conectar con Google');
-      showToast('Google OAuth', 'error', err.message || 'Error de conexión');
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'No se pudo conectar con Google');
+      showToast('Google OAuth', 'error', err instanceof Error ? err.message : 'Error de conexión');
       setBusy(false);
     }
   };
@@ -149,15 +171,15 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
             {activeTab === 'login'
               ? 'Iniciar Sesión'
               : activeTab === 'register'
-              ? 'Crear Cuenta'
-              : 'Recuperar Contraseña'}
+                ? 'Crear Cuenta'
+                : 'Recuperar Contraseña'}
           </h3>
           <p className="text-xs text-white/60 mt-1">
             {activeTab === 'login'
               ? 'Accede a tu cuenta de cliente, comercio o administración'
               : activeTab === 'register'
-              ? 'Únete al ecosistema digital de Paseo Aranjuez'
-              : 'Te enviaremos una contraseña temporal a tu correo electrónico vía Google SMTP.'}
+                ? 'Únete al ecosistema digital de Paseo Aranjuez'
+                : 'Te enviaremos una contraseña temporal a tu correo electrónico vía Google SMTP.'}
           </p>
         </div>
 
@@ -190,86 +212,12 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
         )}
 
         {/* Tipo de cuenta en registro */}
-        {activeTab === 'register' && (
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setAccountType('cliente')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                accountType === 'cliente'
-                  ? 'bg-[#FF6B1A]/20 border-[#FF6B1A] text-[#FF6B1A]'
-                  : 'border-white/10 text-white/60 hover:text-white'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              <span>Cliente / Visitante</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountType('comercio')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                accountType === 'comercio'
-                  ? 'bg-[#D4A24C]/20 border-[#D4A24C] text-[#D4A24C]'
-                  : 'border-white/10 text-white/60 hover:text-white'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Comercio / Tienda</span>
-            </button>
-          </div>
-        )}
-
-        {/* Google OAuth (solo en login/register) */}
-        {activeTab !== 'forgot' && (
-          <>
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={busy}
-              className="w-full py-2.5 px-4 rounded-xl bg-white text-gray-800 font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-100 transition-all shadow-md disabled:opacity-50 mb-4"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>{activeTab === 'login' ? 'Continuar con Google' : 'Registrarse con Google'}</span>
-            </button>
-
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider">o con correo</span>
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
-          </>
-        )}
-
-        {/* Mensaje de Error */}
-        {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-xs text-red-200">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {activeTab === 'register' && (
             <div>
-              <label className="text-xs font-semibold text-white/80 block mb-1">Nombre Completo</label>
+              <label className="text-xs font-semibold text-white/80 block mb-1">
+                Nombre Completo
+              </label>
               <div className="relative">
                 <User className="absolute left-3.5 top-3 w-4 h-4 text-white/40" />
                 <input
@@ -288,7 +236,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">Nombre de la Tienda</label>
+                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">
+                    Nombre de la Tienda
+                  </label>
                   <input
                     type="text"
                     required
@@ -299,7 +249,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">Categoría</label>
+                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">
+                    Categoría
+                  </label>
                   <select
                     value={storeCategory}
                     onChange={(e) => setStoreCategory(e.target.value)}
@@ -316,7 +268,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">Piso / Planta</label>
+                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">
+                    Piso / Planta
+                  </label>
                   <select
                     value={storeFloor}
                     onChange={(e) => setStoreFloor(e.target.value)}
@@ -330,7 +284,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">Local (Número)</label>
+                  <label className="text-[11px] font-semibold text-[#D4A24C] block mb-1">
+                    Local (Número)
+                  </label>
                   <input
                     type="text"
                     required
@@ -345,7 +301,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
           )}
 
           <div>
-            <label className="text-xs font-semibold text-white/80 block mb-1">Correo Electrónico</label>
+            <label className="text-xs font-semibold text-white/80 block mb-1">
+              Correo Electrónico
+            </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3 w-4 h-4 text-white/40" />
               <input
@@ -361,7 +319,9 @@ export function AuthModal({ isOpen, onClose, onSuccessLogin }: AuthModalProps) {
 
           {activeTab === 'register' && (
             <div>
-              <label className="text-xs font-semibold text-white/80 block mb-1">Celular (Opcional)</label>
+              <label className="text-xs font-semibold text-white/80 block mb-1">
+                Celular (Opcional)
+              </label>
               <div className="relative">
                 <Phone className="absolute left-3.5 top-3 w-4 h-4 text-white/40" />
                 <input

@@ -1,5 +1,6 @@
+import { auditDatabase } from '../tests/audit-database.mjs';
 // Integration test against an isolated local PostgreSQL cluster, never Supabase.
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execFile } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
@@ -93,6 +94,10 @@ try {
   console.log(
     'PASS: original schema with historical data; migration applied twice; records, coupon states and permissions preserved.',
   );
+  const auditMigration = readFileSync('supabase/paseo/20261003_audit.sql', 'utf8');
+  sql(auditMigration);
+  sql(auditMigration);
+  console.log('PASS: audit migration applied twice.');
   const redeem =
     "select paseo_redeem('10000000-0000-4000-8000-000000000001','50000000-0000-4000-8000-000000000001','60000000-0000-4000-8000-000000000001')";
   const id = sql(redeem);
@@ -118,7 +123,7 @@ try {
     "select paseo_create_order('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','[{\"productId\":\"30000000-0000-4000-8000-000000000001\",\"quantity\":2}]','60000000-0000-4000-8000-000000000002')",
   );
   const pickup = sql(`select pickup_code from paseo_orders where id='${order}'`);
-  for (const status of ['confirmado', 'preparando', 'listo']) {
+  for (const status of ['en_preparacion', 'listo_para_recoger']) {
     sql(`select paseo_transition('10000000-0000-4000-8000-000000000002','${order}','${status}')`);
   }
   assert.throws(() =>
@@ -136,6 +141,22 @@ try {
   assert.equal(sql('select stock from paseo_products'), '8');
   console.log(
     'PASS: order creation, stock reservation, pickup validation and points award on migrated schema.',
+  );
+  await auditDatabase(
+    sql,
+    (query) =>
+      new Promise((resolve, reject) => {
+        execFile(
+          psql,
+          [...args, '-d', database, '-c', query],
+          {
+            encoding: 'utf8',
+            windowsHide: true,
+            env: { ...process.env, PGCLIENTENCODING: 'UTF8' },
+          },
+          (error, stdout) => (error ? reject(error) : resolve(stdout.trim())),
+        );
+      }),
   );
 } finally {
   // This database name is generated above; never targets an existing user database.

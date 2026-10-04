@@ -69,7 +69,7 @@ function CameraReader({
   );
 }
 export function Terminal() {
-  const { data, loading, error, reload } = useResource<{ rows: Store[] }>('gestion/tiendas');
+  const { data, loading, error, reload } = useResource<{ rows: Store[] }>('operacion/tiendas');
   const [type, setType] = useState('user');
   const [code, setCode] = useState('');
   const [camera, setCamera] = useState(false);
@@ -332,12 +332,12 @@ export function Terminal() {
               </p>
               <button
                 className="button full"
-                disabled={busy || !['listo', 'llego'].includes(order.status)}
+                disabled={busy || !['listo_para_recoger'].includes(order.status)}
                 onClick={deliver}
               >
                 {busy ? 'Confirmando…' : 'Confirmar cobro y entrega'}
               </button>
-              {!['listo', 'llego'].includes(order.status) && (
+              {!['listo_para_recoger'].includes(order.status) && (
                 <p className="muted">El pedido debe estar listo para retirar.</p>
               )}
             </div>

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Role, User } from './model';
 
 export const USER_FIELDS =
-  'id,name,email,phone,role,points,lifetime_points,qr_token,birthday,is_active,created_at';
+  'id,name,email,phone,role,points,lifetime_points,qr_token,birthday,avatar_url,is_active,created_at';
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -51,7 +51,7 @@ export async function session(token?: string): Promise<User | null> {
     .eq('is_active', true)
     .maybeSingle();
   if (error) throw new ApiError(503, 'No pudimos consultar tu sesión. Reintenta en un momento.');
-  if (data && !['cliente', 'comercio', 'admin'].includes(data.role)) return null;
+  if (data && !['cliente', 'comercio', 'empleado', 'admin'].includes(data.role)) return null;
   return data as User | null;
 }
 export async function requireUser(req: NextRequest, roles?: Role[]) {
@@ -86,7 +86,7 @@ export async function signedResponse(user: User) {
   });
   return response;
 }
-export function checkMutation(req: NextRequest) {
+export function checkOrigin(req: NextRequest) {
   const origin = req.headers.get('origin');
   if (origin) {
     const allowed = new Set<string>([
@@ -112,18 +112,20 @@ export function checkMutation(req: NextRequest) {
       } catch {}
     }
 
-    let host = '';
+    // Next may normalize req.url to localhost behind its HTTP server. The browser's
+    // Host header still identifies the actual destination (including its port).
+    let sameHost = false;
     try {
-      host = new URL(origin).hostname;
+      const source = new URL(origin);
+      sameHost =
+        ['http:', 'https:'].includes(source.protocol) && source.host === req.headers.get('host');
     } catch {}
-    const isAllowed =
-      allowed.has(origin) ||
-      host.endsWith('.vercel.app') ||
-      host === 'localhost' ||
-      host === '127.0.0.1';
-
-    if (!isAllowed) throw new ApiError(403, 'Origen de solicitud no permitido.');
+    if (!allowed.has(origin) && !sameHost)
+      throw new ApiError(403, 'Origen de solicitud no permitido.');
   }
+}
+export function checkMutation(req: NextRequest) {
+  checkOrigin(req);
   if (!req.headers.get('content-type')?.includes('application/json'))
     throw new ApiError(415, 'Envía datos JSON.');
 }
@@ -198,6 +200,15 @@ export async function ownsStore(user: User, id: string) {
   if (!store) throw new ApiError(404, 'Establecimiento no encontrado.');
   if (user.role !== 'admin' && (user.role !== 'comercio' || store.owner_id !== user.id))
     throw new ApiError(403, 'Este establecimiento no pertenece a tu cuenta.');
+}
+export async function operatesStore(user: User, id: string) {
+  if (user.role !== 'empleado') return ownsStore(user, id);
+  if (user.avatar_url !== `store:${id}`)
+    throw new ApiError(403, 'Este establecimiento no pertenece a tu turno.');
+  const store = checked(
+    await db().from('paseo_stores').select('id').eq('id', id).eq('is_active', true).maybeSingle(),
+  );
+  if (!store) throw new ApiError(403, 'Establecimiento inactivo.');
 }
 const attempts = new Map<string, { count: number; until: number }>();
 export function rateLimit(key: string, max = 30) {

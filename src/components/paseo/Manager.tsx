@@ -1,4 +1,6 @@
 'use client';
+import { UserRoleFields } from './UserRoleFields';
+import { ImageDragDropUploader } from './ImageDragDropUploader';
 import { useState } from 'react';
 import { Pencil, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -128,6 +130,14 @@ export function ResourceManager({ resource }: { resource: string }) {
     for (const f of config.fields)
       if (f.type === 'datetime-local' && initial[f.key])
         initial[f.key] = localDate(String(initial[f.key]));
+    if (resource === 'usuarios') {
+      initial.store_id =
+        row?.role === 'empleado'
+          ? String(row.avatar_url || '').replace(/^store:/, '')
+          : data?.stores.find((s) => s.owner_id === row?.id)?.id || '';
+      initial.store_mode = 'existing';
+      initial.points = row?.points ?? 0;
+    }
     setEdit(initial);
     setCreating(!row);
     setFailure('');
@@ -137,6 +147,7 @@ export function ResourceManager({ resource }: { resource: string }) {
     setBusy(true);
     setFailure('');
     const payload = { ...edit };
+    if (resource === 'usuarios') payload.points = Number(edit.points || 0);
     for (const f of config.fields) {
       if (f.type === 'integer' || f.type === 'number') payload[f.key] = Number(payload[f.key]);
       if (f.type === 'datetime-local' && payload[f.key])
@@ -247,6 +258,14 @@ export function ResourceManager({ resource }: { resource: string }) {
               {config.fields.map((f) => {
                 const value = String(edit[f.key] ?? '');
                 const update = (v: string | boolean) => setEdit({ ...edit, [f.key]: v });
+                if (f.key === 'image_url')
+                  return (
+                    <ImageDragDropUploader
+                      key={f.key}
+                      value={value}
+                      onChange={(url) => update(url)}
+                    />
+                  );
                 if (f.type === 'checkbox')
                   return (
                     <label key={f.key} className="checkbox">
@@ -265,12 +284,13 @@ export function ResourceManager({ resource }: { resource: string }) {
                       ? catalog.data?.categories.map((c) => [c.id, c.name]) || []
                       : f.type === 'owner'
                         ? owners.data?.rows
-                            .filter((u) => u.is_active && u.role !== 'cliente')
+                            .filter((u) => u.is_active && ['comercio', 'admin'].includes(u.role))
                             .map((u) => [u.id, `${u.name} · ${u.email}`]) || []
                         : f.type === 'role'
                           ? [
                               ['cliente', 'Cliente'],
                               ['comercio', 'Comercio'],
+                              ['empleado', 'Empleado'],
                               ['admin', 'Administrador'],
                             ]
                           : null;
@@ -317,7 +337,7 @@ export function ResourceManager({ resource }: { resource: string }) {
                   </label>
                 );
               })}
-              {creating && resource === 'usuarios' && (
+              {resource === 'usuarios' && (
                 <>
                   <label>
                     Correo
@@ -330,19 +350,29 @@ export function ResourceManager({ resource }: { resource: string }) {
                       onChange={(e) => setEdit({ ...edit, email: e.target.value })}
                     />
                   </label>
-                  <label>
-                    Contraseña inicial
-                    <input
-                      type="password"
-                      required
-                      minLength={8}
-                      maxLength={72}
-                      autoComplete="new-password"
-                      value={String(edit.password || '')}
-                      onChange={(e) => setEdit({ ...edit, password: e.target.value })}
-                    />
-                  </label>
+                  {creating && (
+                    <label>
+                      Contraseña inicial
+                      <input
+                        type="password"
+                        required
+                        minLength={8}
+                        maxLength={72}
+                        autoComplete="new-password"
+                        value={String(edit.password || '')}
+                        onChange={(e) => setEdit({ ...edit, password: e.target.value })}
+                      />
+                    </label>
+                  )}
                 </>
+              )}
+              {resource === 'usuarios' && (
+                <UserRoleFields
+                  edit={edit}
+                  setEdit={setEdit}
+                  stores={data?.stores || []}
+                  categories={catalog.data?.categories || []}
+                />
               )}
               {resource !== 'categorias' && (
                 <label className="checkbox span-all">

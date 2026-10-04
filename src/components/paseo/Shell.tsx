@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { MobileBottomDock } from './MobileBottomDock';
 import { usePathname } from 'next/navigation';
 import { useCart, useSession } from './Providers';
 import { NavbarPaseo } from './NavbarPaseo';
@@ -8,56 +9,67 @@ import { FooterPaseo } from './FooterPaseo';
 import { toast } from 'sonner';
 import { LayoutDashboard } from 'lucide-react';
 
-export function Shell({ children, demo }: { children: React.ReactNode; demo?: boolean }) {
-  const { user, logout } = useSession();
+export function Shell({ children }: { children: React.ReactNode; demo?: boolean }) {
+  const { user, logout, loading } = useSession();
   const cart = useCart();
   const pathname = usePathname();
 
   let activeTab = 'inicio';
   if (pathname === '/') activeTab = 'inicio';
   else if (pathname.startsWith('/cliente/puntos')) activeTab = 'puntos';
-  else if (pathname.startsWith('/cliente') || pathname.startsWith('/producto')) activeTab = 'paseoya';
+  else if (pathname.startsWith('/cliente') || pathname.startsWith('/producto'))
+    activeTab = 'paseoya';
   else if (pathname.startsWith('/jarvis')) activeTab = 'jarvis';
   else if (pathname.startsWith('/admin/analytics')) activeTab = 'mapa';
 
   const currentUserData = user
     ? {
         name: user.name,
+        email: user.email,
         points: user.points || 0,
         level: ((user.points || 0) >= 1000
           ? 'Platino'
           : (user.points || 0) >= 500
-          ? 'Oro'
-          : (user.points || 0) >= 200
-          ? 'Plata'
-          : 'Bronce') as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
+            ? 'Oro'
+            : (user.points || 0) >= 200
+              ? 'Plata'
+              : 'Bronce') as 'Bronce' | 'Plata' | 'Oro' | 'Platino',
         role: user.role,
         qrToken: user.qr_token,
       }
     : null;
 
-  const isPanel = pathname.startsWith('/admin') || pathname.startsWith('/comercio');
-  const role = pathname.startsWith('/admin') ? 'admin' : 'comercio';
-
   return (
     <div className="min-h-screen bg-[#030B1A] text-white flex flex-col font-sans selection:bg-[#FF6B1A] selection:text-white">
-      <NavbarPaseo
-        activeTab={activeTab}
-        cartCount={cart.count}
-        user={currentUserData}
-        onLogout={() => logout().catch((e) => toast.error(e.message))}
-      />
+      {loading ? (
+        <header className="paseo-header">
+          <div className="paseo-header-inner">Paseo Aranjuez</div>
+        </header>
+      ) : (
+        <NavbarPaseo
+          activeTab={activeTab}
+          cartCount={cart.count}
+          user={currentUserData}
+          onLogout={() => logout().catch((e) => toast.error(e.message))}
+        />
+      )}
 
-      <main className="flex-1 w-full" id="main">
+      <main
+        className={
+          !user || user.role === 'cliente' ? 'flex-1 w-full pb-20 md:pb-0' : 'flex-1 w-full'
+        }
+        id="main"
+      >
         {children}
       </main>
 
-      <FooterPaseo />
+      {!loading && user?.role !== 'admin' && user?.role !== 'empleado' && <FooterPaseo />}
+      <MobileBottomDock />
     </div>
   );
 }
 
-export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
+export function PanelNav({ role }: { role: 'admin' | 'comercio' | 'empleado' }) {
   const pathname = usePathname();
   const admin = [
     ['overview', 'Resumen'],
@@ -78,6 +90,7 @@ export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
   const commerce = [
     ['', 'Resumen y pedidos'],
     ['perfil', 'Mi Establecimiento'],
+    ['empleados', 'Mi equipo'],
     ['productos', 'Mis productos'],
     ['scanner', 'Caja y validación'],
     ['promociones', 'Promociones'],
@@ -105,17 +118,20 @@ export function PanelNav({ role }: { role: 'admin' | 'comercio' }) {
           <strong style={{ color: '#fff', fontSize: '14px', display: 'block' }}>
             {role === 'admin' ? 'Administración' : 'Mi establecimiento'}
           </strong>
-          <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
-            Paseo Aranjuez
-          </small>
+          <small style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>Paseo Aranjuez</small>
         </div>
       </div>
       <nav
         aria-label={`Panel ${role}`}
         style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
       >
-        {(role === 'admin' ? admin : commerce).map(([route, label]) => {
-          const href = `/${role}${route ? '/' + route : ''}`;
+        {(role === 'admin'
+          ? admin
+          : role === 'empleado'
+            ? commerce.filter(([route]) => ['', 'scanner'].includes(route))
+            : commerce
+        ).map(([route, label]) => {
+          const href = `/${role === 'empleado' ? 'comercio' : role}${route ? '/' + route : ''}`;
           return (
             <Link href={href} key={href} className={pathname === href ? 'active' : ''}>
               {label}

@@ -3,9 +3,21 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { 
-  ArrowUpRight, Gift, Mail, ShieldCheck, Sparkles, UserRound, 
-  Building2, Phone, Calendar, Lock, CheckCircle2, AlertCircle, LayoutDashboard, QrCode
+import {
+  ArrowUpRight,
+  Gift,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+  Building2,
+  Phone,
+  Calendar,
+  Lock,
+  CheckCircle2,
+  AlertCircle,
+  LayoutDashboard,
+  QrCode,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { api, useSession } from './Providers';
@@ -18,8 +30,10 @@ import { Code } from './Code';
 export function AuthForm({ register = false }: { register?: boolean }) {
   const router = useRouter();
   const { user, setUser, logout } = useSession();
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(register ? 'register' : 'login');
-  const [accountType, setAccountType] = useState<'cliente' | 'comercio'>('cliente');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>(
+    register ? 'register' : 'login',
+  );
+  const [accountType] = useState<'cliente' | 'comercio'>('cliente');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -45,9 +59,14 @@ export function AuthForm({ register = false }: { register?: boolean }) {
         },
       });
       if (oauthError) throw new Error(oauthError.message);
-    } catch (err: any) {
-      setError(err?.message || 'Error al conectar con el servicio de Google.');
-      toast.error(err?.message || 'No se pudo iniciar con Google.');
+    } catch (err: unknown) {
+      setError(
+        (err instanceof Error ? err.message : undefined) ||
+          'Error al conectar con el servicio de Google.',
+      );
+      toast.error(
+        (err instanceof Error ? err.message : undefined) || 'No se pudo iniciar con Google.',
+      );
       setBusy(false);
     }
   }
@@ -61,12 +80,16 @@ export function AuthForm({ register = false }: { register?: boolean }) {
 
     try {
       if (mode === 'forgot') {
-        const email = String(form.get('email') || '').trim().toLowerCase();
+        const email = String(form.get('email') || '')
+          .trim()
+          .toLowerCase();
         const res = await api<{ ok: boolean; message: string }>('auth', {
           method: 'POST',
           body: JSON.stringify({ action: 'forgot_password', email }),
         });
-        setSuccessMsg(res.message || 'Se ha enviado una contraseña temporal a tu correo electrónico.');
+        setSuccessMsg(
+          res.message || 'Si el correo está registrado, recibirás un enlace de recuperación.',
+        );
         toast.success('Correo enviado: Revisa tu bandeja de entrada o spam.');
         return;
       }
@@ -85,7 +108,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
       toast.success(
         mode === 'register'
           ? `¡Bienvenido a Paseo Aranjuez, ${user.name}!`
-          : `¡Hola de nuevo, ${user.name}!`
+          : `¡Hola de nuevo, ${user.name}!`,
       );
       router.push(homeFor(user.role));
       router.refresh();
@@ -101,20 +124,72 @@ export function AuthForm({ register = false }: { register?: boolean }) {
   if (user) {
     return (
       <div className="container auth-layout" style={{ maxWidth: '520px', margin: '40px auto' }}>
-        <div className="form-card" style={{ padding: '36px', borderRadius: '24px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg, #B84D0B, #FF6B1A)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 8px 24px rgba(255, 107, 26, 0.3)', border: '2px solid rgba(255,255,255,0.2)' }}>
+        <div
+          className="form-card"
+          style={{
+            padding: '36px',
+            borderRadius: '24px',
+            textAlign: 'center',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #B84D0B, #FF6B1A)',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 900,
+              fontSize: '24px',
+              margin: '0 auto 16px',
+              boxShadow: '0 8px 24px rgba(255, 107, 26, 0.3)',
+              border: '2px solid rgba(255,255,255,0.2)',
+            }}
+          >
             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
           </div>
-          <span className="tag" style={{ textTransform: 'uppercase', marginBottom: '8px', background: 'rgba(212, 162, 76, 0.2)', color: '#D4A24C', border: '1px solid rgba(212, 162, 76, 0.4)' }}>
+          <span
+            className="tag"
+            style={{
+              textTransform: 'uppercase',
+              marginBottom: '8px',
+              background: 'rgba(212, 162, 76, 0.2)',
+              color: '#D4A24C',
+              border: '1px solid rgba(212, 162, 76, 0.4)',
+            }}
+          >
             Sesión Activa
           </span>
-          <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', marginTop: '8px', marginBottom: '4px' }}>
+          <h2
+            style={{
+              fontSize: '24px',
+              fontWeight: 800,
+              color: '#fff',
+              marginTop: '8px',
+              marginBottom: '4px',
+            }}
+          >
             {user.name}
           </h2>
           <p className="muted" style={{ fontSize: '13px', marginBottom: '12px' }}>
             {user.email}
           </p>
-          <div style={{ display: 'inline-flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.06)', padding: '6px 16px', borderRadius: '12px', marginBottom: '28px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              gap: '8px',
+              alignItems: 'center',
+              background: 'rgba(255,255,255,0.06)',
+              padding: '6px 16px',
+              borderRadius: '12px',
+              marginBottom: '28px',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
             <span style={{ fontSize: '12px', fontWeight: 700, color: '#D4A24C' }}>
               Rol: {user.role.toUpperCase()}
             </span>
@@ -133,8 +208,8 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               {user.role === 'admin'
                 ? 'Ir al Panel de Administración'
                 : user.role === 'comercio'
-                ? 'Ir al Panel de Mi Tienda & Caja'
-                : 'Ir al Catálogo & PaseoYa'}
+                  ? 'Ir al Panel de Mi Tienda & Caja'
+                  : 'Ir al Catálogo & PaseoYa'}
             </Link>
 
             <Link
@@ -177,8 +252,8 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           {mode === 'register'
             ? 'Hay mucho por descubrir. Y por ganar.'
             : mode === 'forgot'
-            ? 'Recupera tu acceso al instante.'
-            : 'Qué bueno tenerte de vuelta.'}
+              ? 'Recupera tu acceso al instante.'
+              : 'Qué bueno tenerte de vuelta.'}
         </h1>
         <p>Una cuenta para tus compras, tus puntos y todos esos planes que empiezan en el Paseo.</p>
         <div className="auth-benefit">
@@ -203,68 +278,18 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           {mode === 'register'
             ? 'Crea tu cuenta'
             : mode === 'forgot'
-            ? 'Recuperar contraseña'
-            : 'Inicia sesión'}
+              ? 'Recuperar contraseña'
+              : 'Inicia sesión'}
         </h2>
         <p className="muted">
           {mode === 'register'
-            ? 'Completa tus datos para registrarte como cliente o comercio.'
+            ? 'Completa tus datos para unirte al Club Paseo. Las cuentas de comercio las asigna administración.'
             : mode === 'forgot'
-            ? 'Te enviaremos una contraseña temporal a tu correo electrónico vía Google SMTP.'
-            : 'Clientes, comercios y administración ingresan aquí.'}
+              ? 'Te enviaremos una contraseña temporal a tu correo electrónico vía Google SMTP.'
+              : 'Clientes, comercios y administración ingresan aquí.'}
         </p>
 
         {/* Selector de Tipo de Cuenta si es Registro */}
-        {mode === 'register' && (
-          <div style={{ display: 'flex', gap: '8px', margin: '14px 0 18px' }}>
-            <button
-              type="button"
-              onClick={() => setAccountType('cliente')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: accountType === 'cliente' ? '2px solid #FF6B1A' : '1px solid rgba(255,255,255,0.15)',
-                background: accountType === 'cliente' ? 'rgba(255, 107, 26, 0.15)' : 'rgba(255,255,255,0.03)',
-                color: accountType === 'cliente' ? '#FF6B1A' : '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              <UserRound size={16} />
-              <span>Cliente / Visitante</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountType('comercio')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '12px',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: accountType === 'comercio' ? '2px solid #D4A24C' : '1px solid rgba(255,255,255,0.15)',
-                background: accountType === 'comercio' ? 'rgba(212, 162, 76, 0.15)' : 'rgba(255,255,255,0.03)',
-                color: accountType === 'comercio' ? '#D4A24C' : '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              <Building2 size={16} />
-              <span>Comercio / Tienda</span>
-            </button>
-          </div>
-        )}
-
-        {/* Botón Google OAuth (solo en login/register) */}
         {mode !== 'forgot' && (
           <>
             <button
@@ -351,12 +376,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <label>
                 Nombre del Negocio
-                <input
-                  name="storeName"
-                  required
-                  maxLength={100}
-                  placeholder="Ej: Samsung Store"
-                />
+                <input name="storeName" required maxLength={100} placeholder="Ej: Samsung Store" />
               </label>
               <label>
                 Categoría
@@ -381,12 +401,7 @@ export function AuthForm({ register = false }: { register?: boolean }) {
               </label>
               <label>
                 Local / Bahía
-                <input
-                  name="storeLocal"
-                  required
-                  maxLength={50}
-                  placeholder="Ej: Local 104"
-                />
+                <input name="storeLocal" required maxLength={50} placeholder="Ej: Local 104" />
               </label>
             </div>
           )}
@@ -443,7 +458,13 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             <>
               <label>
                 Celular <span className="muted">(opcional)</span>
-                <input name="phone" autoComplete="tel" type="tel" maxLength={25} placeholder="+591 70000000" />
+                <input
+                  name="phone"
+                  autoComplete="tel"
+                  type="tel"
+                  maxLength={25}
+                  placeholder="+591 70000000"
+                />
               </label>
               {accountType === 'cliente' && (
                 <label>
@@ -461,7 +482,17 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           )}
 
           {successMsg && (
-            <div style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '10px', padding: '12px', fontSize: '13px', color: '#10B981', margin: '8px 0' }}>
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '10px',
+                padding: '12px',
+                fontSize: '13px',
+                color: '#10B981',
+                margin: '8px 0',
+              }}
+            >
               ✓ {successMsg}
             </div>
           )}
@@ -470,10 +501,10 @@ export function AuthForm({ register = false }: { register?: boolean }) {
             {busy
               ? 'Un momento…'
               : mode === 'register'
-              ? `Crear cuenta ${accountType === 'comercio' ? 'de comercio' : 'de cliente'}`
-              : mode === 'forgot'
-              ? 'Enviar contraseña temporal por correo'
-              : 'Ingresar'}{' '}
+                ? `Crear cuenta ${accountType === 'comercio' ? 'de comercio' : 'de cliente'}`
+                : mode === 'forgot'
+                  ? 'Enviar contraseña temporal por correo'
+                  : 'Ingresar'}{' '}
             <ArrowUpRight size={17} />
           </button>
 
@@ -502,7 +533,13 @@ export function AuthForm({ register = false }: { register?: boolean }) {
           <button
             type="button"
             onClick={() => setMode(mode === 'register' ? 'login' : 'register')}
-            style={{ background: 'none', border: 'none', color: '#FF6B1A', fontWeight: 700, cursor: 'pointer' }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#FF6B1A',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
           >
             {mode === 'register' ? 'Inicia sesión' : 'Regístrate'}
           </button>
@@ -552,7 +589,7 @@ export function Profile() {
       </div>
     );
 
-  const level = levelFor(user.lifetime_points);
+  const level = levelFor(user.points);
 
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault();
@@ -571,8 +608,8 @@ export function Profile() {
         setUser(res.user);
         toast.success('¡Datos personales actualizados correctamente!');
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Error al actualizar datos.');
+    } catch (err: unknown) {
+      toast.error((err instanceof Error ? err.message : undefined) || 'Error al actualizar datos.');
     } finally {
       setBusyInfo(false);
     }
@@ -602,8 +639,10 @@ export function Profile() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err: any) {
-      toast.error(err?.message || 'Error al cambiar contraseña.');
+    } catch (err: unknown) {
+      toast.error(
+        (err instanceof Error ? err.message : undefined) || 'Error al cambiar contraseña.',
+      );
     } finally {
       setBusyPass(false);
     }
@@ -625,7 +664,12 @@ export function Profile() {
         </div>
         <h2>{user.name}</h2>
         <p>
-          <Mail size={15} /> {user.email} {user.role !== 'cliente' && <strong style={{ color: '#D4A24C', marginLeft: '8px' }}>({user.role.toUpperCase()})</strong>}
+          <Mail size={15} /> {user.email}{' '}
+          {user.role !== 'cliente' && (
+            <strong style={{ color: '#D4A24C', marginLeft: '8px' }}>
+              ({user.role.toUpperCase()})
+            </strong>
+          )}
         </p>
         <Code type="user" token={user.qr_token} label="QR de membresía y retiros" />
         <div className="membership-bottom">
@@ -643,14 +687,22 @@ export function Profile() {
       {/* Accesos Rápidos según Rol */}
       <div className="quick-grid" style={{ marginBottom: '32px' }}>
         {user.role === 'admin' && (
-          <Link className="card" href="/admin/overview" style={{ borderColor: 'rgba(212, 162, 76, 0.4)' }}>
+          <Link
+            className="card"
+            href="/admin/overview"
+            style={{ borderColor: 'rgba(212, 162, 76, 0.4)' }}
+          >
             <LayoutDashboard style={{ color: '#D4A24C' }} />
             <h3 style={{ color: '#D4A24C' }}>Panel de Administración</h3>
             <p>Control de tiendas, analítica y gestión general.</p>
           </Link>
         )}
         {user.role === 'comercio' && (
-          <Link className="card" href="/comercio" style={{ borderColor: 'rgba(255, 107, 26, 0.4)' }}>
+          <Link
+            className="card"
+            href="/comercio"
+            style={{ borderColor: 'rgba(255, 107, 26, 0.4)' }}
+          >
             <Building2 style={{ color: '#FF6B1A' }} />
             <h3 style={{ color: '#FF6B1A' }}>Mi Establecimiento & Caja</h3>
             <p>Escanear QRs, validar pedidos y ver productos.</p>
@@ -671,7 +723,17 @@ export function Profile() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
         {/* Formulario de Datos Personales */}
         <section className="form-card" style={{ padding: '24px', borderRadius: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '18px',
+              fontWeight: 800,
+              color: '#fff',
+              marginBottom: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <UserRound size={18} style={{ color: '#FF6B1A' }} />
             Información Personal
           </h3>
@@ -713,15 +775,15 @@ export function Profile() {
               </label>
               <label>
                 Fecha de nacimiento
-                <input
-                  type="date"
-                  value={birthday}
-                  onChange={(e) => setBirthday(e.target.value)}
-                />
+                <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
               </label>
             </div>
 
-            <button className="button" disabled={busyInfo} style={{ marginTop: '8px', alignSelf: 'flex-start' }}>
+            <button
+              className="button"
+              disabled={busyInfo}
+              style={{ marginTop: '8px', alignSelf: 'flex-start' }}
+            >
               {busyInfo ? 'Guardando…' : 'Guardar Datos Personales'}
             </button>
           </form>
@@ -729,7 +791,17 @@ export function Profile() {
 
         {/* Formulario de Cambio de Contraseña */}
         <section className="form-card" style={{ padding: '24px', borderRadius: '20px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3
+            style={{
+              fontSize: '18px',
+              fontWeight: 800,
+              color: '#fff',
+              marginBottom: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <Lock size={18} style={{ color: '#D4A24C' }} />
             Seguridad & Contraseña
           </h3>
@@ -774,7 +846,11 @@ export function Profile() {
               </label>
             </div>
 
-            <button className="button light" disabled={busyPass} style={{ marginTop: '8px', alignSelf: 'flex-start' }}>
+            <button
+              className="button light"
+              disabled={busyPass}
+              style={{ marginTop: '8px', alignSelf: 'flex-start' }}
+            >
               {busyPass ? 'Actualizando…' : 'Actualizar Contraseña'}
             </button>
           </form>

@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import type { Catalog, Store } from '@/lib/paseo/model';
 import { api, useResource, useSession } from './Providers';
 import { ErrorState, Loading, PageTitle } from './UI';
+import { ImageDragDropUploader } from './ImageDragDropUploader';
 
 const FLOORS = [
   { id: 'Subsuelo', label: 'Subsuelo (-1)', desc: 'Parking & Click & Collect' },
@@ -60,6 +61,8 @@ export function MerchantStoreProfile() {
   // Initialize form once data is loaded
   useEffect(() => {
     if (existingStore) {
+      // Synchronize the editable form after the store is fetched.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
         name: existingStore.name || '',
         description: existingStore.description || '',
@@ -191,7 +194,10 @@ export function MerchantStoreProfile() {
                     c.done ? 'text-emerald-400 font-medium' : 'text-slate-500'
                   }`}
                 >
-                  <CheckCircle2 size={12} className={c.done ? 'text-emerald-400' : 'text-slate-600'} />
+                  <CheckCircle2
+                    size={12}
+                    className={c.done ? 'text-emerald-400' : 'text-slate-600'}
+                  />
                   <span className="truncate">{c.label}</span>
                 </div>
               ))}
@@ -292,7 +298,10 @@ export function MerchantStoreProfile() {
                             : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
                         }`}
                       >
-                        <Building2 size={16} className={active ? 'text-[#FF6B1A] mb-1' : 'text-slate-500 mb-1'} />
+                        <Building2
+                          size={16}
+                          className={active ? 'text-[#FF6B1A] mb-1' : 'text-slate-500 mb-1'}
+                        />
                         <span className="truncate w-full">{f.id}</span>
                       </button>
                     );
@@ -357,6 +366,10 @@ export function MerchantStoreProfile() {
               </div>
 
               <div>
+                <ImageDragDropUploader
+                  value={form.image_url}
+                  onChange={(image_url) => setForm({ ...form, image_url })}
+                />
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
                   URL de Imagen de Fachada / Logo (HTTPS)
                 </label>
@@ -409,7 +422,11 @@ export function MerchantStoreProfile() {
                 className="button primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-[#FF6B1A]/20"
               >
                 <Save size={18} />
-                {saving ? 'Guardando cambios...' : existingStore ? 'Guardar Cambios' : 'Registrar Establecimiento'}
+                {saving
+                  ? 'Guardando cambios...'
+                  : existingStore
+                    ? 'Guardar Cambios'
+                    : 'Registrar Establecimiento'}
               </button>
             </div>
           </form>
@@ -448,7 +465,8 @@ export function MerchantStoreProfile() {
                   {form.name || 'Nombre de tu Tienda'}
                 </h5>
                 <p className="text-xs text-slate-400 line-clamp-2">
-                  {form.description || 'Aquí se mostrará la descripción comercial de tu establecimiento...'}
+                  {form.description ||
+                    'Aquí se mostrará la descripción comercial de tu establecimiento...'}
                 </p>
 
                 <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs text-slate-300">

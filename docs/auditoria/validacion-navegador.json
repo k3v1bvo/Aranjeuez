@@ -1,0 +1,98 @@
+[
+  {
+    "name": "04: customer form has points without stores",
+    "status": "passed"
+  },
+  {
+    "name": "06: merchant creation supports new store",
+    "status": "passed"
+  },
+  {
+    "name": "07: employee requires store and hides points",
+    "status": "passed"
+  },
+  {
+    "name": "08: administrator form isolates privileges",
+    "status": "passed"
+  },
+  {
+    "name": "05: merchant edit shows assigned store",
+    "status": "passed"
+  },
+  {
+    "name": "02: admin navigation excludes consumption",
+    "status": "passed"
+  },
+  {
+    "name": "01: original logo keeps 2:1 aspect ratio",
+    "status": "passed"
+  },
+  {
+    "name": "23/24: admin fits mobile and desktop widths",
+    "status": "passed"
+  },
+  {
+    "name": "11: employee denied inventory page and API",
+    "status": "passed"
+  },
+  {
+    "name": "22: employee scanner opens with assigned store",
+    "status": "passed"
+  },
+  {
+    "name": "10: store inventory isolation and foreign writes rejected; customers denied management",
+    "status": "passed"
+  },
+  {
+    "name": "13/14: unified directory includes store with no online products",
+    "status": "passed"
+  },
+  {
+    "name": "03: named session, email, role and logout",
+    "status": "passed"
+  },
+  {
+    "name": "23/24: catalog and dock fit mobile and desktop widths",
+    "status": "passed"
+  },
+  {
+    "name": "25: footer separates hours, terraces and parking",
+    "status": "passed"
+  },
+  {
+    "name": "20/21: camera control and manual check-in are present",
+    "status": "passed"
+  },
+  {
+    "name": "21: strict geofence rejects remote or missing GPS",
+    "status": "passed"
+  },
+  {
+    "name": "15/19: speech end sends question and orb activates speech",
+    "status": "passed"
+  },
+  {
+    "name": "16: voice language falls back after unsupported language",
+    "status": "passed"
+  },
+  {
+    "name": "18: speech keep-alive calls resume at 10-second intervals",
+    "status": "passed"
+  },
+  {
+    "name": "19: orb can silence speaking response",
+    "status": "passed"
+  },
+  {
+    "name": "03: logout removes cookie",
+    "status": "passed"
+  },
+  {
+    "name": "12: anonymous uploads rejected",
+    "status": "passed"
+  },
+  {
+    "name": "Security: arbitrary Vercel origins rejected",
+    "status": "passed"
+  }
+]
