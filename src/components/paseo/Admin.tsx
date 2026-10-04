@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 import { PaseoHeatmap } from './PaseoHeatmap';
 import { QrStationManager } from './QrStationManager';
 import { QrCode, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { ArrowUpRight, Coins, Package, ShoppingBag, Users, MapPin, Compass, Award } from 'lucide-react';
+import { ArrowUpRight, Coins, Package, ShoppingBag, Users, MapPin, Compass, Award, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Movement, Order, Product, Settings, Store, User } from '@/lib/paseo/model';
 import { dateTime, money } from '@/lib/paseo/model';
@@ -92,9 +92,9 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
   return (
     <section>
       <PageTitle
-        eyebrow={compact ? 'Tu día en el Paseo' : 'Paseo Aranjuez · Administración'}
-        title={compact ? 'Todo listo para recibirlos.' : 'Así se mueve el Paseo.'}
-        description="Actividad registrada en el sistema. Actualización cada 30 segundos."
+        eyebrow={compact ? 'Tu dÃ­a en el Paseo' : 'Paseo Aranjuez Â· AdministraciÃ³n'}
+        title={compact ? 'Todo listo para recibirlos.' : 'AsÃ­ se mueve el Paseo.'}
+        description="Actividad registrada en el sistema. ActualizaciÃ³n cada 30 segundos."
       />
       {error && <ErrorState message={error} retry={reload} />}
       {loading ? (
@@ -106,14 +106,14 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
             {compact && (
               <section className="surface section">
                 <h2>Movimientos de mis establecimientos</h2>
-                <p className="muted">Últimos 200 movimientos de puntos vinculados a tus locales.</p>
+                <p className="muted">Ãšltimos 200 movimientos de puntos vinculados a tus locales.</p>
                 <ul className="activity-list">
                   {data.movements.map((movement) => (
                     <li key={movement.id}>
                       <div>
                         <strong>{movement.reason}</strong>
                         <small>
-                          {movement.user?.name} · {movement.store?.name} ·{' '}
+                          {movement.user?.name} Â· {movement.store?.name} Â·{' '}
                           {dateTime(movement.created_at)}
                         </small>
                       </div>
@@ -125,7 +125,7 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
                   ))}
                 </ul>
                 {!data.movements.length && (
-                  <p className="muted">Las compras y canjes de tus locales aparecerán aquí.</p>
+                  <p className="muted">Las compras y canjes de tus locales aparecerÃ¡n aquÃ­.</p>
                 )}
               </section>
             )}
@@ -161,12 +161,15 @@ export function Dashboard({ compact = false }: { compact?: boolean }) {
   );
 }
 function Analytics({ data }: { data: Summary }) {
+  const [activeTab, setActiveTab] = useState<'ventas' | 'jarvis' | 'clientes'>('ventas');
+
   const sales = [
     ...data.orders
       .filter((o) => o.status === 'entregado')
       .map((o) => ({ store_id: o.store_id, user_id: o.user_id, amount: Number(o.total) })),
     ...data.purchases.map((p) => ({ ...p, amount: Number(p.amount) })),
   ];
+
   const stores = data.stores
     .map((s) => ({
       name: s.name,
@@ -174,70 +177,272 @@ function Analytics({ data }: { data: Summary }) {
       count: sales.filter((p) => p.store_id === s.id).length,
     }))
     .sort((a, b) => b.total - a.total);
+
+  const totalSalesRevenue = stores.reduce((acc, s) => acc + s.total, 0);
+  const maxStoreTotal = stores[0]?.total || 1;
+
   const customers = data.users
     .filter((u) => u.role === 'cliente')
-    .map((u) => ({ name: u.name, count: sales.filter((s) => s.user_id === u.id).length }))
-    .filter((u) => u.count)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+    .map((u) => ({
+      id: u.id,
+      name: u.name,
+      points: u.points,
+      count: sales.filter((s) => s.user_id === u.id).length,
+    }))
+    .filter((u) => u.count > 0 || u.points > 0)
+    .sort((a, b) => (b.count * 100 + b.points) - (a.count * 100 + a.points))
+    .slice(0, 8);
+
   const topics = Object.entries(
     data.questions.reduce<Record<string, number>>((counts, q) => {
       counts[q.topic] = (counts[q.topic] || 0) + 1;
       return counts;
     }, {}),
   ).sort((a, b) => b[1] - a[1]);
+
+  const maxTopicCount = topics[0]?.[1] || 1;
+  const totalQuestions = topics.reduce((acc, t) => acc + t[1], 0);
+
+  const barColors = [
+    'linear-gradient(90deg, #f97316 0%, #ea580c 100%)',
+    'linear-gradient(90deg, #06b6d4 0%, #0284c7 100%)',
+    'linear-gradient(90deg, #8b5cf6 0%, #6d28d9 100%)',
+    'linear-gradient(90deg, #10b981 0%, #059669 100%)',
+    'linear-gradient(90deg, #ec4899 0%, #be185d 100%)',
+    'linear-gradient(90deg, #eab308 0%, #ca8a04 100%)',
+  ];
+
   return (
-    <div className="analytics-grid">
-      <section className="surface">
-        <h2>Ventas por establecimiento</h2>
-        <p className="muted">Compras presenciales y pedidos entregados.</p>
-        {stores.length ? (
-          stores.map((s) => (
-            <div className="bar-row" key={s.name}>
+    <div className="dashboard-analytics-container">
+      <div className="analytics-tabs-header">
+        <div className="tabs-nav">
+          <button
+            type="button"
+            className={'tab-btn ' + (activeTab === 'ventas' ? 'active' : '')}
+            onClick={() => setActiveTab('ventas')}
+          >
+            <Coins size={16} /> Rendimiento de Comercios
+          </button>
+          <button
+            type="button"
+            className={'tab-btn ' + (activeTab === 'jarvis' ? 'active' : '')}
+            onClick={() => setActiveTab('jarvis')}
+          >
+            <Sparkles size={16} /> Radar de Inteligencia Jarvis
+          </button>
+          <button
+            type="button"
+            className={'tab-btn ' + (activeTab === 'clientes' ? 'active' : '')}
+            onClick={() => setActiveTab('clientes')}
+          >
+            <Users size={16} /> Fidelizaci?n de Clientes
+          </button>
+        </div>
+        <div className="data-badge-live">
+          <span className="live-dot"></span> M?tricas en Vivo
+        </div>
+      </div>
+
+      {activeTab === 'ventas' && (
+        <div className="analytics-grid modern-grid">
+          <section className="surface chart-card">
+            <div className="card-header-flex">
               <div>
-                <span>{s.name}</span>
-                <strong>{money(s.total)}</strong>
+                <h3>?? Distribuci?n de Ventas por Establecimiento</h3>
+                <p className="muted">Comparativa de ingresos confirmados y volumen de compras</p>
               </div>
-              <div className="bar-track">
-                <span
-                  style={{ width: `${stores[0].total ? (s.total / stores[0].total) * 100 : 0}%` }}
-                />
+              <div className="metric-pill">
+                Total: <strong>{money(totalSalesRevenue)}</strong>
               </div>
-              <small>{s.count} compras confirmadas</small>
             </div>
-          ))
-        ) : (
-          <p>Aún no hay establecimientos.</p>
-        )}
-      </section>
-      <section className="surface">
-        <h2>Clientes que más vuelven</h2>
-        <ul className="activity-list">
-          {customers.map((u, i) => (
-            <li key={i}>
-              <strong>{u.name}</strong>
-              <span>{u.count} compras</span>
-            </li>
-          ))}
-        </ul>
-        {!customers.length && <p className="muted">Aún no hay compras confirmadas.</p>}
-        <h3>Consultas a Jarvis</h3>
-        <p className="muted">
-          Temas de las últimas 1.000 respuestas. No se guardan conversaciones.
-        </p>
-        <ul className="activity-list">
-          {topics.map(([topic, count]) => (
-            <li key={topic}>
-              <span>{topic}</span>
-              <strong>{count}</strong>
-            </li>
-          ))}
-        </ul>
-        {!topics.length && <p className="muted">Todavía no hay consultas registradas.</p>}
-      </section>
+
+            {stores.length ? (
+              <div className="charts-bars-list">
+                {stores.map((s, index) => {
+                  const pct = totalSalesRevenue > 0 ? Math.round((s.total / totalSalesRevenue) * 100) : 0;
+                  const barWidth = Math.max(4, Math.round((s.total / maxStoreTotal) * 100));
+                  return (
+                    <div className="visual-bar-item" key={s.name}>
+                      <div className="visual-bar-label">
+                        <div className="bar-title-wrap">
+                          <span className="rank-badge">#{index + 1}</span>
+                          <strong>{s.name}</strong>
+                        </div>
+                        <div className="bar-values">
+                          <span className="amount">{money(s.total)}</span>
+                          <span className="pct-tag">{pct}%</span>
+                        </div>
+                      </div>
+                      <div className="visual-bar-track">
+                        <div
+                          className="visual-bar-fill"
+                          style={{
+                            width: barWidth + '%',
+                            background: barColors[index % barColors.length],
+                          }}
+                        />
+                      </div>
+                      <div className="visual-bar-footer">
+                        <span>{s.count} transacciones</span>
+                        <span>Promedio: {s.count ? money(s.total / s.count) : 'Bs. 0'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-chart-notice">A?n no hay ventas registradas en los comercios.</div>
+            )}
+          </section>
+
+          <section className="surface chart-card donut-section">
+            <div className="card-header-flex">
+              <div>
+                <h3>?? Participaci?n de Mercado</h3>
+                <p className="muted">Aporte de cada comercio a la facturaci?n</p>
+              </div>
+            </div>
+
+            {stores.filter((s) => s.total > 0).length ? (
+              <div className="donut-visual-container">
+                <div className="donut-legend">
+                  {stores
+                    .filter((s) => s.total > 0)
+                    .map((s, i) => (
+                      <div className="donut-legend-item" key={s.name}>
+                        <span
+                          className="legend-dot"
+                          style={{ background: barColors[i % barColors.length] }}
+                        />
+                        <span className="legend-name">{s.name}</span>
+                        <strong className="legend-val">{money(s.total)}</strong>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-chart-notice">Registra transacciones para generar la cuota de mercado.</div>
+            )}
+          </section>
+        </div>
+      )}
+
+      {activeTab === 'jarvis' && (
+        <div className="analytics-grid modern-grid">
+          <section className="surface chart-card">
+            <div className="card-header-flex">
+              <div>
+                <h3>? Consultas y Tendencias de B?squeda</h3>
+                <p className="muted">Temas m?s recurrentes procesados por el motor de IA en el Paseo</p>
+              </div>
+              <div className="metric-pill purple">{totalQuestions} consultas</div>
+            </div>
+
+            {topics.length ? (
+              <div className="charts-bars-list">
+                {topics.map(([topic, count]) => {
+                  const pct = Math.round((count / maxTopicCount) * 100);
+                  return (
+                    <div className="visual-bar-item" key={topic}>
+                      <div className="visual-bar-label">
+                        <div className="bar-title-wrap">
+                          <span className="topic-tag">? {topic}</span>
+                        </div>
+                        <span className="amount">{count} consultas</span>
+                      </div>
+                      <div className="visual-bar-track">
+                        <div
+                          className="visual-bar-fill purple"
+                          style={{ width: Math.max(5, pct) + '%' }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-chart-notice">A?n no se han registrado conversaciones con Jarvis.</div>
+            )}
+          </section>
+
+          <section className="surface chart-card">
+            <h3>?? Resumen Operativo</h3>
+            <p className="muted">Datos en tiempo real</p>
+            <div className="insights-grid">
+              <div className="insight-stat-box">
+                <span>Top Categor?a</span>
+                <strong>{topics[0]?.[0] || 'En espera'}</strong>
+              </div>
+              <div className="insight-stat-box">
+                <span>Locales Activos</span>
+                <strong>{data.stores.filter((s) => s.is_active).length} activos</strong>
+              </div>
+              <div className="insight-stat-box">
+                <span>Cat?logo Total</span>
+                <strong>{data.products.length} productos</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {activeTab === 'clientes' && (
+        <div className="analytics-grid modern-grid">
+          <section className="surface chart-card span-2">
+            <div className="card-header-flex">
+              <div>
+                <h3>?? Clientes con Mayor Frecuencia y Puntos Club</h3>
+                <p className="muted">Ranking de usuarios con mayor fidelizaci?n en el Paseo</p>
+              </div>
+            </div>
+
+            {customers.length ? (
+              <div className="ranking-table-wrapper">
+                <table className="modern-ranking-table">
+                  <thead>
+                    <tr>
+                      <th>Posici?n</th>
+                      <th>Cliente</th>
+                      <th>Pedidos / Compras</th>
+                      <th>Puntos Acumulados</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customers.map((c, i) => (
+                      <tr key={c.id}>
+                        <td>
+                          <span className={'rank-badge rank-' + (i + 1)}>
+                            {i === 0 ? '??' : i === 1 ? '??' : i === 2 ? '??' : '#' + (i + 1)}
+                          </span>
+                        </td>
+                        <td>
+                          <strong>{c.name}</strong>
+                        </td>
+                        <td>
+                          <span className="purchases-badge">{c.count} compras</span>
+                        </td>
+                        <td>
+                          <strong className="points-highlight">? {c.points} pts</strong>
+                        </td>
+                        <td>
+                          <span className="status-pill active">Activo</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty-chart-notice">A?n no hay clientes con actividad confirmada.</div>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
+
 function SettingsForm({ settings }: { settings: Settings }) {
   const [values, setValues] = useState<Settings>({
     ...settings,
@@ -260,7 +465,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
     setError('');
     try {
       await api('configuracion', { method: 'PATCH', body: JSON.stringify(values) });
-      toast.success('Configuración guardada correctamente');
+      toast.success('ConfiguraciÃ³n guardada correctamente');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No pudimos guardar.');
     } finally {
@@ -270,7 +475,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
 
   function testDeviceGps() {
     if (!navigator.geolocation) {
-      setGpsStatus('La geolocalización no está soportada en este navegador.');
+      setGpsStatus('La geolocalizaciÃ³n no estÃ¡ soportada en este navegador.');
       return;
     }
     setTestingGps(true);
@@ -280,11 +485,11 @@ function SettingsForm({ settings }: { settings: Settings }) {
         setTestingGps(false);
         const { latitude, longitude } = pos.coords;
         const R = 6371e3;
-        const φ1 = (latitude * Math.PI) / 180;
-        const φ2 = ((values.geofence_lat ?? -17.37365) * Math.PI) / 180;
-        const Δφ = (((values.geofence_lat ?? -17.37365) - latitude) * Math.PI) / 180;
-        const Δλ = (((values.geofence_lng ?? -66.15582) - longitude) * Math.PI) / 180;
-        const a = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+        const phi1 = (latitude * Math.PI) / 180;
+        const phi2 = ((values.geofence_lat ?? -17.37365) * Math.PI) / 180;
+        const deltaPhi = (((values.geofence_lat ?? -17.37365) - latitude) * Math.PI) / 180;
+        const deltaLambda = (((values.geofence_lng ?? -66.15582) - longitude) * Math.PI) / 180;
+        const a = Math.sin(deltaPhi / 2) ** 2 + Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const dist = Math.round(R * c);
 
@@ -292,8 +497,8 @@ function SettingsForm({ settings }: { settings: Settings }) {
         const inside = dist <= radius;
         setGpsStatus(
           inside
-            ? `🟢 ¡Estás dentro del perímetro! Distancia actual: ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
-            : `⚠️ Fuera del perímetro: Tu dispositivo está a ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+            ? `ðŸŸ¢ Â¡EstÃ¡s dentro del perÃ­metro! Distancia actual: ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
+            : `âš ï¸ Fuera del perÃ­metro: Tu dispositivo estÃ¡ a ${dist} metros del Paseo Aranjuez (Radio permitido: ${radius}m).`
         );
       },
       (err) => {
@@ -323,7 +528,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
         />
       </label>
       <label>
-        Ubicación y referencia física
+        UbicaciÃ³n y referencia fÃ­sica
         <textarea
           required
           minLength={2}
@@ -360,15 +565,15 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </label>
       </div>
 
-      {/* Sección Geocerca y Telemetría */}
+      {/* SecciÃ³n Geocerca y TelemetrÃ­a */}
       <div className="p-5 rounded-2xl bg-white/5 border border-[#FF6B1A]/30 space-y-4">
         <div className="flex items-center gap-2 text-white font-bold text-base">
           <MapPin size={18} className="text-[#FF6B1A]" />
-          <span>Perímetro de Geocerca & Telemetría Espacial</span>
+          <span>PerÃ­metro de Geocerca & TelemetrÃ­a Espacial</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Define el radio de proximidad física alrededor del edificio Paseo Aranjuez para validar
-          la presencia del cliente, activar la telemetría del mapa de calor y permitir la suma de puntos en los tótems de entrada.
+          Define el radio de proximidad fÃ­sica alrededor del edificio Paseo Aranjuez para validar
+          la presencia del cliente, activar la telemetrÃ­a del mapa de calor y permitir la suma de puntos en los tÃ³tems de entrada.
         </p>
 
         <div className="form-grid">
@@ -384,12 +589,12 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, geofence_radius: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              Recomendado: 200 metros (cubre accesos América, Pando y parqueos).
+              Recomendado: 200 metros (cubre accesos AmÃ©rica, Pando y parqueos).
             </small>
           </label>
 
           <label className="flex flex-col justify-center">
-            <span className="text-xs font-semibold text-slate-300 mb-2">Validación Estricta</span>
+            <span className="text-xs font-semibold text-slate-300 mb-2">ValidaciÃ³n Estricta</span>
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -397,7 +602,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
                 onChange={(e) => setValues({ ...values, geofence_strict: e.target.checked })}
               />
               <span className="text-xs">
-                Bloquear escaneo si el cliente está fuera del radio (Desactivado = modo flexible con registro)
+                Bloquear escaneo si el cliente estÃ¡ fuera del radio (Desactivado = modo flexible con registro)
               </span>
             </label>
           </label>
@@ -435,7 +640,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
             className="button secondary small inline-flex items-center gap-1.5"
           >
             <Compass size={15} />
-            {testingGps ? 'Midiendo GPS...' : '📍 Calibrar / Probar mi GPS actual'}
+            {testingGps ? 'Midiendo GPS...' : 'ðŸ“ Calibrar / Probar mi GPS actual'}
           </button>
           {gpsStatus && (
             <span className="text-xs text-slate-200 font-medium bg-black/40 px-3 py-1.5 rounded-lg border border-white/10">
@@ -445,19 +650,19 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </div>
       </div>
 
-      {/* Sección Puntos por Tótems QR y Recorrido de Pisos */}
+      {/* SecciÃ³n Puntos por TÃ³tems QR y Recorrido de Pisos */}
       <div className="p-5 rounded-2xl bg-white/5 border border-amber-500/30 space-y-4">
         <div className="flex items-center gap-2 text-white font-bold text-base">
           <Award size={18} className="text-amber-400" />
-          <span>Puntos por Tótems QR de Recorrido (Sin Compra Obligatoria)</span>
+          <span>Puntos por TÃ³tems QR de Recorrido (Sin Compra Obligatoria)</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          Configura cuántos puntos recibe un visitante al escanear los tótems físicos en las puertas principales, en la entrada de cada piso y al salir tras recorrer el centro comercial.
+          Configura cuÃ¡ntos puntos recibe un visitante al escanear los tÃ³tems fÃ­sicos en las puertas principales, en la entrada de cada piso y al salir tras recorrer el centro comercial.
         </p>
 
         <div className="form-grid">
           <label>
-            Puntos por Bienvenida (Puertas América / Dalence)
+            Puntos por Bienvenida (Puertas AmÃ©rica / Dalence)
             <input
               type="number"
               min="0"
@@ -468,7 +673,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, qr_welcome_points: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              Máximo 1 vez al día por usuario.
+              MÃ¡ximo 1 vez al dÃ­a por usuario.
             </small>
           </label>
 
@@ -484,7 +689,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
               onChange={(e) => setValues({ ...values, qr_entry_points: Number(e.target.value) })}
             />
             <small className="text-slate-400 text-[11px] block mt-1">
-              Al llegar al piso por ascensor o gradas (1 vez al día por piso).
+              Al llegar al piso por ascensor o gradas (1 vez al dÃ­a por piso).
             </small>
           </label>
         </div>
@@ -507,7 +712,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
           </label>
 
           <label>
-            Permanencia Mínima en Piso (Minutos)
+            Permanencia MÃ­nima en Piso (Minutos)
             <input
               type="number"
               min="0"
@@ -525,7 +730,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
       </div>
 
       <p className="notice">
-        La equivalencia y la geocerca se aplican inmediatamente. Los tótems de entrada registrarán
+        La equivalencia y la geocerca se aplican inmediatamente. Los tÃ³tems de entrada registrarÃ¡n
         la proximidad del visitante con base en el radio configurado.
       </p>
       {error && (
@@ -534,7 +739,7 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </p>
       )}
       <button className="button" disabled={busy}>
-        {busy ? 'Guardando…' : 'Guardar configuración'}
+        {busy ? 'Guardandoâ€¦' : 'Guardar configuraciÃ³n'}
       </button>
     </form>
   );
@@ -544,14 +749,14 @@ function Reports({ section }: { section: string }) {
   if (loading) return <Loading />;
   if (!data) return <ErrorState message={error} retry={reload} />;
   const titles: Record<string, string> = {
-    analytics: 'Estadísticas del Paseo',
-    audit: 'Movimientos y auditoría',
-    alerts: 'Alertas de operación',
-    settings: 'Configuración del Paseo',
+    analytics: 'EstadÃ­sticas del Paseo',
+    audit: 'Movimientos y auditorÃ­a',
+    alerts: 'Alertas de operaciÃ³n',
+    settings: 'ConfiguraciÃ³n del Paseo',
   };
   return (
     <>
-      <PageTitle eyebrow="Administración" title={titles[section]} />
+      <PageTitle eyebrow="AdministraciÃ³n" title={titles[section]} />
       {error && <ErrorState message={error} retry={reload} />}
       {section === 'analytics' && (
         <>
@@ -565,7 +770,7 @@ function Reports({ section }: { section: string }) {
       {section === 'settings' && <SettingsForm settings={data.settings} />}
       {section === 'alerts' && (
         <section className="surface">
-          <h2>Reposición de stock</h2>
+          <h2>ReposiciÃ³n de stock</h2>
           <p className="muted">Productos con tres unidades o menos.</p>
           {data.products.filter((p) => p.stock <= 3).length ? (
             <ul className="activity-list">
@@ -584,7 +789,7 @@ function Reports({ section }: { section: string }) {
           ) : (
             <Empty
               title="Stock sin alertas"
-              detail="Todos los productos tienen más de tres unidades."
+              detail="Todos los productos tienen mÃ¡s de tres unidades."
             />
           )}
           <Link className="text-button" href="/admin/products">
@@ -596,14 +801,14 @@ function Reports({ section }: { section: string }) {
         <>
           <section className="surface">
             <h2>Historial de puntos</h2>
-            <p className="muted">Últimos 200 movimientos registrados.</p>
+            <p className="muted">Ãšltimos 200 movimientos registrados.</p>
             <ul className="activity-list">
               {data.movements.map((m) => (
                 <li key={m.id}>
                   <div>
                     <strong>{m.reason}</strong>
                     <small>
-                      {m.user?.name} · {m.store?.name || 'Club Paseo'} · {dateTime(m.created_at)}
+                      {m.user?.name} Â· {m.store?.name || 'Club Paseo'} Â· {dateTime(m.created_at)}
                     </small>
                   </div>
                   <strong className={m.amount > 0 ? 'positive' : ''}>
@@ -615,10 +820,10 @@ function Reports({ section }: { section: string }) {
             </ul>
           </section>
           <section className="surface section">
-            <h2>Auditoría de operaciones</h2>
+            <h2>AuditorÃ­a de operaciones</h2>
             <p className="muted">
-              Últimas 100 operaciones. Las compras y los canjes se registran dentro de la misma
-              transacción.
+              Ãšltimas 100 operaciones. Las compras y los canjes se registran dentro de la misma
+              transacciÃ³n.
             </p>
             <ul className="activity-list">
               {data.audit.map((a) => (
@@ -626,11 +831,11 @@ function Reports({ section }: { section: string }) {
                   <div>
                     <strong>{a.action.replaceAll('_', ' ')}</strong>
                     <small>
-                      {data.users.find((u) => u.id === a.actor_id)?.name || 'Usuario'} · {a.entity}{' '}
-                      · {dateTime(a.created_at)}
+                      {data.users.find((u) => u.id === a.actor_id)?.name || 'Usuario'} Â· {a.entity}{' '}
+                      Â· {dateTime(a.created_at)}
                     </small>
                     <small>
-                      {a.entity_id?.slice(0, 8)} {a.detail.despues ? `→ ${a.detail.despues}` : ''}
+                      {a.entity_id?.slice(0, 8)} {a.detail.despues ? `â†’ ${a.detail.despues}` : ''}
                     </small>
                   </div>
                 </li>
@@ -658,3 +863,4 @@ export function AdminSection({ section }: { section: string }) {
   if (section === 'sales' || section === 'payments') return <Orders commerce />;
   return <Reports key={section} section={section} />;
 }
+
