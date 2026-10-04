@@ -184,7 +184,18 @@ export function Points() {
           userLng: userCoords?.lng,
         }),
       });
-      toast.success(res.message || '¡Ingreso registrado! Puntos sumados');
+      toast.success(res.message || 'Ingreso registrado! Puntos sumados');
+        try {
+          const isExit = (customCode || '').toLowerCase().includes('salida');
+          if (isExit) {
+            localStorage.removeItem('paseo_geofence_active');
+            localStorage.removeItem('paseo_last_station');
+          } else {
+            localStorage.setItem('paseo_geofence_active', 'true');
+            if (customCode) localStorage.setItem('paseo_last_station', customCode);
+          }
+          window.dispatchEvent(new Event('storage'));
+        } catch {}
       setCamera(false);
       reload();
       void refresh();

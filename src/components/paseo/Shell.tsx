@@ -1,3 +1,4 @@
+import { PresenceTracker } from './PresenceTracker';
 'use client';
 
 import Link from 'next/link';
@@ -64,6 +65,7 @@ export function Shell({ children }: { children: React.ReactNode; demo?: boolean 
       </main>
 
       {!loading && user?.role !== 'admin' && user?.role !== 'empleado' && <FooterPaseo />}
+      <PresenceTracker />
       <MobileBottomDock />
     </div>
   );

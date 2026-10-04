@@ -1432,6 +1432,79 @@ async function settings(req: NextRequest) {
   return NextResponse.json({ success: true, qr_points: qrPointsObj });
 }
 
+
+async function telemetryPing(req: NextRequest) {
+  const user = await requireUser(req, ['cliente']);
+  const client = db();
+  const data = await body(req);
+
+  const userLat = number(data.lat, 'Latitud', -90, 90);
+  const userLng = number(data.lng, 'Longitud', -180, 180);
+  const lastStationCode = typeof data.last_station === 'string' ? data.last_station : '';
+
+  rateLimit(`ping:${user.id}`, 60);
+
+  // Leer configuraci?n de Geocerca actual
+  const rawSettings = checked(
+    await client.from('paseo_settings').select('location').eq('id', 1).maybeSingle(),
+  );
+  const geo = parseGeofence(rawSettings?.location);
+
+  const distanceToPaseo = getDistanceMeters(userLat, userLng, geo.lat, geo.lng);
+  const inGeofence = distanceToPaseo <= geo.radius;
+
+  // Si ya sali? de los 200m, avisarle al cliente que detenga el tracker
+  if (!inGeofence) {
+    return NextResponse.json({
+      ok: true,
+      in_geofence: false,
+      should_stop: true,
+      distance_meters: Math.round(distanceToPaseo),
+      message: 'Fuera de per?metro (>= ' + Math.round(distanceToPaseo) + 'm). Monitoreo finalizado.',
+    });
+  }
+
+  // Si est? dentro de los 200m, registrar presencia en paseo_audit para el mapa de calor
+  const station = lastStationCode ? findStation(lastStationCode) : null;
+  const x = station ? station.x : 50;
+  const y = station ? station.y : 50;
+  const z = station ? station.z : 0;
+  const floor = station ? station.floorLabel : 'Planta Baja';
+
+  await client.from('paseo_audit').insert({
+    actor_id: user.id,
+    action: 'telemetry_scan',
+    entity: 'heat_telemetry',
+    detail: {
+      type: 'heartbeat_presence',
+      station_code: station?.code || 'PRESENCIA-ACTIVA',
+      totem_code: station?.code || 'PRESENCIA-ACTIVA',
+      totem_name: station ? 'Presencia en ' + station.name : 'Visitante en Recorrido',
+      floor_id: station?.floorId || 'piso-pb',
+      floor: floor,
+      x,
+      y,
+      z,
+      lat: userLat,
+      lng: userLng,
+      distance_meters: Math.round(distanceToPaseo),
+      in_geofence: true,
+      points_granted: 0,
+      user_name: user.name,
+      timestamp: new Date().toISOString(),
+    },
+  });
+
+  return NextResponse.json({
+    ok: true,
+    in_geofence: true,
+    should_stop: false,
+    distance_meters: Math.round(distanceToPaseo),
+    floor,
+    z,
+  });
+}
+
 export async function handle(req: NextRequest, path: string[]) {
   try {
     let response: NextResponse;
@@ -1442,6 +1515,7 @@ export async function handle(req: NextRequest, path: string[]) {
     else if (resource === 'pedidos') response = await orders(req);
     else if (resource === 'puntos') response = await points(req);
     else if (resource === 'checkin' && req.method === 'POST') response = await checkin(req);
+    else if (resource === 'telemetria' && child === 'ping' && req.method === 'POST') response = await telemetryPing(req);
     else if (resource === 'mapa-calor') response = await heatmap(req);
     else if (resource === 'scanner' && req.method === 'POST') response = await scanner(req);
     else if (resource === 'compras' && req.method === 'POST') response = await purchase(req);
