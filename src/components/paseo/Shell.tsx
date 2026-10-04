@@ -1,6 +1,6 @@
-import { PresenceTracker } from './PresenceTracker';
 'use client';
 
+import { PresenceTracker } from './PresenceTracker';
 import Link from 'next/link';
 import { MobileBottomDock } from './MobileBottomDock';
 import { usePathname } from 'next/navigation';
